@@ -7,6 +7,7 @@ import pandas as pd
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import PlainTextResponse
 
 from backend.app.services.automl_runner import run_automl_experiment
 from backend.app.services.ai_analyst import analyze_automl_result
@@ -14,6 +15,12 @@ from backend.app.services.report_generator import generate_markdown_report
 from backend.app.services.folder_scanner import (
     read_csv_from_path,
     scan_folder_schema_groups,
+)
+from backend.app.services.storage import (
+    list_jobs,
+    load_report,
+    load_result,
+    save_analysis_result,
 )
 
 
@@ -74,7 +81,7 @@ def _normalize_task_type(task_type: str | None) -> str | None:
 
 def _normalize_cv(cv: int) -> int:
     """
-    너무 큰 CV는 API 테스트가 느려지므로 일단 2~10 사이로 제한.
+    너무 큰 CV는 API 테스트가 느려지므로 2~10 사이로 제한.
     """
 
     if cv < 2:
@@ -92,9 +99,10 @@ def root() -> dict[str, Any]:
         "message": "AI AutoML Analyst API",
         "docs": "/docs",
         "health": "/health",
-        "analyze": "/api/analyze",
+        "analyze_upload": "/api/analyze",
         "folder_scan": "/api/folder/scan",
         "analyze_path": "/api/analyze-path",
+        "results": "/api/results",
     }
 
 
@@ -113,7 +121,7 @@ async def analyze_dataset(
     cv: int = Form(5),
 ) -> dict[str, Any]:
     """
-    CSV 파일을 업로드하면 AutoML 분석을 실행한다.
+    CSV 파일을 업로드해서 AutoML 분석을 실행하고 결과를 저장한다.
     """
 
     filename = file.filename or ""
@@ -158,7 +166,7 @@ async def analyze_dataset(
             analysis=analysis,
         )
 
-        return {
+        response_payload: dict[str, Any] = {
             "filename": filename,
             "dataset_info": {
                 "rows": int(df.shape[0]),
@@ -174,6 +182,15 @@ async def analyze_dataset(
             "analysis": analysis,
             "report_markdown": report,
         }
+
+        job_info = save_analysis_result(
+            result_payload=response_payload,
+            report_markdown=report,
+        )
+
+        response_payload["job"] = job_info
+
+        return response_payload
 
     except ValueError as e:
         raise HTTPException(
@@ -238,7 +255,7 @@ def analyze_csv_by_path(
     sample_rows: int | None = Form(50000),
 ) -> dict[str, Any]:
     """
-    업로드 없이 로컬 CSV 경로를 직접 넣어서 분석한다.
+    업로드 없이 로컬 CSV 경로를 직접 넣어서 AutoML 분석을 실행하고 결과를 저장한다.
 
     sample_rows:
         0 또는 빈 값이면 전체 사용
@@ -281,7 +298,7 @@ def analyze_csv_by_path(
             analysis=analysis,
         )
 
-        return {
+        response_payload: dict[str, Any] = {
             "source": {
                 "type": "local_csv_path",
                 "file_path": file_path,
@@ -303,6 +320,15 @@ def analyze_csv_by_path(
             "report_markdown": report,
         }
 
+        job_info = save_analysis_result(
+            result_payload=response_payload,
+            report_markdown=report,
+        )
+
+        response_payload["job"] = job_info
+
+        return response_payload
+
     except FileNotFoundError as e:
         raise HTTPException(
             status_code=404,
@@ -319,4 +345,73 @@ def analyze_csv_by_path(
         raise HTTPException(
             status_code=500,
             detail=f"Internal server error: {e}",
-        ) from e   
+        ) from e
+
+
+@app.get("/api/results")
+def get_results(limit: int = 50) -> dict[str, Any]:
+    """
+    저장된 분석 작업 목록 조회.
+    """
+
+    if limit < 1:
+        limit = 1
+
+    if limit > 200:
+        limit = 200
+
+    jobs = list_jobs(limit=limit)
+
+    return {
+        "count": len(jobs),
+        "jobs": jobs,
+    }
+
+
+@app.get("/api/results/{job_id}")
+def get_result(job_id: str) -> dict[str, Any]:
+    """
+    특정 job_id의 result.json 조회.
+    """
+
+    try:
+        return load_result(job_id)
+
+    except FileNotFoundError as e:
+        raise HTTPException(
+            status_code=404,
+            detail=str(e),
+        ) from e
+
+    except ValueError as e:
+        raise HTTPException(
+            status_code=400,
+            detail=str(e),
+        ) from e
+
+
+@app.get("/api/reports/{job_id}", response_class=PlainTextResponse)
+def get_report(job_id: str) -> PlainTextResponse:
+    """
+    특정 job_id의 Markdown 리포트 조회.
+    """
+
+    try:
+        report = load_report(job_id)
+
+        return PlainTextResponse(
+            content=report,
+            media_type="text/markdown; charset=utf-8",
+        )
+
+    except FileNotFoundError as e:
+        raise HTTPException(
+            status_code=404,
+            detail=str(e),
+        ) from e
+
+    except ValueError as e:
+        raise HTTPException(
+            status_code=400,
+            detail=str(e),
+        ) from e
