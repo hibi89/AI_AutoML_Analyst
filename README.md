@@ -219,3 +219,31 @@ volumes:
 ```text
 https://github.com/hibi89/AI_AutoML_Analyst
 ```
+
+---
+
+## 화면 예시
+
+### 1. 프론트 첫 화면
+
+![Frontend Home](docs/screenshots/01_frontend_home.png)
+
+### 2. 폴더 스캔 결과
+
+![Folder Scan](docs/screenshots/02_folder_scan.png)
+
+### 3. CSV 유형 목록
+
+![Schema Groups](docs/screenshots/03_schema_groups.png)
+
+### 4. 분석 설정 화면
+
+![Analysis Form](docs/screenshots/04_analysis_form.png)
+
+### 5. 분석 결과
+
+![Analysis Result](docs/screenshots/05_analysis_result.png)
+
+### 6. Swagger 또는 Docker 실행 화면
+
+![Swagger or Docker](docs/screenshots/06_swagger_or_docker.png)
