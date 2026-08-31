@@ -1,0 +1,737 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>AI AutoML Analyst</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: #f5f7fb;
+      color: #222;
+    }
+
+    header {
+      background: #111827;
+      color: white;
+      padding: 20px 32px;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+
+    header p {
+      margin: 8px 0 0;
+      color: #cbd5e1;
+    }
+
+    main {
+      padding: 24px 32px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    section {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+
+    h2 {
+      margin-top: 0;
+      font-size: 20px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: bold;
+    }
+
+    input, select, button, textarea {
+      font-size: 14px;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 10px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      margin-bottom: 12px;
+    }
+
+    textarea {
+      min-height: 100px;
+      font-family: Consolas, monospace;
+    }
+
+    button {
+      padding: 10px 14px;
+      border: none;
+      border-radius: 6px;
+      background: #2563eb;
+      color: white;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    button:hover {
+      background: #1d4ed8;
+    }
+
+    button.secondary {
+      background: #4b5563;
+    }
+
+    button.secondary:hover {
+      background: #374151;
+    }
+
+    button.danger {
+      background: #dc2626;
+    }
+
+    button.danger:hover {
+      background: #b91c1c;
+    }
+
+    button.small {
+      padding: 6px 10px;
+      font-size: 12px;
+      margin: 2px;
+    }
+
+    button:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .summary {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .badge {
+      background: #eef2ff;
+      color: #3730a3;
+      padding: 8px 10px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: bold;
+    }
+
+    .schema-card {
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 14px;
+      margin-bottom: 14px;
+      background: #fafafa;
+    }
+
+    .schema-title {
+      font-weight: bold;
+      margin-bottom: 8px;
+      font-size: 16px;
+    }
+
+    .muted {
+      color: #6b7280;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .notice {
+      background: #fff7ed;
+      border: 1px solid #fed7aa;
+      color: #9a3412;
+      padding: 12px;
+      border-radius: 8px;
+      margin: 12px 0;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .candidate-list, .file-list {
+      margin-top: 8px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+    }
+
+    th, td {
+      border: 1px solid #e5e7eb;
+      padding: 8px;
+      text-align: left;
+      font-size: 13px;
+    }
+
+    th {
+      background: #f3f4f6;
+    }
+
+    pre {
+      background: #111827;
+      color: #e5e7eb;
+      padding: 16px;
+      border-radius: 8px;
+      overflow: auto;
+      max-height: 500px;
+      white-space: pre-wrap;
+    }
+
+    .status {
+      margin-top: 10px;
+      font-weight: bold;
+      color: #2563eb;
+    }
+
+    .error {
+      color: #dc2626;
+      font-weight: bold;
+    }
+
+    .success {
+      color: #059669;
+      font-weight: bold;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .button-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-top: 4px;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>AI AutoML Analyst</h1>
+    <p>
+      폴더 안 CSV를 탐색하고, 선택한 CSV/target 컬럼 기준으로 ML 모델 실험 결과를 비교하는 분석 보조 도구입니다.
+    </p>
+  </header>
+
+  <main>
+    <section>
+      <h2>1. 폴더 스캔</h2>
+
+      <p class="muted">
+        로컬 폴더 경로를 입력하면 하위 CSV 파일을 탐색하고, 컬럼 구성이 같은 CSV끼리 schema 그룹으로 묶습니다.
+      </p>
+
+      <label>분석할 루트 폴더 경로</label>
+      <input
+        id="folderPath"
+        value="C:\Users\haein\OneDrive\Desktop\project 1st"
+      />
+
+      <div class="row">
+        <div>
+          <label>샘플 행 수</label>
+          <input id="scanSampleRows" type="number" value="50" />
+        </div>
+        <div>
+          <label>그룹별 대표 파일 수</label>
+          <input id="representativesPerGroup" type="number" value="3" />
+        </div>
+      </div>
+
+      <button onclick="scanFolder()">폴더 스캔 실행</button>
+      <div id="scanStatus" class="status"></div>
+    </section>
+
+    <section id="scanResultSection" class="hidden">
+      <h2>2. CSV 유형 목록</h2>
+
+      <p class="muted">
+        각 schema 그룹은 컬럼 구성이 같은 CSV 묶음입니다.
+        대표 파일은 그룹 안의 일부 CSV 예시이며, 현재 분석은 사용자가 선택한 CSV 파일 1개만 실행합니다.
+        여러 CSV를 병합한 최종 모델링은 후속 분석 단계에서 별도로 수행해야 합니다.
+      </p>
+
+      <div id="scanSummary" class="summary"></div>
+      <div id="schemaGroups"></div>
+    </section>
+
+    <section id="analysisSection" class="hidden">
+      <h2>3. 선택한 CSV 분석</h2>
+
+      <p class="muted">
+        아래 분석은 선택한 CSV 파일 1개와 선택한 예측 대상 컬럼을 기준으로 실행됩니다.
+        결과는 최종 결론이 아니라, 데이터 구조와 모델 실험 가능성을 확인하기 위한 탐색적 결과입니다.
+      </p>
+
+      <label>선택한 CSV 경로</label>
+      <textarea id="selectedFilePath"></textarea>
+
+      <div class="row">
+        <div>
+          <label>예측 대상 컬럼</label>
+          <select id="targetColumnSelect"></select>
+        </div>
+        <div>
+          <label>문제 유형</label>
+          <select id="taskType">
+            <option value="">자동/기본 - 잘 모르겠으면 선택</option>
+            <option value="classification">분류 - 여부/등급/카테고리처럼 종류를 맞힐 때</option>
+            <option value="regression">회귀 - 매출/금액/수량/점수/인구처럼 숫자를 예측할 때</option>
+          </select>
+
+          <div class="muted" style="margin-top: -6px; margin-bottom: 12px;">
+            예시:<br />
+            - 분류: 당뇨 여부, 구매 여부, 연체 여부, 상권 변화 등급, 콘텐츠 카테고리<br />
+            - 회귀: 매출 금액, 지출 총금액, 유동인구 수, 점포 수, 시청 시간, 가격
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label>CV</label>
+          <input id="cv" type="number" value="2" />
+        </div>
+        <div>
+          <label>분석 샘플 행 수</label>
+          <input id="analysisSampleRows" type="number" value="5000" />
+        </div>
+      </div>
+
+      <div id="taskHint" class="notice hidden"></div>
+
+      <div class="notice">
+        주의: 현재 분석은 선택한 CSV 파일 1개만 실행합니다.
+        같은 schema 그룹의 여러 CSV를 자동 병합하지 않습니다.
+        매출/금액/건수/인구/점포수 같은 집계형 컬럼을 target으로 선택할 경우,
+        같은 계열의 파생 컬럼이 feature에 포함되어 성능이 비정상적으로 높게 나올 수 있습니다.
+      </div>
+
+      <div class="muted">
+        중단 버튼은 브라우저 요청을 취소합니다. 이미 서버에서 시작된 작업은 잠시 더 실행될 수 있습니다.
+      </div>
+
+      <div class="button-row">
+        <button id="runButton" onclick="runAnalysis()">분석 실행</button>
+        <button id="cancelButton" class="danger" onclick="cancelAnalysis()" disabled>분석 중단</button>
+      </div>
+
+      <div id="analysisStatus" class="status"></div>
+    </section>
+
+    <section id="resultSection" class="hidden">
+      <h2>4. 분석 결과</h2>
+
+      <div id="jobInfo" class="summary"></div>
+
+      <h3>상위 모델</h3>
+      <div id="topModel"></div>
+
+      <h3>모델 랭킹</h3>
+      <div id="rankingTable"></div>
+
+      <h3>결과 해석</h3>
+      <pre id="analysisText"></pre>
+
+      <h3>Markdown Report</h3>
+      <pre id="reportText"></pre>
+    </section>
+  </main>
+
+  <script>
+    const API_BASE = "http://127.0.0.1:8000";
+
+    let latestScanResult = null;
+    let analysisAbortController = null;
+
+    function setStatus(id, msg, isError = false, isSuccess = false) {
+      const el = document.getElementById(id);
+      el.textContent = msg;
+
+      if (isError) {
+        el.className = "status error";
+      } else if (isSuccess) {
+        el.className = "status success";
+      } else {
+        el.className = "status";
+      }
+    }
+
+    async function postForm(url, data, signal = null) {
+      const body = new URLSearchParams();
+
+      for (const [key, value] of Object.entries(data)) {
+        body.append(key, value);
+      }
+
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body,
+        signal,
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text);
+      }
+
+      return await res.json();
+    }
+
+    async function scanFolder() {
+      try {
+        setStatus("scanStatus", "폴더 스캔 중...");
+
+        const rootPath = document.getElementById("folderPath").value;
+        const sampleRows = document.getElementById("scanSampleRows").value;
+        const representatives = document.getElementById("representativesPerGroup").value;
+
+        const result = await postForm(`${API_BASE}/api/folder/scan`, {
+          root_path: rootPath,
+          recursive: "true",
+          max_files: "500",
+          sample_rows: sampleRows,
+          representatives_per_group: representatives,
+        });
+
+        latestScanResult = result;
+
+        renderScanResult(result);
+        setStatus("scanStatus", "폴더 스캔 완료", false, true);
+
+        document.getElementById("scanResultSection").classList.remove("hidden");
+      } catch (err) {
+        console.error(err);
+        setStatus("scanStatus", "스캔 실패: " + err.message, true);
+      }
+    }
+
+    function renderScanResult(result) {
+      const summary = document.getElementById("scanSummary");
+
+      summary.innerHTML = `
+        <span class="badge">CSV 발견: ${result.total_csv_found}</span>
+        <span class="badge">읽기 가능: ${result.readable_csv_count}</span>
+        <span class="badge">Schema 그룹: ${result.schema_group_count}</span>
+        <span class="badge">총 CSV 크기: ${result.total_csv_size_mb} MB</span>
+      `;
+
+      const container = document.getElementById("schemaGroups");
+      container.innerHTML = "";
+
+      result.schema_groups.forEach((group) => {
+        const card = document.createElement("div");
+        card.className = "schema-card";
+
+        const topCandidates = group.target_candidates || [];
+        const reps = group.representative_files || [];
+
+        const candidateButtons = topCandidates.length
+          ? topCandidates.map(c => `
+              <button class="small secondary"
+                onclick='selectTargetCandidate(${JSON.stringify(c.column)}, ${JSON.stringify(c.guessed_task_type)})'>
+                ${c.column} (${toKoreanTaskType(c.guessed_task_type)})
+              </button>
+            `).join("")
+          : `<span class="muted">후보 컬럼 없음</span>`;
+
+        const fileButtons = reps.length
+          ? reps.map(f => `
+              <div>
+                <button class="small"
+                  onclick='selectFile(${JSON.stringify(f.file_path)}, ${JSON.stringify(group.columns)}, ${JSON.stringify(topCandidates)})'>
+                  이 CSV만 분석
+                </button>
+                <span>${f.file_name}</span>
+                <span class="muted">(${f.size_mb} MB)</span>
+              </div>
+            `).join("")
+          : `<span class="muted">대표 파일 없음</span>`;
+
+        card.innerHTML = `
+          <div class="schema-title">
+            ${group.schema_id}
+            <span class="muted">
+              파일 ${group.file_count}개 / ${group.total_size_mb} MB / 컬럼 ${group.column_count}개
+            </span>
+          </div>
+
+          <div class="muted">
+            컬럼 예시:
+            ${(group.columns || []).slice(0, 10).join(", ")}
+            ${(group.columns || []).length > 10 ? " ..." : ""}
+          </div>
+
+          <div class="candidate-list">
+            <strong>예측 대상 후보</strong><br/>
+            ${candidateButtons}
+          </div>
+
+          <div class="file-list">
+            <strong>대표 파일</strong><br/>
+            ${fileButtons}
+          </div>
+        `;
+
+        container.appendChild(card);
+      });
+    }
+
+    function selectFile(filePath, columns, candidates) {
+      document.getElementById("analysisSection").classList.remove("hidden");
+      document.getElementById("selectedFilePath").value = filePath;
+
+      const select = document.getElementById("targetColumnSelect");
+      select.innerHTML = "";
+
+      const candidateColumns = (candidates || []).map(c => c.column);
+      const allColumns = columns || [];
+
+      const ordered = [
+        ...candidateColumns,
+        ...allColumns.filter(c => !candidateColumns.includes(c)),
+      ];
+
+      ordered.forEach(col => {
+        const option = document.createElement("option");
+        option.value = col;
+        option.textContent = col;
+        select.appendChild(option);
+      });
+
+      if (candidates && candidates.length > 0) {
+        const first = candidates[0];
+        select.value = first.column;
+
+        if (first.guessed_task_type === "classification" || first.guessed_task_type === "regression") {
+          document.getElementById("taskType").value = first.guessed_task_type;
+        }
+      }
+
+      updateTaskHint();
+
+      window.scrollTo({
+        top: document.getElementById("analysisSection").offsetTop - 20,
+        behavior: "smooth",
+      });
+    }
+
+    function selectTargetCandidate(column, taskType) {
+      const select = document.getElementById("targetColumnSelect");
+
+      let found = false;
+      for (const option of select.options) {
+        if (option.value === column) {
+          found = true;
+          break;
+        }
+      }
+
+      if (!found) {
+        const option = document.createElement("option");
+        option.value = column;
+        option.textContent = column;
+        select.appendChild(option);
+      }
+
+      select.value = column;
+
+      if (taskType === "classification" || taskType === "regression") {
+        document.getElementById("taskType").value = taskType;
+      }
+
+      updateTaskHint();
+    }
+
+    async function runAnalysis() {
+      try {
+        setStatus("analysisStatus", "분석 실행 중...");
+
+        document.getElementById("runButton").disabled = true;
+        document.getElementById("cancelButton").disabled = false;
+
+        analysisAbortController = new AbortController();
+
+        const filePath = document.getElementById("selectedFilePath").value;
+        const targetColumn = document.getElementById("targetColumnSelect").value;
+        const taskType = document.getElementById("taskType").value;
+        const cv = document.getElementById("cv").value;
+        const sampleRows = document.getElementById("analysisSampleRows").value;
+
+        const result = await postForm(`${API_BASE}/api/analyze-path`, {
+          file_path: filePath,
+          target_column: targetColumn,
+          task_type: taskType,
+          cv: cv,
+          sample_rows: sampleRows,
+        }, analysisAbortController.signal);
+
+        renderAnalysisResult(result);
+        setStatus("analysisStatus", "분석 완료", false, true);
+
+        document.getElementById("resultSection").classList.remove("hidden");
+
+        window.scrollTo({
+          top: document.getElementById("resultSection").offsetTop - 20,
+          behavior: "smooth",
+        });
+      } catch (err) {
+        console.error(err);
+
+        if (err.name === "AbortError") {
+          setStatus("analysisStatus", "분석 요청을 중단했습니다.", true);
+        } else {
+          setStatus("analysisStatus", "분석 실패: " + err.message, true);
+        }
+      } finally {
+        analysisAbortController = null;
+        document.getElementById("runButton").disabled = false;
+        document.getElementById("cancelButton").disabled = true;
+      }
+    }
+
+    function cancelAnalysis() {
+      if (analysisAbortController) {
+        analysisAbortController.abort();
+      }
+    }
+
+    function renderAnalysisResult(result) {
+      const job = result.job || {};
+      const automl = result.automl_result || {};
+      const analysis = result.analysis || {};
+      const ranked = automl.ranked_results || [];
+      const top = automl.best_result || {};
+
+      document.getElementById("jobInfo").innerHTML = `
+        <span class="badge">Job ID: ${job.job_id || "N/A"}</span>
+        <span class="badge">Rows: ${result.dataset_info?.rows || "N/A"}</span>
+        <span class="badge">Columns: ${result.dataset_info?.columns || "N/A"}</span>
+        <span class="badge">Task: ${toKoreanTaskType(result.request?.task_type) || "N/A"}</span>
+      `;
+
+      document.getElementById("topModel").innerHTML = `
+        <table>
+          <tr><th>항목</th><th>값</th></tr>
+          <tr><td>Top ranked model</td><td>${top.model_name || "N/A"}</td></tr>
+          <tr><td>Primary metric</td><td>${top.primary_metric || "N/A"}</td></tr>
+          <tr><td>Mean score</td><td>${formatNum(top.primary_score_mean)}</td></tr>
+          <tr><td>Score std</td><td>${formatNum(top.primary_score_std)}</td></tr>
+        </table>
+      `;
+
+      const rows = ranked.map(r => `
+        <tr>
+          <td>${r.rank}</td>
+          <td>${r.model_name}</td>
+          <td>${r.primary_metric}</td>
+          <td>${formatNum(r.primary_score_mean)}</td>
+          <td>${formatNum(r.primary_score_std)}</td>
+          <td>${formatNum(r.fit_time_mean)}</td>
+        </tr>
+      `).join("");
+
+      document.getElementById("rankingTable").innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>Model</th>
+              <th>Metric</th>
+              <th>Mean</th>
+              <th>Std</th>
+              <th>Fit Time</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+
+      document.getElementById("analysisText").textContent =
+        JSON.stringify(analysis, null, 2);
+
+      document.getElementById("reportText").textContent =
+        result.report_markdown || "";
+    }
+
+    function updateTaskHint() {
+      const target = document.getElementById("targetColumnSelect").value || "";
+      const taskType = document.getElementById("taskType").value || "";
+      const hint = document.getElementById("taskHint");
+
+      const regressionKeywords = [
+        "매출", "금액", "가격", "수량", "건수", "인구", "점포", "평균", "지출",
+        "amount", "price", "sales", "revenue", "count", "score", "population"
+      ];
+
+      const classificationKeywords = [
+        "여부", "등급", "상태", "유형", "분류", "카테고리", "category",
+        "class", "label", "status", "binary", "diabetes", "default", "churn", "fraud"
+      ];
+
+      const lower = target.toLowerCase();
+
+      const looksRegression = regressionKeywords.some(k => lower.includes(k.toLowerCase()) || target.includes(k));
+      const looksClassification = classificationKeywords.some(k => lower.includes(k.toLowerCase()) || target.includes(k));
+
+      if (looksRegression && taskType !== "regression") {
+        hint.classList.remove("hidden");
+        hint.textContent = "선택한 target은 매출/금액/수량/인구/점포수 같은 숫자 예측형 컬럼으로 보입니다. 문제 유형은 회귀를 권장합니다.";
+        return;
+      }
+
+      if (looksClassification && taskType !== "classification") {
+        hint.classList.remove("hidden");
+        hint.textContent = "선택한 target은 여부/등급/카테고리 같은 분류형 컬럼으로 보입니다. 문제 유형은 분류를 권장합니다.";
+        return;
+      }
+
+      hint.classList.add("hidden");
+      hint.textContent = "";
+    }
+
+    function toKoreanTaskType(value) {
+      if (value === "classification") return "분류";
+      if (value === "regression") return "회귀";
+      if (value === "auto/default") return "자동/기본";
+      if (!value || value === "unknown") return "알 수 없음";
+      return value;
+    }
+
+    function formatNum(value) {
+      if (value === null || value === undefined) return "N/A";
+      if (typeof value === "number") return value.toFixed(4);
+      return value;
+    }
+
+    document.addEventListener("change", function (event) {
+      if (event.target && (event.target.id === "targetColumnSelect" || event.target.id === "taskType")) {
+        updateTaskHint();
+      }
+    });
+  </script>
+</body>
+</html>
