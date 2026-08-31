@@ -1,0 +1,9 @@
+services:
+  automl-api:
+    build: .
+    container_name: ai-automl-analyst
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./experiments:/app/experiments
+      - "C:/Users/haein/OneDrive/Desktop/project 1st:/data"
