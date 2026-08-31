@@ -135,4 +135,87 @@ AI\_AutoML\_Analyst/
 ├─ .gitignore
 
 └─ README.md
+```
 
+
+---
+
+## 현재 한계
+
+- 현재 분석은 선택한 CSV 파일 1개 기준으로 실행됩니다.
+- 같은 schema group의 여러 CSV를 자동 병합하지는 않습니다.
+- JSON, ZIP, SHP 등 비정형/공간 데이터는 분석 대상이 아닙니다.
+- 대용량 CSV는 `sample_rows`를 사용한 샘플 분석을 권장합니다.
+- target 후보는 자동 확정이 아니라 사용자가 선택하기 위한 참고 정보입니다.
+- 분석 중단 버튼은 브라우저 요청 취소 수준이며, 서버 작업 완전 취소는 추후 개선 예정입니다.
+- 집계형 데이터에서는 target과 같은 계열의 파생 컬럼이 feature에 포함될 경우 성능이 과도하게 높게 나올 수 있습니다.
+
+---
+
+## 향후 개선 방향
+
+- target 후보 정렬 고도화
+- 자동 분류/회귀 판단 개선
+- 데이터 누수 가능성 탐지 강화
+- schema group 단위 CSV 병합 분석
+- 백그라운드 job 및 실제 작업 취소 기능
+- React 기반 프론트엔드 개선
+- PostgreSQL 기반 분석 이력 저장
+- 테스트 코드 추가
+- 배포 환경 구성
+
+---
+
+## 실행 요약
+
+### 로컬 실행
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\activate
+pip install pandas scikit-learn fastapi uvicorn python-multipart
+uvicorn backend.app.main:app --reload
+```
+
+브라우저:
+
+```text
+http://127.0.0.1:8000
+http://127.0.0.1:8000/docs
+```
+
+프론트:
+
+```text
+frontend/index.html
+```
+
+---
+
+### Docker 실행
+
+```powershell
+docker compose up --build
+```
+
+브라우저:
+
+```text
+http://127.0.0.1:8000
+```
+
+Docker에서 로컬 데이터 폴더를 스캔할 경우 `docker-compose.yml`에 volume을 연결한 뒤 프론트에서 `/data`를 입력합니다.
+
+```yaml
+volumes:
+  - ./experiments:/app/experiments
+  - "C:/Users/haein/OneDrive/Desktop/project 1st:/data"
+```
+
+---
+
+## Repository
+
+```text
+https://github.com/hibi89/AI_AutoML_Analyst
+```
