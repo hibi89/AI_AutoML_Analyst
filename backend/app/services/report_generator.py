@@ -22,7 +22,10 @@ def generate_markdown_report(
     analysis: dict[str, Any] | None = None,
 ) -> str:
     """
-    AutoML 실행 결과를 Markdown 리포트로 변환.
+    AutoML 실행 결과를 Markdown 리포트로 변환한다.
+
+    특정 모델을 절대적으로 추천하는 보고서가 아니라,
+    현재 실험 조건에서의 모델 비교 결과와 해석을 정리하는 보고서다.
     """
 
     if analysis is None:
@@ -30,7 +33,7 @@ def generate_markdown_report(
 
     output = automl_result.to_dict()
     prep = output["preprocessing_summary"]
-    best = output["best_result"]
+    top_result = output["best_result"]
 
     lines: list[str] = []
 
@@ -52,40 +55,61 @@ def generate_markdown_report(
     lines.append(f"- Dropped features: `{len(prep['dropped_features'])}`")
     lines.append("")
 
+    model_selection = output.get("model_selection")
+    if model_selection:
+        lines.append("## 3. Model Selection Policy")
+        lines.append("")
+        lines.append(f"- Data size level: `{model_selection['data_size_level']}`")
+        lines.append(f"- Selected models: `{len(model_selection['selected_model_names'])}`")
+        lines.append(f"- Excluded models: `{len(model_selection['excluded_model_names'])}`")
+        lines.append("")
+        if model_selection.get("selected_model_names"):
+            lines.append("### Selected Model Candidates")
+            lines.append("")
+            for model_name in model_selection["selected_model_names"]:
+                lines.append(f"- `{model_name}`")
+            lines.append("")
+        if model_selection.get("policy", {}).get("rules"):
+            lines.append("### Selection Notes")
+            lines.append("")
+            for rule in model_selection["policy"]["rules"]:
+                lines.append(f"- {rule}")
+            lines.append("")
+
     if prep["numeric_features"]:
-        lines.append("### Numeric Features")
+        lines.append("## 4. Numeric Features")
         lines.append("")
         for col in prep["numeric_features"]:
             lines.append(f"- `{col}`")
         lines.append("")
 
     if prep["categorical_features"]:
-        lines.append("### Categorical Features")
+        lines.append("## 5. Categorical Features")
         lines.append("")
         for col in prep["categorical_features"]:
             lines.append(f"- `{col}`")
         lines.append("")
 
     if prep["datetime_features"]:
-        lines.append("### Datetime Features")
+        lines.append("## 6. Datetime Features")
         lines.append("")
         for col in prep["datetime_features"]:
             lines.append(f"- `{col}`")
         lines.append("")
 
     if prep["dropped_features"]:
-        lines.append("### Dropped Features")
+        lines.append("## 7. Dropped Features")
         lines.append("")
         for col in prep["dropped_features"]:
             lines.append(f"- `{col}`")
         lines.append("")
 
-    lines.append("## 3. Metric Interpretation")
+    lines.append("## 8. Metric Interpretation")
     lines.append("")
     lines.append(analysis["metric_interpretation"])
     lines.append("")
 
-    lines.append("## 4. Model Ranking")
+    lines.append("## 9. Model Ranking")
     lines.append("")
     lines.append("| Rank | Model | Primary Metric | Mean | Std | Fit Time |")
     lines.append("|---:|---|---|---:|---:|---:|")
@@ -103,36 +127,42 @@ def generate_markdown_report(
 
     lines.append("")
 
-    lines.append("## 5. Best Model")
+    lines.append("## 10. Top Ranked Model")
     lines.append("")
 
-    if best:
-        lines.append(f"- Best model: `{best['model_name']}`")
-        lines.append(f"- Primary metric: `{best['primary_metric']}`")
-        lines.append(f"- Mean score: `{_fmt(best['primary_score_mean'])}`")
-        lines.append(f"- Score std: `{_fmt(best['primary_score_std'])}`")
+    if top_result:
+        lines.append(f"- Top ranked model: `{top_result['model_name']}`")
+        lines.append(f"- Primary metric: `{top_result['primary_metric']}`")
+        lines.append(f"- Mean score: `{_fmt(top_result['primary_score_mean'])}`")
+        lines.append(f"- Score std: `{_fmt(top_result['primary_score_std'])}`")
         lines.append("")
-        if analysis["best_model_summary"]:
-            lines.append(analysis["best_model_summary"]["quality_comment"])
+        top_summary = analysis.get("top_model_summary") or analysis.get("best_model_summary")
+        if top_summary:
+            lines.append(top_summary["quality_comment"])
             lines.append("")
     else:
-        lines.append("No successful model was found.")
+        lines.append("No successful model result was found.")
         lines.append("")
 
-    lines.append("## 6. Model Recommendations")
+    lines.append("## 11. Top Model Result Summaries")
     lines.append("")
 
-    for rec in analysis["recommendations"]:
-        lines.append(f"### Rank {rec['rank']} - {rec['model_name']}")
+    top_summaries = analysis.get("top_model_summaries") or analysis.get("recommendations", [])
+
+    for item in top_summaries:
+        lines.append(f"### Rank {item['rank']} - {item['model_name']}")
         lines.append("")
-        lines.append(f"- Score: `{_fmt(rec['primary_score_mean'])}`")
-        lines.append(f"- Std: `{_fmt(rec['primary_score_std'])}`")
-        lines.append("- Reasons:")
-        for reason in rec["reasons"]:
-            lines.append(f"  - {reason}")
+        lines.append(f"- Score: `{_fmt(item['primary_score_mean'])}`")
+        lines.append(f"- Std: `{_fmt(item['primary_score_std'])}`")
+
+        observations = item.get("observations") or item.get("reasons") or []
+
+        lines.append("- Observations:")
+        for observation in observations:
+            lines.append(f"  - {observation}")
         lines.append("")
 
-    lines.append("## 7. Risks / Cautions")
+    lines.append("## 12. Risks / Cautions")
     lines.append("")
 
     for risk in analysis["risks"]:
@@ -140,7 +170,7 @@ def generate_markdown_report(
 
     lines.append("")
 
-    lines.append("## 8. Next Actions")
+    lines.append("## 13. Next Actions")
     lines.append("")
 
     for action in analysis["next_actions"]:

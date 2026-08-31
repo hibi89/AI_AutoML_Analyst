@@ -24,59 +24,59 @@ def _find_baseline_result(results: list[ExperimentResult]) -> ExperimentResult |
     return None
 
 
-def _make_model_reason(
+def _make_model_observations(
     result: ExperimentResult,
     baseline: ExperimentResult | None,
     rank: int,
 ) -> list[str]:
-    reasons: list[str] = []
+    observations: list[str] = []
 
     score = result.primary_score_mean
     std = result.primary_score_std
 
     if rank == 1:
-        reasons.append("가장 높은 주요 평가 점수를 기록했습니다.")
+        observations.append("현재 실험 조건에서 가장 높은 주요 평가 점수를 기록했습니다.")
     else:
-        reasons.append(f"전체 후보 중 {rank}위 성능을 기록했습니다.")
+        observations.append(f"현재 실험 조건에서 전체 후보 중 {rank}위 성능을 기록했습니다.")
 
     if score is not None:
-        reasons.append(
+        observations.append(
             f"주요 지표 {result.primary_metric} 평균 점수는 {score:.4f}입니다."
         )
 
     if std is not None:
         if std <= 0.03:
-            reasons.append("교차검증 fold 간 점수 변동이 작아 비교적 안정적입니다.")
+            observations.append("교차검증 fold 간 점수 변동이 작아 비교적 안정적인 결과입니다.")
         elif std <= 0.10:
-            reasons.append("교차검증 fold 간 점수 변동은 보통 수준입니다.")
+            observations.append("교차검증 fold 간 점수 변동은 보통 수준입니다.")
         else:
-            reasons.append("교차검증 fold 간 점수 변동이 큰 편이라 데이터 분할에 민감할 수 있습니다.")
+            observations.append("교차검증 fold 간 점수 변동이 큰 편이므로 데이터 분할에 민감할 수 있습니다.")
 
     if baseline and baseline.primary_score_mean is not None and score is not None:
         diff = score - baseline.primary_score_mean
 
         if diff > 0.15:
-            reasons.append(
-                f"단순 기준 모델보다 {diff:.4f}p 높은 성능을 보여 의미 있는 개선이 있습니다."
+            observations.append(
+                f"단순 기준 모델보다 {diff:.4f}p 높은 성능을 보여 의미 있는 개선이 관찰됩니다."
             )
         elif diff > 0:
-            reasons.append(
+            observations.append(
                 f"단순 기준 모델보다 {diff:.4f}p 높지만 개선 폭은 크지 않습니다."
             )
         elif diff == 0:
-            reasons.append("단순 기준 모델과 성능 차이가 거의 없습니다.")
+            observations.append("단순 기준 모델과 성능 차이가 거의 없습니다.")
         else:
-            reasons.append("단순 기준 모델보다 성능이 낮아 실제 사용에는 주의가 필요합니다.")
+            observations.append("단순 기준 모델보다 성능이 낮아 현재 설정에서는 주의가 필요합니다.")
 
     if result.fit_time_mean is not None:
         if result.fit_time_mean < 0.05:
-            reasons.append("학습 시간이 짧아 빠른 실험에 유리합니다.")
+            observations.append("학습 시간이 짧아 빠른 반복 실험에 유리합니다.")
         elif result.fit_time_mean < 1.0:
-            reasons.append("학습 시간은 부담스럽지 않은 수준입니다.")
+            observations.append("학습 시간은 부담스럽지 않은 수준입니다.")
         else:
-            reasons.append("학습 시간이 긴 편이므로 대용량 데이터에서는 비용을 확인해야 합니다.")
+            observations.append("학습 시간이 긴 편이므로 대용량 데이터에서는 실행 비용을 확인해야 합니다.")
 
-    return reasons
+    return observations
 
 
 def generate_model_recommendations(
@@ -84,26 +84,17 @@ def generate_model_recommendations(
     top_n: int = 3,
 ) -> list[dict[str, Any]]:
     """
-    AutoML 결과를 바탕으로 상위 모델 추천 목록 생성.
+    AutoML 결과를 바탕으로 상위 모델 결과를 요약한다.
 
-    반환 예:
-    [
-        {
-            "rank": 1,
-            "model_name": "random_forest_classifier",
-            "primary_metric": "f1_weighted",
-            "primary_score_mean": 0.91,
-            "reasons": [...]
-        }
-    ]
+    이름은 기존 호환을 위해 recommendation으로 유지하지만,
+    실제 의미는 '추천'이 아니라 '현재 실험 조건에서의 상위 결과 요약'이다.
     """
 
     ranked = automl_result.ranked_results
     baseline = _find_baseline_result(automl_result.results)
 
-    recommendations: list[dict[str, Any]] = []
+    summaries: list[dict[str, Any]] = []
 
-    # ranked_results는 dict이므로 실제 ExperimentResult를 model_name으로 다시 찾는다.
     result_by_name = {
         result.model_name: result
         for result in automl_result.results
@@ -117,7 +108,7 @@ def generate_model_recommendations(
         if result is None:
             continue
 
-        recommendations.append(
+        summaries.append(
             {
                 "rank": rank,
                 "model_name": result.model_name,
@@ -126,7 +117,7 @@ def generate_model_recommendations(
                 "primary_score_std": result.primary_score_std,
                 "fit_time_mean": result.fit_time_mean,
                 "score_time_mean": result.score_time_mean,
-                "reasons": _make_model_reason(
+                "observations": _make_model_observations(
                     result=result,
                     baseline=baseline,
                     rank=rank,
@@ -134,4 +125,4 @@ def generate_model_recommendations(
             }
         )
 
-    return recommendations
+    return summaries

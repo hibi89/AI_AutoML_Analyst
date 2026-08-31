@@ -8,10 +8,10 @@ from backend.app.services.recommendation import generate_model_recommendations
 
 def _interpret_task_type(task_type: str) -> str:
     if task_type == "regression":
-        return "연속형 숫자 값을 예측하는 회귀 문제로 판단됩니다."
+        return "연속형 숫자 값을 예측하는 회귀 문제로 해석할 수 있습니다."
 
     if task_type == "classification":
-        return "정답 클래스를 예측하는 분류 문제로 판단됩니다."
+        return "정답 클래스를 예측하는 분류 문제로 해석할 수 있습니다."
 
     return "문제 유형이 명확하지 않아 기본 분석 기준을 적용했습니다."
 
@@ -52,7 +52,7 @@ def _score_quality_comment(task_type: str, score: float | None) -> str:
 
     if task_type == "regression":
         if score >= 0.80:
-            return "현재 실험 데이터 기준으로 설명력이 높은 회귀 모델입니다."
+            return "현재 실험 데이터 기준으로 설명력이 높은 회귀 결과입니다."
         if score >= 0.50:
             return "현재 실험 데이터 기준으로 어느 정도 설명력이 있습니다."
         if score >= 0.20:
@@ -69,7 +69,7 @@ def _detect_risks(automl_result: AutoMLRunResult) -> list[str]:
     n_rows = prep_summary["n_rows"]
     dropped_features = prep_summary["dropped_features"]
 
-    best = automl_result.best_result
+    top_result = automl_result.best_result
 
     failed_results = [
         result
@@ -91,15 +91,15 @@ def _detect_risks(automl_result: AutoMLRunResult) -> list[str]:
             f"전처리 과정에서 {len(dropped_features)}개 컬럼이 제거되었습니다: {dropped_features}"
         )
 
-    if best and best.primary_score_mean is not None:
-        if best.primary_score_mean >= 0.98 and n_rows < 100:
+    if top_result and top_result.primary_score_mean is not None:
+        if top_result.primary_score_mean >= 0.98 and n_rows < 100:
             risks.append(
                 "작은 데이터에서 거의 완벽한 점수가 나왔습니다. 데이터 누수나 너무 쉬운 샘플 구성인지 확인이 필요합니다."
             )
 
-        if best.primary_score_std is not None and best.primary_score_std > 0.10:
+        if top_result.primary_score_std is not None and top_result.primary_score_std > 0.10:
             risks.append(
-                "교차검증 fold 간 성능 편차가 큽니다. 데이터 분할에 따라 모델 성능이 흔들릴 수 있습니다."
+                "교차검증 fold 간 성능 편차가 큽니다. 데이터 분할에 따라 성능이 흔들릴 수 있습니다."
             )
 
     if failed_results:
@@ -118,30 +118,30 @@ def analyze_automl_result(
     automl_result: AutoMLRunResult,
 ) -> dict[str, Any]:
     """
-    AutoML 결과를 해석 가능한 분석 dict로 변환.
+    AutoML 결과를 해석 가능한 분석 dict로 변환한다.
 
-    Gemini API를 붙이기 전 1차 로컬 분석 엔진이다.
-    나중에는 이 dict를 Gemini에게 넘겨서 자연어 보고서를 더 풍부하게 만들 수 있다.
+    이 분석은 특정 모델을 절대적으로 추천하는 것이 아니라,
+    현재 데이터/전처리/평가지표/교차검증 설정에서 관찰된 결과를 요약한다.
     """
 
-    best = automl_result.best_result
+    top_result = automl_result.best_result
     prep_summary = automl_result.preprocessing.summary()
 
-    if best:
-        best_model_summary = {
-            "model_name": best.model_name,
-            "primary_metric": best.primary_metric,
-            "primary_score_mean": best.primary_score_mean,
-            "primary_score_std": best.primary_score_std,
+    if top_result:
+        top_model_summary = {
+            "model_name": top_result.model_name,
+            "primary_metric": top_result.primary_metric,
+            "primary_score_mean": top_result.primary_score_mean,
+            "primary_score_std": top_result.primary_score_std,
             "quality_comment": _score_quality_comment(
                 task_type=automl_result.task_type,
-                score=best.primary_score_mean,
+                score=top_result.primary_score_mean,
             ),
         }
     else:
-        best_model_summary = None
+        top_model_summary = None
 
-    recommendations = generate_model_recommendations(
+    top_model_summaries = generate_model_recommendations(
         automl_result=automl_result,
         top_n=3,
     )
@@ -150,7 +150,7 @@ def analyze_automl_result(
         "task_interpretation": _interpret_task_type(automl_result.task_type),
         "metric_interpretation": _interpret_primary_metric(
             task_type=automl_result.task_type,
-            primary_metric=best.primary_metric if best else "unknown",
+            primary_metric=top_result.primary_metric if top_result else "unknown",
         ),
         "dataset_summary": {
             "n_rows": prep_summary["n_rows"],
@@ -160,13 +160,15 @@ def analyze_automl_result(
             "datetime_feature_count": len(prep_summary["datetime_features"]),
             "dropped_feature_count": len(prep_summary["dropped_features"]),
         },
-        "best_model_summary": best_model_summary,
-        "recommendations": recommendations,
+        "top_model_summary": top_model_summary,
+        "top_model_summaries": top_model_summaries,
+        # 기존 호환용 키. 의미는 추천이 아니라 상위 결과 요약.
+        "recommendations": top_model_summaries,
         "risks": _detect_risks(automl_result),
         "next_actions": [
-            "실제 데이터셋으로 다시 실행해 성능이 유지되는지 확인합니다.",
+            "현재 결과는 선택한 샘플, 전처리 방식, 평가 지표 기준의 실험 결과로 해석합니다.",
             "타깃 컬럼이 feature에 섞여 들어간 데이터 누수가 없는지 확인합니다.",
-            "상위 모델에 대해 하이퍼파라미터 튜닝을 추가로 수행합니다.",
+            "필요하면 분석할 target 컬럼을 바꿔 다른 관점의 실험을 수행합니다.",
             "최종 후보 모델은 별도 hold-out test set으로 검증합니다.",
         ],
     }
