@@ -11,6 +11,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from backend.app.services.automl_runner import run_automl_experiment
 from backend.app.services.ai_analyst import analyze_automl_result
 from backend.app.services.report_generator import generate_markdown_report
+from backend.app.services.folder_scanner import (
+    read_csv_from_path,
+    scan_folder_schema_groups,
+)
 
 
 app = FastAPI(
@@ -32,7 +36,6 @@ app.add_middleware(
 def _read_csv_from_bytes(content: bytes) -> pd.DataFrame:
     """
     업로드된 CSV bytes를 DataFrame으로 변환.
-
     한국어 CSV 대응을 위해 여러 인코딩을 순서대로 시도한다.
     """
 
@@ -89,6 +92,9 @@ def root() -> dict[str, Any]:
         "message": "AI AutoML Analyst API",
         "docs": "/docs",
         "health": "/health",
+        "analyze": "/api/analyze",
+        "folder_scan": "/api/folder/scan",
+        "analyze_path": "/api/analyze-path",
     }
 
 
@@ -108,18 +114,6 @@ async def analyze_dataset(
 ) -> dict[str, Any]:
     """
     CSV 파일을 업로드하면 AutoML 분석을 실행한다.
-
-    입력:
-        file            CSV 파일
-        target_column   예측 대상 컬럼명
-        task_type       classification / regression / auto
-        cv              cross validation split 수
-
-    반환:
-        dataset_info
-        automl_result
-        analysis
-        report_markdown
     """
 
     filename = file.filename or ""
@@ -158,6 +152,7 @@ async def analyze_dataset(
         )
 
         analysis = analyze_automl_result(automl_result)
+
         report = generate_markdown_report(
             automl_result=automl_result,
             analysis=analysis,
@@ -191,3 +186,137 @@ async def analyze_dataset(
             status_code=500,
             detail=f"Internal server error: {e}",
         ) from e
+
+
+@app.post("/api/folder/scan")
+def scan_folder(
+    root_path: str = Form(...),
+    recursive: bool = Form(True),
+    max_files: int = Form(500),
+    sample_rows: int = Form(50),
+    representatives_per_group: int = Form(3),
+) -> dict[str, Any]:
+    """
+    폴더 안 CSV를 찾고, 컬럼 구조별 schema group으로 묶는다.
+    각 그룹에서 대표 CSV 몇 개만 샘플로 읽어 target 후보와 패턴을 파악한다.
+    """
+
+    try:
+        return scan_folder_schema_groups(
+            root_path=root_path,
+            recursive=recursive,
+            max_files=max_files,
+            sample_rows=sample_rows,
+            representatives_per_group=representatives_per_group,
+        )
+
+    except FileNotFoundError as e:
+        raise HTTPException(
+            status_code=404,
+            detail=str(e),
+        ) from e
+
+    except ValueError as e:
+        raise HTTPException(
+            status_code=400,
+            detail=str(e),
+        ) from e
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Internal server error: {e}",
+        ) from e
+
+
+@app.post("/api/analyze-path")
+def analyze_csv_by_path(
+    file_path: str = Form(...),
+    target_column: str = Form(...),
+    task_type: str | None = Form(None),
+    cv: int = Form(3),
+    sample_rows: int | None = Form(50000),
+) -> dict[str, Any]:
+    """
+    업로드 없이 로컬 CSV 경로를 직접 넣어서 분석한다.
+
+    sample_rows:
+        0 또는 빈 값이면 전체 사용
+        숫자를 넣으면 앞에서 해당 행 수만 읽어서 분석
+    """
+
+    try:
+        normalized_task_type = _normalize_task_type(task_type)
+        normalized_cv = _normalize_cv(cv)
+
+        nrows: int | None = None
+        if sample_rows is not None and sample_rows > 0:
+            nrows = sample_rows
+
+        df, encoding = read_csv_from_path(
+            file_path=file_path,
+            nrows=nrows,
+        )
+
+        if df.empty:
+            raise ValueError("CSV file has no rows.")
+
+        if target_column not in df.columns:
+            raise ValueError(
+                f"target_column '{target_column}' not found. "
+                f"Available columns: {list(df.columns)}"
+            )
+
+        automl_result = run_automl_experiment(
+            df=df,
+            target_column=target_column,
+            task_type=normalized_task_type,
+            cv=normalized_cv,
+        )
+
+        analysis = analyze_automl_result(automl_result)
+
+        report = generate_markdown_report(
+            automl_result=automl_result,
+            analysis=analysis,
+        )
+
+        return {
+            "source": {
+                "type": "local_csv_path",
+                "file_path": file_path,
+                "encoding": encoding,
+                "sample_rows": nrows,
+            },
+            "dataset_info": {
+                "rows": int(df.shape[0]),
+                "columns": int(df.shape[1]),
+                "column_names": list(df.columns),
+            },
+            "request": {
+                "target_column": target_column,
+                "task_type": normalized_task_type or "auto/default",
+                "cv": normalized_cv,
+            },
+            "automl_result": automl_result.to_dict(),
+            "analysis": analysis,
+            "report_markdown": report,
+        }
+
+    except FileNotFoundError as e:
+        raise HTTPException(
+            status_code=404,
+            detail=str(e),
+        ) from e
+
+    except ValueError as e:
+        raise HTTPException(
+            status_code=400,
+            detail=str(e),
+        ) from e
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Internal server error: {e}",
+        ) from e   
