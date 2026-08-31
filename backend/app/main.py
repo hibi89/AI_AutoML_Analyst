@@ -1,77 +1,193 @@
+from __future__ import annotations
+
+from io import BytesIO
+from typing import Any
+
 import pandas as pd
-from pprint import pprint
 
-from backend.app.services.profiler import profile_csv
-from backend.app.services.task_detector import detect_task
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
+
+from backend.app.services.automl_runner import run_automl_experiment
+from backend.app.services.ai_analyst import analyze_automl_result
+from backend.app.services.report_generator import generate_markdown_report
 
 
-def main() -> None:
-    file_path = "data/sample_customer.csv"
+app = FastAPI(
+    title="AI AutoML Analyst API",
+    description="Upload a CSV file and run automated ML analysis.",
+    version="0.1.0",
+)
 
-    result = profile_csv(file_path)
 
-    df = pd.read_csv(file_path)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-    target = result["target_candidates"][0]["column"]
 
-    task = detect_task(
-        df,
-        target,
+def _read_csv_from_bytes(content: bytes) -> pd.DataFrame:
+    """
+    업로드된 CSV bytes를 DataFrame으로 변환.
+
+    한국어 CSV 대응을 위해 여러 인코딩을 순서대로 시도한다.
+    """
+
+    encodings = ["utf-8-sig", "utf-8", "cp949", "euc-kr"]
+
+    last_error: Exception | None = None
+
+    for encoding in encodings:
+        try:
+            return pd.read_csv(BytesIO(content), encoding=encoding)
+        except Exception as e:
+            last_error = e
+
+    raise ValueError(f"Failed to read CSV file. Last error: {last_error}")
+
+
+def _normalize_task_type(task_type: str | None) -> str | None:
+    if task_type is None:
+        return None
+
+    normalized = task_type.strip().lower()
+
+    if normalized in ["", "auto", "none", "null"]:
+        return None
+
+    if normalized in ["classification", "classifier", "class"]:
+        return "classification"
+
+    if normalized in ["regression", "regressor", "reg"]:
+        return "regression"
+
+    raise ValueError(
+        "task_type must be one of: classification, regression, auto"
     )
 
-    print("\n=== DATASET OVERVIEW ===")
 
-    dataset = result["dataset"]
+def _normalize_cv(cv: int) -> int:
+    """
+    너무 큰 CV는 API 테스트가 느려지므로 일단 2~10 사이로 제한.
+    """
 
-    print(f"Rows: {dataset['rows']:,}")
-    print(f"Columns: {dataset['columns']}")
-    print(f"Numeric: {dataset['numeric_columns']}")
-    print(f"Categorical: {dataset['categorical_columns']}")
-    print(f"Datetime: {dataset['datetime_columns']}")
+    if cv < 2:
+        return 2
 
-    print("\n=== DATA QUALITY ===")
+    if cv > 10:
+        return 10
 
-    quality = result["quality"]
+    return cv
 
-    print(f"Duplicate rows: {quality['duplicate_rows']}")
-    print(f"Constant columns: {quality['constant_columns']}")
 
-    print("\n=== MISSING VALUES ===")
+@app.get("/")
+def root() -> dict[str, Any]:
+    return {
+        "message": "AI AutoML Analyst API",
+        "docs": "/docs",
+        "health": "/health",
+    }
 
-    if quality["missing_columns"]:
-        pprint(quality["missing_columns"])
-    else:
-        print("No missing values.")
 
-    print("\n=== TARGET CANDIDATES ===")
+@app.get("/health")
+def health_check() -> dict[str, str]:
+    return {
+        "status": "ok",
+    }
 
-    for candidate in result["target_candidates"]:
-        reasons = ", ".join(candidate["reasons"])
 
-        print(
-            f"{candidate['column']}: "
-            f"{candidate['score']} → {reasons}"
+@app.post("/api/analyze")
+async def analyze_dataset(
+    file: UploadFile = File(...),
+    target_column: str = Form(...),
+    task_type: str | None = Form(None),
+    cv: int = Form(5),
+) -> dict[str, Any]:
+    """
+    CSV 파일을 업로드하면 AutoML 분석을 실행한다.
+
+    입력:
+        file            CSV 파일
+        target_column   예측 대상 컬럼명
+        task_type       classification / regression / auto
+        cv              cross validation split 수
+
+    반환:
+        dataset_info
+        automl_result
+        analysis
+        report_markdown
+    """
+
+    filename = file.filename or ""
+
+    if not filename.lower().endswith(".csv"):
+        raise HTTPException(
+            status_code=400,
+            detail="Only CSV files are supported in this MVP version.",
         )
 
-    print("\n=== ML TASK DETECTION ===")
+    try:
+        normalized_task_type = _normalize_task_type(task_type)
+        normalized_cv = _normalize_cv(cv)
 
-    print(f"Target: {task['target']}")
-    print(f"Task: {task['task_type']}")
-    print(f"Subtype: {task['subtype']}")
-    print(f"Unique values: {task['unique_count']}")
+        content = await file.read()
 
-    if task["class_distribution"]:
-        print("Class distribution:")
+        if not content:
+            raise ValueError("Uploaded file is empty.")
 
-        for label, rate in task["class_distribution"].items():
-            print(f"  {label}: {rate:.1%}")
+        df = _read_csv_from_bytes(content)
 
-    print("\n=== COLUMN PROFILES ===")
+        if df.empty:
+            raise ValueError("CSV file has no rows.")
 
-    for column, profile in result["columns"].items():
-        print(f"\n[{column}]")
-        pprint(profile)
+        if target_column not in df.columns:
+            raise ValueError(
+                f"target_column '{target_column}' not found. "
+                f"Available columns: {list(df.columns)}"
+            )
 
+        automl_result = run_automl_experiment(
+            df=df,
+            target_column=target_column,
+            task_type=normalized_task_type,
+            cv=normalized_cv,
+        )
 
-if __name__ == "__main__":
-    main()
+        analysis = analyze_automl_result(automl_result)
+        report = generate_markdown_report(
+            automl_result=automl_result,
+            analysis=analysis,
+        )
+
+        return {
+            "filename": filename,
+            "dataset_info": {
+                "rows": int(df.shape[0]),
+                "columns": int(df.shape[1]),
+                "column_names": list(df.columns),
+            },
+            "request": {
+                "target_column": target_column,
+                "task_type": normalized_task_type or "auto/default",
+                "cv": normalized_cv,
+            },
+            "automl_result": automl_result.to_dict(),
+            "analysis": analysis,
+            "report_markdown": report,
+        }
+
+    except ValueError as e:
+        raise HTTPException(
+            status_code=400,
+            detail=str(e),
+        ) from e
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Internal server error: {e}",
+        ) from e
