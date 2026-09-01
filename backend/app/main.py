@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 from io import BytesIO
+from pathlib import Path
 from typing import Any
 
 import pandas as pd
 
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse
 
@@ -41,18 +42,13 @@ app.add_middleware(
 
 
 def _read_csv_from_bytes(content: bytes) -> pd.DataFrame:
-    """
-    업로드된 CSV bytes를 DataFrame으로 변환.
-    한국어 CSV 대응을 위해 여러 인코딩을 순서대로 시도한다.
-    """
-
     encodings = [
-    "utf-8-sig",
-    "utf-8",
-    "cp949",
-    "euc-kr",
-    "latin1",
-    "ISO-8859-1",
+        "utf-8-sig",
+        "utf-8",
+        "cp949",
+        "euc-kr",
+        "latin1",
+        "ISO-8859-1",
     ]
 
     last_error: Exception | None = None
@@ -87,10 +83,6 @@ def _normalize_task_type(task_type: str | None) -> str | None:
 
 
 def _normalize_cv(cv: int) -> int:
-    """
-    너무 큰 CV는 API 테스트가 느려지므로 2~10 사이로 제한.
-    """
-
     if cv < 2:
         return 2
 
@@ -108,6 +100,7 @@ def root() -> dict[str, Any]:
         "health": "/health",
         "analyze_upload": "/api/analyze",
         "folder_scan": "/api/folder/scan",
+        "folder_browse": "/api/folders/browse",
         "analyze_path": "/api/analyze-path",
         "results": "/api/results",
     }
@@ -120,6 +113,122 @@ def health_check() -> dict[str, str]:
     }
 
 
+@app.get("/api/folders/browse")
+def browse_folders(
+    path: str | None = Query(None),
+) -> dict[str, Any]:
+    """
+    로컬 개발용 폴더 탐색 API.
+
+    브라우저는 보안상 로컬 절대경로를 직접 가져오기 어렵기 때문에,
+    FastAPI 서버가 접근 가능한 폴더 목록을 읽어서 반환한다.
+
+    주의:
+        실제 배포 환경에서 아무 경로나 탐색하게 두면 보안상 위험하다.
+        현재는 로컬 개발/포트폴리오 데모용 기능이다.
+    """
+
+    try:
+        if path is None or path.strip() == "":
+            # Docker에서는 /data가 있으면 우선 보여주고,
+            # 로컬 Windows에서는 사용자의 home/Desktop을 기본 후보로 제공한다.
+            home = Path.home()
+            candidates: list[Path] = []
+
+            if Path("/data").exists():
+                candidates.append(Path("/data"))
+
+            candidates.extend(
+                [
+                    home,
+                    home / "Desktop",
+                    home / "OneDrive" / "Desktop",
+                    Path.cwd(),
+                ]
+            )
+
+            folders = []
+
+            seen: set[str] = set()
+
+            for candidate in candidates:
+                try:
+                    if candidate.exists() and candidate.is_dir():
+                        key = str(candidate)
+                        if key not in seen:
+                            folders.append(
+                                {
+                                    "name": candidate.name or str(candidate),
+                                    "path": str(candidate),
+                                }
+                            )
+                            seen.add(key)
+                except Exception:
+                    continue
+
+            return {
+                "current_path": None,
+                "parent_path": None,
+                "folders": folders,
+                "note": "시작 위치 후보입니다. 폴더를 클릭해서 이동하거나 직접 경로를 입력할 수 있습니다.",
+            }
+
+        current = Path(path).expanduser()
+
+        if not current.exists():
+            raise FileNotFoundError(f"Folder not found: {current}")
+
+        if not current.is_dir():
+            raise ValueError(f"Path is not a folder: {current}")
+
+        folders: list[dict[str, Any]] = []
+
+        for item in sorted(current.iterdir(), key=lambda p: p.name.lower()):
+            try:
+                if item.is_dir():
+                    folders.append(
+                        {
+                            "name": item.name,
+                            "path": str(item),
+                        }
+                    )
+            except Exception:
+                continue
+
+        parent = current.parent if current.parent != current else None
+
+        return {
+            "current_path": str(current),
+            "parent_path": str(parent) if parent else None,
+            "folders": folders,
+            "note": None,
+        }
+
+    except FileNotFoundError as e:
+        raise HTTPException(
+            status_code=404,
+            detail=str(e),
+        ) from e
+
+    except ValueError as e:
+        raise HTTPException(
+            status_code=400,
+            detail=str(e),
+        ) from e
+
+    except PermissionError as e:
+        raise HTTPException(
+            status_code=403,
+            detail=f"Permission denied: {e}",
+        ) from e
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Internal server error: {e}",
+        ) from e
+
+
 @app.post("/api/analyze")
 async def analyze_dataset(
     file: UploadFile = File(...),
@@ -127,10 +236,6 @@ async def analyze_dataset(
     task_type: str | None = Form(None),
     cv: int = Form(5),
 ) -> dict[str, Any]:
-    """
-    CSV 파일을 업로드해서 AutoML 분석을 실행하고 결과를 저장한다.
-    """
-
     filename = file.filename or ""
 
     if not filename.lower().endswith(".csv"):
@@ -220,11 +325,6 @@ def scan_folder(
     sample_rows: int = Form(50),
     representatives_per_group: int = Form(3),
 ) -> dict[str, Any]:
-    """
-    폴더 안 CSV를 찾고, 컬럼 구조별 schema group으로 묶는다.
-    각 그룹에서 대표 CSV 몇 개만 샘플로 읽어 target 후보와 패턴을 파악한다.
-    """
-
     try:
         return scan_folder_schema_groups(
             root_path=root_path,
@@ -261,14 +361,6 @@ def analyze_csv_by_path(
     cv: int = Form(3),
     sample_rows: int | None = Form(50000),
 ) -> dict[str, Any]:
-    """
-    업로드 없이 로컬 CSV 경로를 직접 넣어서 AutoML 분석을 실행하고 결과를 저장한다.
-
-    sample_rows:
-        0 또는 빈 값이면 전체 사용
-        숫자를 넣으면 앞에서 해당 행 수만 읽어서 분석
-    """
-
     try:
         normalized_task_type = _normalize_task_type(task_type)
         normalized_cv = _normalize_cv(cv)
@@ -357,10 +449,6 @@ def analyze_csv_by_path(
 
 @app.get("/api/results")
 def get_results(limit: int = 50) -> dict[str, Any]:
-    """
-    저장된 분석 작업 목록 조회.
-    """
-
     if limit < 1:
         limit = 1
 
@@ -377,10 +465,6 @@ def get_results(limit: int = 50) -> dict[str, Any]:
 
 @app.get("/api/results/{job_id}")
 def get_result(job_id: str) -> dict[str, Any]:
-    """
-    특정 job_id의 result.json 조회.
-    """
-
     try:
         return load_result(job_id)
 
@@ -399,10 +483,6 @@ def get_result(job_id: str) -> dict[str, Any]:
 
 @app.get("/api/reports/{job_id}", response_class=PlainTextResponse)
 def get_report(job_id: str) -> PlainTextResponse:
-    """
-    특정 job_id의 Markdown 리포트 조회.
-    """
-
     try:
         report = load_report(job_id)
 

@@ -269,11 +269,39 @@
       </p>
 
       <label>분석할 루트 폴더 경로</label>
-      <input
-        id="folderPath"
-        value="C:\Users\haein\OneDrive\Desktop\project 1st"
-        placeholder="예: C:\Users\username\Desktop\dataset 또는 Docker 실행 시 /data"
-      />
+<input
+  id="folderPath"
+  placeholder="예: C:\Users\username\Desktop\dataset 또는 Docker 실행 시 /data"
+/>
+
+<div class="button-row" style="margin-bottom: 12px;">
+  <button type="button" class="secondary small" onclick="openFolderBrowser()">
+    폴더 찾아보기
+  </button>
+  <button type="button" class="secondary small" onclick="setFolderPath('/data')">
+    Docker /data 입력
+  </button>
+  <button type="button" class="secondary small" onclick="clearFolderPath()">
+    경로 비우기
+  </button>
+</div>
+
+<div id="folderBrowser" class="schema-card hidden">
+  <div class="schema-title">폴더 탐색기</div>
+  <div id="browserCurrentPath" class="muted"></div>
+  <div class="button-row" style="margin: 8px 0;">
+    <button type="button" class="secondary small" onclick="browseParentFolder()">상위 폴더</button>
+    <button type="button" class="small" onclick="chooseCurrentFolder()">현재 폴더 선택</button>
+    <button type="button" class="secondary small" onclick="closeFolderBrowser()">닫기</button>
+  </div>
+  <div id="folderList"></div>
+</div>
+
+<p class="muted">
+  참고: 일반 브라우저는 보안상 로컬 폴더의 절대경로를 직접 가져올 수 없습니다.
+  이 화면의 폴더 탐색기는 FastAPI 서버가 접근 가능한 폴더 목록을 읽어와 표시합니다.
+  Docker 실행 시에는 volume으로 연결한 `/data`를 사용할 수 있습니다.
+</p>
 
       <div class="row">
         <div>
@@ -391,6 +419,8 @@
 
     let latestScanResult = null;
     let analysisAbortController = null;
+    let folderBrowserCurrentPath = null;
+    let folderBrowserParentPath = null;
 
     function setStatus(id, msg, isError = false, isSuccess = false) {
       const el = document.getElementById(id);
@@ -403,6 +433,106 @@
       } else {
         el.className = "status";
       }
+    }
+
+         function setFolderPath(path) {
+      document.getElementById("folderPath").value = path;
+    }
+
+    function clearFolderPath() {
+      document.getElementById("folderPath").value = "";
+      setStatus("scanStatus", "");
+    }
+
+    async function openFolderBrowser() {
+      document.getElementById("folderBrowser").classList.remove("hidden");
+
+      const currentInput = document.getElementById("folderPath").value.trim();
+
+      if (currentInput) {
+        await browseFolder(currentInput);
+      } else {
+        await browseFolder("");
+      }
+    }
+
+    function closeFolderBrowser() {
+      document.getElementById("folderBrowser").classList.add("hidden");
+    }
+
+    async function browseParentFolder() {
+      if (folderBrowserParentPath) {
+        await browseFolder(folderBrowserParentPath);
+      }
+    }
+
+    function chooseCurrentFolder() {
+      if (folderBrowserCurrentPath) {
+        document.getElementById("folderPath").value = folderBrowserCurrentPath;
+      }
+
+      closeFolderBrowser();
+    }
+
+    async function browseFolder(path) {
+      try {
+        const url = new URL(`${API_BASE}/api/folders/browse`);
+
+        if (path) {
+          url.searchParams.set("path", path);
+        }
+
+        const res = await fetch(url.toString());
+
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(text);
+        }
+
+        const data = await res.json();
+
+        folderBrowserCurrentPath = data.current_path;
+        folderBrowserParentPath = data.parent_path;
+
+        renderFolderBrowser(data);
+      } catch (err) {
+        console.error(err);
+        document.getElementById("folderList").innerHTML =
+          `<div class="error">폴더 탐색 실패: ${escapeHtml(err.message)}</div>`;
+      }
+    }
+
+    function renderFolderBrowser(data) {
+      const current = data.current_path || "시작 위치";
+      const note = data.note ? `<div class="muted">${escapeHtml(data.note)}</div>` : "";
+
+      document.getElementById("browserCurrentPath").innerHTML = `
+        현재 위치: <strong>${escapeHtml(current)}</strong>
+        ${note}
+      `;
+
+      const folders = data.folders || [];
+
+      if (folders.length === 0) {
+        document.getElementById("folderList").innerHTML =
+          `<div class="muted">하위 폴더가 없습니다.</div>`;
+        return;
+      }
+
+      document.getElementById("folderList").innerHTML = folders.map(folder => `
+        <div style="padding: 6px 0; border-bottom: 1px solid #e5e7eb;">
+          <button type="button" class="secondary small"
+            onclick='browseFolder(${JSON.stringify(folder.path)})'>
+            📁 열기
+          </button>
+          <button type="button" class="small"
+            onclick='setFolderPath(${JSON.stringify(folder.path)}); closeFolderBrowser();'>
+            선택
+          </button>
+          <span>${escapeHtml(folder.name)}</span>
+          <span class="muted">${escapeHtml(folder.path)}</span>
+        </div>
+      `).join("");
     }
 
     async function postForm(url, data, signal = null) {
