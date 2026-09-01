@@ -33,9 +33,6 @@ def _normalize_column_name(col: Any) -> str:
 
 
 def _schema_signature(columns: list[str]) -> str:
-    """
-    컬럼 순서가 달라도 같은 schema로 보기 위해 정렬해서 signature 생성.
-    """
     normalized = sorted(_normalize_column_name(col) for col in columns)
     return "|".join(normalized)
 
@@ -79,22 +76,150 @@ def read_csv_from_path(
     return _read_csv_try_encodings(path, nrows=nrows)
 
 
+def _to_json_safe_value(value: Any) -> Any:
+    """
+    numpy/pandas 값을 JSON으로 안전하게 내려주기 위한 변환.
+    """
+    if pd.isna(value):
+        return None
+
+    if hasattr(value, "item"):
+        try:
+            value = value.item()
+        except Exception:
+            pass
+
+    if isinstance(value, (str, int, float, bool)):
+        return value
+
+    return str(value)
+
+
+def _sample_values(series: pd.Series, max_values: int = 5) -> list[Any]:
+    values: list[Any] = []
+
+    try:
+        unique_values = series.dropna().unique()
+    except Exception:
+        return values
+
+    for value in unique_values[:max_values]:
+        safe_value = _to_json_safe_value(value)
+        if safe_value is not None:
+            values.append(safe_value)
+
+    return values
+
+
+def _build_column_profiles(
+    df: pd.DataFrame,
+    max_values: int = 5,
+) -> dict[str, dict[str, Any]]:
+    """
+    샘플 데이터 기준 컬럼별 간단 프로필 생성.
+
+    주의:
+    전체 CSV 기준이 아니라 scan 시 읽은 sample_rows 기준이다.
+    """
+
+    profiles: dict[str, dict[str, Any]] = {}
+
+    for col in df.columns:
+        series = df[col]
+
+        try:
+            sample_unique_count = int(series.nunique(dropna=True))
+        except Exception:
+            sample_unique_count = 0
+
+        try:
+            missing_count = int(series.isna().sum())
+        except Exception:
+            missing_count = 0
+
+        profiles[str(col)] = {
+            "dtype": str(series.dtype),
+            "sample_unique_count": sample_unique_count,
+            "sample_missing_count": missing_count,
+            "sample_values": _sample_values(series, max_values=max_values),
+        }
+
+    return profiles
+
+
+def _merge_column_profiles(
+    profile_list: list[dict[str, dict[str, Any]]],
+    max_values: int = 8,
+) -> dict[str, dict[str, Any]]:
+    """
+    대표 파일 여러 개에서 나온 column_profiles를 그룹 단위로 병합.
+    """
+
+    merged: dict[str, dict[str, Any]] = {}
+
+    for profiles in profile_list:
+        for col, profile in profiles.items():
+            if col not in merged:
+                merged[col] = {
+                    "dtype": profile.get("dtype"),
+                    "sample_unique_count": profile.get("sample_unique_count", 0),
+                    "sample_missing_count": profile.get("sample_missing_count", 0),
+                    "sample_values": list(profile.get("sample_values", [])),
+                }
+                continue
+
+            merged[col]["sample_unique_count"] = max(
+                int(merged[col].get("sample_unique_count", 0)),
+                int(profile.get("sample_unique_count", 0)),
+            )
+
+            merged[col]["sample_missing_count"] = max(
+                int(merged[col].get("sample_missing_count", 0)),
+                int(profile.get("sample_missing_count", 0)),
+            )
+
+            existing_values = merged[col].get("sample_values", [])
+            new_values = profile.get("sample_values", [])
+
+            seen = {str(value) for value in existing_values}
+
+            for value in new_values:
+                if str(value) not in seen:
+                    existing_values.append(value)
+                    seen.add(str(value))
+
+                if len(existing_values) >= max_values:
+                    break
+
+            merged[col]["sample_values"] = existing_values[:max_values]
+
+    return merged
+
+
 def _guess_target_candidates(df: pd.DataFrame) -> list[dict[str, Any]]:
     candidates: list[dict[str, Any]] = []
 
     strong_keywords = [
         "target", "label", "class", "result", "outcome", "answer",
+        "binary", "diabetes", "default", "churn", "fraud",
         "정답", "타겟", "라벨", "결과",
     ]
 
     classification_keywords = [
         "여부", "구분", "분류", "등급", "상태", "유형",
-        "category", "type", "class", "label", "status",
+        "category", "type", "class", "label", "status", "binary",
     ]
 
     regression_keywords = [
-        "price", "amount", "sales", "revenue", "score", "count",
+        "price", "amount", "sales", "revenue", "score",
         "매출", "금액", "가격", "점수", "수량", "건수", "인구", "방문",
+        "지출", "점포", "율", "_amt", "_co", "selng", "population",
+        "count_", "_count",
+    ]
+
+    id_keywords = [
+        "id", "idx", "index", "code", "_cd", "_id",
+        "코드", "번호", "순번",
     ]
 
     n_rows = len(df)
@@ -109,22 +234,39 @@ def _guess_target_candidates(df: pd.DataFrame) -> list[dict[str, Any]]:
         guessed_task = "unknown"
         reasons: list[str] = []
 
-        if any(k in lower for k in strong_keywords):
-            score += 50
-            reasons.append("target/label 계열 컬럼명입니다.")
+        is_id_like = (
+            lower in ["id", "idx", "index"]
+            or lower.endswith("_id")
+            or lower.endswith("_cd")
+            or any(k in lower for k in ["code"])
+            or "코드" in col_name
+            or "번호" in col_name
+            or "순번" in col_name
+        )
 
-        if any(k in lower for k in classification_keywords):
+        looks_regression_by_name = any(k in lower or k in col_name for k in regression_keywords)
+        looks_classification_by_name = any(k in lower or k in col_name for k in classification_keywords)
+
+        if any(k in lower or k in col_name for k in strong_keywords):
+            score += 45
+            reasons.append("target/label/binary 계열 컬럼명입니다.")
+
+        if looks_classification_by_name:
             score += 25
             guessed_task = "classification"
             reasons.append("분류 target 후보로 보이는 컬럼명입니다.")
 
-        if any(k in lower for k in regression_keywords):
+        if looks_regression_by_name:
             score += 25
             guessed_task = "regression"
             reasons.append("회귀 target 후보로 보이는 컬럼명입니다.")
 
         if pd.api.types.is_numeric_dtype(series):
-            if 2 <= nunique <= 20:
+            if looks_regression_by_name:
+                score += 15
+                guessed_task = "regression"
+                reasons.append("숫자형이며 금액/수량/인구/점포/지출 계열 컬럼입니다.")
+            elif 2 <= nunique <= 20:
                 score += 15
                 if guessed_task == "unknown":
                     guessed_task = "classification"
@@ -141,17 +283,14 @@ def _guess_target_candidates(df: pd.DataFrame) -> list[dict[str, Any]]:
                     guessed_task = "classification"
                 reasons.append("범주형 target 후보일 수 있습니다.")
 
-        if n_rows > 0 and nunique / max(n_rows, 1) > 0.9:
+        # 고유값 비율이 높으면 ID 가능성.
+        # 단, 매출/금액/인구/점포 같은 명확한 회귀형 이름이면 ID 감점하지 않음.
+        if n_rows > 0 and nunique / max(n_rows, 1) > 0.9 and not looks_regression_by_name:
             score -= 20
             reasons.append("고유값 비율이 높아 ID 컬럼일 수 있습니다.")
 
-        if (
-            lower in ["id", "idx", "index"]
-            or lower.endswith("_id")
-            or "코드" in col_name
-            or "id" == lower
-        ):
-            score -= 15
+        if is_id_like:
+            score -= 25
             reasons.append("ID/코드성 컬럼일 수 있어 우선순위를 낮췄습니다.")
 
         if score > 0:
@@ -162,6 +301,7 @@ def _guess_target_candidates(df: pd.DataFrame) -> list[dict[str, Any]]:
                     "guessed_task_type": guessed_task,
                     "dtype": str(series.dtype),
                     "unique_count_in_sample": nunique,
+                    "sample_values": _sample_values(series, max_values=5),
                     "reasons": reasons,
                 }
             )
@@ -170,10 +310,6 @@ def _guess_target_candidates(df: pd.DataFrame) -> list[dict[str, Any]]:
 
 
 def _guess_join_keys(columns: list[str]) -> list[str]:
-    """
-    여러 CSV를 나중에 병합할 때 공통 key 후보가 될 수 있는 컬럼 추정.
-    지금은 분석 참고용.
-    """
     key_hints = [
         "id", "code", "코드", "번호", "key",
         "년", "월", "분기", "일자", "날짜", "date",
@@ -205,6 +341,21 @@ def _merge_target_candidates(
             else:
                 merged[col]["score"] = max(merged[col]["score"], cand["score"])
                 merged[col]["seen_in_representatives"] += 1
+
+                existing_values = merged[col].get("sample_values", [])
+                new_values = cand.get("sample_values", [])
+
+                seen = {str(v) for v in existing_values}
+
+                for value in new_values:
+                    if str(value) not in seen:
+                        existing_values.append(value)
+                        seen.add(str(value))
+
+                    if len(existing_values) >= 8:
+                        break
+
+                merged[col]["sample_values"] = existing_values[:8]
 
     return sorted(
         merged.values(),
@@ -305,6 +456,7 @@ def scan_folder_schema_groups(
 
         representative_analyses: list[dict[str, Any]] = []
         target_candidate_lists: list[list[dict[str, Any]]] = []
+        column_profile_list: list[dict[str, dict[str, Any]]] = []
 
         for rep in representatives:
             path = Path(rep["file_path"])
@@ -318,6 +470,12 @@ def scan_folder_schema_groups(
                 target_candidates = _guess_target_candidates(sample_df)
                 target_candidate_lists.append(target_candidates)
 
+                column_profiles = _build_column_profiles(
+                    sample_df,
+                    max_values=5,
+                )
+                column_profile_list.append(column_profiles)
+
                 representative_analyses.append(
                     {
                         "file_name": path.name,
@@ -330,6 +488,7 @@ def scan_folder_schema_groups(
                             str(col): str(dtype)
                             for col, dtype in sample_df.dtypes.items()
                         },
+                        "column_profiles": column_profiles,
                         "target_candidates": target_candidates,
                     }
                 )
@@ -345,6 +504,7 @@ def scan_folder_schema_groups(
                 )
 
         columns = files_sorted[0]["columns"] if files_sorted else []
+        group_column_profiles = _merge_column_profiles(column_profile_list)
 
         schema_groups.append(
             {
@@ -353,6 +513,7 @@ def scan_folder_schema_groups(
                 "total_size_mb": round(sum(f["size_mb"] for f in files_sorted), 3),
                 "columns": columns,
                 "column_count": len(columns),
+                "column_profiles": group_column_profiles,
                 "possible_join_keys": _guess_join_keys(columns),
                 "representative_files": [
                     {

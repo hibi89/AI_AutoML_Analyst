@@ -165,8 +165,35 @@
       line-height: 1.6;
     }
 
-    .candidate-list, .file-list {
+    .candidate-list, .file-list, .column-list {
+      margin-top: 10px;
+    }
+
+    .columns-box {
       margin-top: 8px;
+      max-height: 170px;
+      overflow-y: auto;
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 8px;
+    }
+
+    .column-chip {
+      display: inline-block;
+      background: #f3f4f6;
+      border: 1px solid #e5e7eb;
+      border-radius: 999px;
+      padding: 5px 8px;
+      margin: 3px;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .column-translation {
+      color: #2563eb;
+      font-weight: bold;
+      margin-left: 4px;
     }
 
     table {
@@ -245,6 +272,7 @@
       <input
         id="folderPath"
         value="C:\Users\haein\OneDrive\Desktop\project 1st"
+        placeholder="예: C:\Users\username\Desktop\dataset 또는 Docker 실행 시 /data"
       />
 
       <div class="row">
@@ -448,12 +476,14 @@
 
         const topCandidates = group.target_candidates || [];
         const reps = group.representative_files || [];
+        const columns = group.columns || [];
+        const columnProfiles = group.column_profiles || {};
 
         const candidateButtons = topCandidates.length
           ? topCandidates.map(c => `
               <button class="small secondary"
                 onclick='selectTargetCandidate(${JSON.stringify(c.column)}, ${JSON.stringify(c.guessed_task_type)})'>
-                ${c.column} (${toKoreanTaskType(c.guessed_task_type)})
+                ${escapeHtml(c.column)} (${toKoreanTaskType(c.guessed_task_type)})
               </button>
             `).join("")
           : `<span class="muted">후보 컬럼 없음</span>`;
@@ -462,10 +492,10 @@
           ? reps.map(f => `
               <div>
                 <button class="small"
-                  onclick='selectFile(${JSON.stringify(f.file_path)}, ${JSON.stringify(group.columns)}, ${JSON.stringify(topCandidates)})'>
+                  onclick='selectFile(${JSON.stringify(f.file_path)}, ${JSON.stringify(columns)}, ${JSON.stringify(topCandidates)})'>
                   이 CSV만 분석
                 </button>
-                <span>${f.file_name}</span>
+                <span>${escapeHtml(f.file_name)}</span>
                 <span class="muted">(${f.size_mb} MB)</span>
               </div>
             `).join("")
@@ -473,16 +503,18 @@
 
         card.innerHTML = `
           <div class="schema-title">
-            ${group.schema_id}
+            ${escapeHtml(group.schema_id)}
             <span class="muted">
               파일 ${group.file_count}개 / ${group.total_size_mb} MB / 컬럼 ${group.column_count}개
             </span>
           </div>
 
-          <div class="muted">
-            컬럼 예시:
-            ${(group.columns || []).slice(0, 10).join(", ")}
-            ${(group.columns || []).length > 10 ? " ..." : ""}
+          <div class="column-list">
+            <strong>컬럼 목록</strong>
+            <span class="muted">(${columns.length}개)</span>
+            <div class="columns-box">
+              ${renderColumnList(columns, columnProfiles)}
+            </div>
           </div>
 
           <div class="candidate-list">
@@ -498,6 +530,44 @@
 
         container.appendChild(card);
       });
+    }
+
+        function renderColumnList(columns, columnProfiles = {}) {
+      if (!columns || columns.length === 0) {
+        return `<span class="muted">컬럼 없음</span>`;
+      }
+
+      return columns.map(col => {
+        const translation = translateColumnName(col);
+        const profile = columnProfiles[col] || {};
+
+        const dtype = profile.dtype || "unknown";
+        const uniqueCount = profile.sample_unique_count;
+        const sampleValues = profile.sample_values || [];
+
+        const translationText = translation
+          ? `<span class="column-translation">(${escapeHtml(translation)})</span>`
+          : "";
+
+        const uniqueText = uniqueCount !== undefined && uniqueCount !== null
+          ? `sample unique: ${uniqueCount}`
+          : "sample unique: N/A";
+
+        const sampleText = sampleValues.length > 0
+          ? `sample: ${sampleValues.map(v => escapeHtml(String(v))).join(", ")}`
+          : "sample: N/A";
+
+        return `
+          <span class="column-chip">
+            <strong>${escapeHtml(col)}</strong>
+            ${translationText}
+            <br />
+            <span class="muted">type: ${escapeHtml(dtype)} / ${uniqueText}</span>
+            <br />
+            <span class="muted">${sampleText}</span>
+          </span>
+        `;
+      }).join("");
     }
 
     function selectFile(filePath, columns, candidates) {
@@ -518,7 +588,8 @@
       ordered.forEach(col => {
         const option = document.createElement("option");
         option.value = col;
-        option.textContent = col;
+        const translation = translateColumnName(col);
+        option.textContent = translation ? `${col} (${translation})` : col;
         select.appendChild(option);
       });
 
@@ -553,7 +624,8 @@
       if (!found) {
         const option = document.createElement("option");
         option.value = column;
-        option.textContent = column;
+        const translation = translateColumnName(column);
+        option.textContent = translation ? `${column} (${translation})` : column;
         select.appendChild(option);
       }
 
@@ -627,7 +699,7 @@
       const top = automl.best_result || {};
 
       document.getElementById("jobInfo").innerHTML = `
-        <span class="badge">Job ID: ${job.job_id || "N/A"}</span>
+        <span class="badge">Job ID: ${escapeHtml(job.job_id || "N/A")}</span>
         <span class="badge">Rows: ${result.dataset_info?.rows || "N/A"}</span>
         <span class="badge">Columns: ${result.dataset_info?.columns || "N/A"}</span>
         <span class="badge">Task: ${toKoreanTaskType(result.request?.task_type) || "N/A"}</span>
@@ -636,8 +708,8 @@
       document.getElementById("topModel").innerHTML = `
         <table>
           <tr><th>항목</th><th>값</th></tr>
-          <tr><td>Top ranked model</td><td>${top.model_name || "N/A"}</td></tr>
-          <tr><td>Primary metric</td><td>${top.primary_metric || "N/A"}</td></tr>
+          <tr><td>Top ranked model</td><td>${escapeHtml(top.model_name || "N/A")}</td></tr>
+          <tr><td>Primary metric</td><td>${escapeHtml(top.primary_metric || "N/A")}</td></tr>
           <tr><td>Mean score</td><td>${formatNum(top.primary_score_mean)}</td></tr>
           <tr><td>Score std</td><td>${formatNum(top.primary_score_std)}</td></tr>
         </table>
@@ -646,8 +718,8 @@
       const rows = ranked.map(r => `
         <tr>
           <td>${r.rank}</td>
-          <td>${r.model_name}</td>
-          <td>${r.primary_metric}</td>
+          <td>${escapeHtml(r.model_name)}</td>
+          <td>${escapeHtml(r.primary_metric)}</td>
           <td>${formatNum(r.primary_score_mean)}</td>
           <td>${formatNum(r.primary_score_std)}</td>
           <td>${formatNum(r.fit_time_mean)}</td>
@@ -683,8 +755,9 @@
       const hint = document.getElementById("taskHint");
 
       const regressionKeywords = [
-      "매출", "금액", "가격", "수량", "건수", "인구", "점포", "평균", "지출",
-      "amount", "price", "sales", "revenue", "_count", "count_", " score", "population"
+        "매출", "금액", "가격", "수량", "건수", "인구", "점포", "평균", "지출",
+        "amount", "price", "sales", "revenue", "_count", "count_", "score", "population",
+        "_amt", "_co", "selng", "stor"
       ];
 
       const classificationKeywords = [
@@ -694,8 +767,13 @@
 
       const lower = target.toLowerCase();
 
-      const looksRegression = regressionKeywords.some(k => lower.includes(k.toLowerCase()) || target.includes(k));
-      const looksClassification = classificationKeywords.some(k => lower.includes(k.toLowerCase()) || target.includes(k));
+      const looksRegression = regressionKeywords.some(k =>
+        lower.includes(k.toLowerCase()) || target.includes(k)
+      );
+
+      const looksClassification = classificationKeywords.some(k =>
+        lower.includes(k.toLowerCase()) || target.includes(k)
+      );
 
       if (looksRegression && taskType !== "regression") {
         hint.classList.remove("hidden");
@@ -713,6 +791,178 @@
       hint.textContent = "";
     }
 
+    function translateColumnName(columnName) {
+      const col = String(columnName);
+      const lower = col.toLowerCase();
+
+      // 이미 한글 컬럼이면 해석 표시 생략
+      if (/[ㄱ-ㅎ가-힣]/.test(col)) {
+        return "";
+      }
+
+      const exactMap = {
+        // Netflix
+        "country_name": "국가명",
+        "country_iso2": "국가 코드",
+        "week": "주차",
+        "weekly_rank": "주간 순위",
+        "show_title": "작품명",
+        "season_title": "시즌명",
+        "category": "카테고리",
+        "weekly_hours_viewed": "주간 시청 시간",
+        "cumulative_weeks_in_top_10": "TOP10 누적 주수",
+
+        // Diabetes
+        "diabetes_binary": "당뇨 여부",
+        "diabetes_012": "당뇨 상태",
+        "highbp": "고혈압 여부",
+        "highchol": "고콜레스테롤 여부",
+        "cholcheck": "콜레스테롤 검사 여부",
+        "bmi": "체질량지수",
+        "smoker": "흡연 여부",
+        "stroke": "뇌졸중 여부",
+        "heartdiseaseorattack": "심장질환/심장마비 여부",
+        "physactivity": "신체활동 여부",
+        "fruits": "과일 섭취 여부",
+        "veggies": "채소 섭취 여부",
+        "hvyalcoholconsump": "과음 여부",
+        "anyhealthcare": "의료보장 여부",
+        "nodocbccost": "비용 문제로 진료 미수진 여부",
+        "genhlth": "전반적 건강 상태",
+        "menthlth": "정신건강 일수",
+        "physhlth": "신체건강 일수",
+        "diffwalk": "보행 어려움 여부",
+        "sex": "성별",
+        "age": "나이",
+        "education": "교육 수준",
+        "income": "소득 수준",
+
+        // Finance / Customer
+        "customer_id": "고객 ID",
+        "customer_seq": "고객 순번",
+        "customer_type": "고객 유형",
+        "gender": "성별",
+        "region": "지역",
+        "income_bracket": "소득 구간",
+        "occupation_group": "직업군",
+        "risk_grade": "위험 등급",
+        "credit_rating": "신용 등급",
+        "marital_status": "결혼 상태",
+        "investment_propensity": "투자 성향",
+        "cross_coverage": "교차 보장",
+        "disease_history": "질병 이력",
+        "product_name": "상품명",
+        "product_amt": "상품 금액",
+        "product_period": "상품 기간",
+        "transaction_type": "거래 유형",
+        "transaction_keyword": "거래 키워드",
+        "transaction_amt": "거래 금액",
+        "transaction_start_year": "거래 시작 연도",
+        "transaction_last_year": "최근 거래 연도",
+
+        // Seoul commercial data abbreviation
+        "stdr_yyqu_cd": "기준 년분기 코드",
+        "trdar_se_cd": "상권 구분 코드",
+        "trdar_se_cd_nm": "상권 구분명",
+        "trdar_cd": "상권 코드",
+        "trdar_cd_nm": "상권명",
+        "svc_induty_cd": "서비스 업종 코드",
+        "svc_induty_cd_nm": "서비스 업종명",
+
+        "thsmon_selng_amt": "당월 매출 금액",
+        "thsmon_selng_co": "당월 매출 건수",
+        "mdwk_selng_amt": "주중 매출 금액",
+        "wkend_selng_amt": "주말 매출 금액",
+        "mon_selng_amt": "월요일 매출 금액",
+        "tues_selng_amt": "화요일 매출 금액",
+        "wed_selng_amt": "수요일 매출 금액",
+        "thur_selng_amt": "목요일 매출 금액",
+        "fri_selng_amt": "금요일 매출 금액",
+        "sat_selng_amt": "토요일 매출 금액",
+        "sun_selng_amt": "일요일 매출 금액",
+
+        "tmzon_00_06_selng_amt": "00~06시 매출 금액",
+        "tmzon_06_11_selng_amt": "06~11시 매출 금액",
+        "tmzon_11_14_selng_amt": "11~14시 매출 금액",
+        "tmzon_14_17_selng_amt": "14~17시 매출 금액",
+        "tmzon_17_21_selng_amt": "17~21시 매출 금액",
+        "tmzon_21_24_selng_amt": "21~24시 매출 금액",
+
+        "ml_selng_amt": "남성 매출 금액",
+        "fml_selng_amt": "여성 매출 금액",
+        "agrde_10_selng_amt": "10대 매출 금액",
+        "agrde_20_selng_amt": "20대 매출 금액",
+        "agrde_30_selng_amt": "30대 매출 금액",
+        "agrde_40_selng_amt": "40대 매출 금액",
+        "agrde_50_selng_amt": "50대 매출 금액",
+        "agrde_60_above_selng_amt": "60대 이상 매출 금액",
+
+        "mdwk_selng_co": "주중 매출 건수",
+        "wkend_selng_co": "주말 매출 건수",
+        "mon_selng_co": "월요일 매출 건수",
+        "tues_selng_co": "화요일 매출 건수",
+        "wed_selng_co": "수요일 매출 건수",
+        "thur_selng_co": "목요일 매출 건수",
+        "fri_selng_co": "금요일 매출 건수",
+        "sat_selng_co": "토요일 매출 건수",
+        "sun_selng_co": "일요일 매출 건수",
+
+        "tmzon_00_06_selng_co": "00~06시 매출 건수",
+        "tmzon_06_11_selng_co": "06~11시 매출 건수",
+        "tmzon_11_14_selng_co": "11~14시 매출 건수",
+        "tmzon_14_17_selng_co": "14~17시 매출 건수",
+        "tmzon_17_21_selng_co": "17~21시 매출 건수",
+        "tmzon_21_24_selng_co": "21~24시 매출 건수",
+
+        "ml_selng_co": "남성 매출 건수",
+        "fml_selng_co": "여성 매출 건수",
+        "agrde_10_selng_co": "10대 매출 건수",
+        "agrde_20_selng_co": "20대 매출 건수",
+        "agrde_30_selng_co": "30대 매출 건수",
+        "agrde_40_selng_co": "40대 매출 건수",
+        "agrde_50_selng_co": "50대 매출 건수",
+        "agrde_60_above_selng_co": "60대 이상 매출 건수",
+
+        "stor_co": "점포 수",
+        "similr_induty_stor_co": "유사 업종 점포 수",
+        "opbiz_rt": "개업률",
+        "opbiz_stor_co": "개업 점포 수",
+        "clsbiz_rt": "폐업률",
+        "clsbiz_stor_co": "폐업 점포 수",
+        "frc_stor_co": "프랜차이즈 점포 수"
+      };
+
+      if (exactMap[lower]) {
+        return exactMap[lower];
+      }
+
+      const parts = [];
+
+      if (lower.includes("country")) parts.push("국가");
+      if (lower.includes("region")) parts.push("지역");
+      if (lower.includes("category")) parts.push("카테고리");
+      if (lower.includes("type")) parts.push("유형");
+      if (lower.includes("class")) parts.push("분류");
+      if (lower.includes("label")) parts.push("라벨");
+      if (lower.includes("status")) parts.push("상태");
+      if (lower.includes("rank")) parts.push("순위");
+      if (lower.includes("score")) parts.push("점수");
+      if (lower.includes("amount") || lower.includes("_amt")) parts.push("금액");
+      if (lower.includes("price")) parts.push("가격");
+      if (lower.includes("sales") || lower.includes("revenue") || lower.includes("selng")) parts.push("매출");
+      if (lower.includes("_count") || lower.includes("count_") || lower.endsWith("_co")) parts.push("건수/수");
+      if (lower.includes("population")) parts.push("인구");
+      if (lower.includes("date") || lower.includes("year")) parts.push("날짜/연도");
+      if (lower.includes("name") || lower.endsWith("_nm")) parts.push("명칭");
+      if (lower.includes("id") || lower.includes("code") || lower.endsWith("_cd")) parts.push("코드");
+
+      if (parts.length > 0) {
+        return parts.join(" / ");
+      }
+
+      return "";
+    }
+
     function toKoreanTaskType(value) {
       if (value === "classification") return "분류";
       if (value === "regression") return "회귀";
@@ -725,6 +975,15 @@
       if (value === null || value === undefined) return "N/A";
       if (typeof value === "number") return value.toFixed(4);
       return value;
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
     }
 
     document.addEventListener("change", function (event) {
