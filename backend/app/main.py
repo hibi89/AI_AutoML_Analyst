@@ -46,7 +46,14 @@ def _read_csv_from_bytes(content: bytes) -> pd.DataFrame:
     한국어 CSV 대응을 위해 여러 인코딩을 순서대로 시도한다.
     """
 
-    encodings = ["utf-8-sig", "utf-8", "cp949", "euc-kr"]
+    encodings = [
+    "utf-8-sig",
+    "utf-8",
+    "cp949",
+    "euc-kr",
+    "latin1",
+    "ISO-8859-1",
+    ]
 
     last_error: Exception | None = None
 

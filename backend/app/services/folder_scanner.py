@@ -7,7 +7,14 @@ from typing import Any
 import pandas as pd
 
 
-CSV_ENCODINGS = ["utf-8-sig", "utf-8", "cp949", "euc-kr"]
+CSV_ENCODINGS = [
+    "utf-8-sig",
+    "utf-8",
+    "cp949",
+    "euc-kr",
+    "latin1",
+    "ISO-8859-1",
+]
 
 
 def _size_mb(path: Path) -> float:
