@@ -41,6 +41,13 @@ class ModelSelectionResult:
             "task_type": self.task_type,
             "data_size_level": self.data_size_level,
             "selected_model_names": self.selected_model_names,
+            "baseline_model_name": next(
+                (name for name in self.selected_model_names if name.startswith("dummy_")), None
+            ),
+            "challenger_model_names": [
+                name for name in self.selected_model_names
+                if not name.startswith("dummy_")
+            ],
             "excluded_model_names": self.excluded_model_names,
             "policy": self.policy,
         }
@@ -66,7 +73,10 @@ def _limit_models(
     models: dict[str, Any],
     max_models: int,
 ) -> dict[str, Any]:
-    return dict(list(models.items())[:max_models])
+    # An independent Dummy baseline does not consume the tier's challenger budget.
+    baseline = [(name, model) for name, model in models.items() if name.startswith("dummy_")]
+    challengers = [(name, model) for name, model in models.items() if not name.startswith("dummy_")]
+    return dict(baseline + challengers[:max_models])
 
 
 def select_model_candidates(
@@ -82,7 +92,7 @@ def select_model_candidates(
 
     핵심:
     - 모델 후보군은 넓게 보유
-    - 실제 실행은 데이터 크기에 맞춰 3~7개 정도만 선택
+    - 실제 실행은 Dummy 기준선 + 3개(기본) 또는 5개(프리미엄) 후보
     - 큰 데이터에서는 SVC/SVR/KNN 같은 무거운 모델 제외
     - sparse output 가능성이 있는 범주형 데이터에서는 HistGradientBoosting 계열 제외
     """
@@ -100,12 +110,9 @@ def select_model_candidates(
     )
 
     if max_models is None:
-        if size_level == "small":
-            max_models = 7
-        elif size_level == "medium":
-            max_models = 6
-        else:
-            max_models = 5
+        max_models = 3
+    if not isinstance(max_models, int) or isinstance(max_models, bool) or not 1 <= max_models <= 5:
+        raise ValueError("max_models must be a challenger count between 1 and 5.")
 
     excluded: list[str] = []
     policy: dict[str, Any] = {
@@ -113,6 +120,9 @@ def select_model_candidates(
         "n_features": n_features,
         "has_categorical_features": has_categorical_features,
         "max_models": max_models,
+        "max_challengers": max_models,
+        "dummy_baseline_in_budget": False,
+        "warnings": ["Shuffled CV is not group/time-aware; validate grouped or future prediction using dedicated holdout before sale."],
         "rules": [],
     }
 
@@ -223,6 +233,23 @@ def _select_classification_models(
     else:
         excluded.append("hist_gradient_boosting_classifier")
         policy["rules"].append("범주형 인코딩으로 sparse matrix 가능성이 있어 HistGradientBoosting은 제외했습니다.")
+
+    # Put diverse estimators ahead of truncation so eligible HistGB actually runs.
+    priority = [
+        "dummy_classifier", "logistic_regression",
+        "random_forest_classifier", "hist_gradient_boosting_classifier",
+        "gradient_boosting_classifier", "extra_trees_classifier",
+        "ridge_classifier", "sgd_classifier", "linear_svc", "svc",
+    ]
+    selected_names = [name for name in priority if name in selected_names]
+
+    priority = [
+        "dummy_regressor", "linear_regression",
+        "random_forest_regressor", "hist_gradient_boosting_regressor",
+        "gradient_boosting_regressor", "extra_trees_regressor",
+        "ridge", "lasso", "elastic_net", "sgd_regressor", "linear_svr", "svr",
+    ]
+    selected_names = [name for name in priority if name in selected_names]
 
     selected_models = {
         name: all_models[name]
