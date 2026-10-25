@@ -58,6 +58,8 @@ def test_standard_real_http_pdf_zip():
         text = " ".join(page.extract_text() or "" for page in reader.pages)
         assert "독립 검증 및 해석" in text
         assert "모델 비교 결과" in text
+        assert "실제 학습 구간 CV 진단" in text
+        assert "Dummy 기준선 CV" in text
 
 
 def test_standard_regression_direct():
