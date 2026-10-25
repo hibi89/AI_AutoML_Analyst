@@ -1,0 +1,10 @@
+# Smoke/CI environment only. Installation does not publish customer data.
+# Python 3.11 is the commercial baseline; narrow/bind versions before release.
+fastapi>=0.115,<1
+uvicorn>=0.30,<1
+pandas>=2.2,<3
+numpy>=1.26,<3
+scikit-learn>=1.5,<2
+python-multipart>=0.0.9,<1
+httpx>=0.27,<1
+pytest>=8,<10
