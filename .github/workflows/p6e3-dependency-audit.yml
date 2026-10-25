@@ -26,6 +26,8 @@ jobs:
           cache-dependency-path: requirements-verified-py311.txt
       - name: Install exact runtime and test dependencies
         run: python -m pip install -r requirements-verified-py311.txt
+      - name: Upgrade build-time setuptools from vulnerable runner default
+        run: python -m pip install --upgrade "setuptools==84.2.1"
       - name: Capture tested full dependency graph and license metadata
         run: |
           mkdir -p ci-benchmarks
