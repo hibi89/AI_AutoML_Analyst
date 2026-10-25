@@ -29,7 +29,7 @@ def dataset(rows: int) -> pd.DataFrame:
 
 def main():
     outcomes=[]
-    for rows, budget in ((120,3), (120,5), (400,3), (400,5)):
+    for rows, budget in ((120,3), (120,5), (400,3), (400,5), (2000,3), (2000,5)):
         frame=dataset(rows)
         began=time.perf_counter()
         outcome=run_standard(frame, target_column="target",
@@ -50,14 +50,14 @@ def main():
         })
         print("P6C ML benchmark:",json.dumps(outcomes[-1]),flush=True)
     memory=resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-    payload={"scope":"CPU/CV/holdout evaluation of synthetic 120/400-row tables only",
+    payload={"scope":"CPU/CV/holdout evaluation of synthetic 120/400/2000-row tables only",
              "platform":platform.platform(),
              "peak_rss_kib_linux":memory if platform.system()=="Linux" else None,
              "results":outcomes, "customer_data_used":False,
              "does_not_prove_20000_row_mln":True}
     directory=Path("ci-benchmarks")
     directory.mkdir(exist_ok=True)
-    (directory/"p6c_model_120_400.json").write_text(
+    (directory/"p6c_model_120_400_2000.json").write_text(
         json.dumps(payload,indent=2),encoding="utf-8")
     print("P6C synthetic model RSS KiB:",memory,flush=True)
 
