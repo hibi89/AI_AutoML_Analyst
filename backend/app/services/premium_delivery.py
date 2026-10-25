@@ -23,6 +23,7 @@ from backend.app.services.preprocessor import (
 )
 from backend.app.services.model_selector import select_model_candidates
 from backend.app.services.standard_engine import run_standard
+from backend.app.services.basic_p3 import NANUM_FONT_CREDIT
 from backend.app.services.standard_delivery import _append_ml_pdf, _comparison_plot
 
 
@@ -297,6 +298,7 @@ def build_premium_zip(
         "4) 모델은 오직 신뢰한 원본 ZIP에서 로드하세요. 모델 파일·스키마 SHA만으로 출처를 증명할 수 없습니다.\n"
         "5) 데이터는 외부로 보내지 않습니다. 기존 결과 파일은 덮어쓰지 않습니다.\n"
         "6) 홀드아웃 결과는 평가 당시 학습 모델에만 적용되며, 최종 전체 재학습 모델에 동일한 성능을 보장하지 않습니다.\n"
+        + NANUM_FONT_CREDIT
     ).encode("utf-8")
     manifest = {
         "format": "premium-v1", "tier": "PREMIUM", "no_raw_dataset": True,
