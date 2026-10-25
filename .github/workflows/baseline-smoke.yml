@@ -9,6 +9,7 @@ on:
       - "frontend/**"
       - "tests/**"
       - "scripts/create_basic_preview.py"
+      - "scripts/p6_benchmark.py"
       - "requirements-ci.txt"
       - ".github/workflows/baseline-smoke.yml"
   workflow_dispatch:
@@ -46,5 +47,14 @@ jobs:
         with:
           name: basic-synthetic-pdf-review
           path: ci-preview/
+          if-no-files-found: error
+          retention-days: 7
+      - name: Benchmark synthetic BASIC upper-bound 20k rows x 50 columns
+        run: python -m scripts.p6_benchmark
+      - name: Upload time and RSS benchmark evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: p6-synthetic-performance
+          path: ci-benchmarks/p6_basic_20000x50.json
           if-no-files-found: error
           retention-days: 7
