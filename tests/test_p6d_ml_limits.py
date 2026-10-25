@@ -69,3 +69,20 @@ def test_http_ml_guard_returns_400_not_500(route):
     )
     assert r.status_code==400, r.text
     assert "ML capacity limit" in r.text
+
+
+def test_legacy_model_endpoint_obeys_separate_ml_limit(monkeypatch):
+    import backend.app.main as main
+    invoked = []
+    monkeypatch.setattr(main, "run_automl_experiment",
+                        lambda **kw: invoked.append(True))
+    n = 5002
+    df = pd.DataFrame({"value":np.arange(n),"target":np.arange(n)%2})
+    r = TestClient(app).post(
+        "/api/analyze",
+        data={"target_column":"target","task_type":"classification"},
+        files={"file":("synthetic.csv",BytesIO(df.to_csv(index=False).encode()),"text/csv")},
+    )
+    assert r.status_code == 400, r.text
+    assert "ML capacity limit" in r.text
+    assert not invoked
