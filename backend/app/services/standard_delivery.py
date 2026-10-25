@@ -137,6 +137,25 @@ def _append_ml_pdf(original: bytes, analysis: dict, chart_png: bytes) -> bytes:
     metrics = analysis["selected_holdout_metrics"]
     dummy = analysis["dummy_holdout_metrics"]
     p = analysis["primary_metric"]
+    # Visual methodology card: actual data partitions and non-overlapping score roles.
+    method_rows = [
+        ["평가 구간", "목적 및 사용 규칙"],
+        ["학습 내부 CV", f"{analysis['cv_splits']}개 폴드 · 후보 선정 / Dummy 비교"],
+        ["독립 holdout", f"{analysis['holdout_rows']:,}행 · 선정 모델 평가에만 사용"],
+        ["최종 모델 선택", "holdout 점수 반영 없음 / CV 평균값 기준"],
+    ]
+    method_table = Table(method_rows, colWidths=[122, 355], hAlign="LEFT")
+    method_table.setStyle(TableStyle([
+        ("FONTNAME", (0, 0), (-1, -1), font),
+        ("FONTSIZE", (0, 0), (-1, -1), 8.6),
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#dcecf5")),
+        ("ROWBACKGROUNDS", (0, 1), (-1, -1),
+         [colors.white, colors.HexColor("#f3f8fa")]),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("GRID", (0, 0), (-1, -1), 0.35, colors.HexColor("#dae5eb")),
+        ("TOPPADDING", (0, 0), (-1, -1), 9),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 9),
+    ]))
     story = [
         para("STANDARD — 모델 학습 및 검증", "title"),
         para("검증 설계", "head"),
@@ -159,6 +178,7 @@ def _append_ml_pdf(original: bytes, analysis: dict, chart_png: bytes) -> bytes:
         para(f"데이터 분할 정책: {analysis['split_policy']} / "
              f"CV 분할 횟수: {analysis['cv_splits']} / "
              f"기준 지표: {analysis['primary_metric']}"),
+        Spacer(1, 8), method_table, Spacer(1, 9),
         para("모형 학습·전처리는 각 학습 부분집합에서만 적합합니다. "
              "동일한 모델 계열이라도 추출 시점·반복 관측에 따라 오차가 달라질 수 있습니다.", "small"),
         PageBreak(),
