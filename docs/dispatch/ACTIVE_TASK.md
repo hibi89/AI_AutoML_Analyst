@@ -61,3 +61,8 @@ Execution sequence for next `ㄱ`: 1) check exact live branch and CI, 2) version
 - Detailed source `docs/qa/P6E3_RELEASE.md`; owner acceptance `docs/qa/P6E3_WINDOWS_RELEASE_CHECKLIST.md`. **Next READY AUTO-KM-P6E4**: verify latest Chromium, improve real-content PDF density, complete skops/third-party license and Windows manual readiness, tier-specific go/no-go. GitHub dev latest SHA should always be fetched live.
 
 P6E4 success criteria: inspect latest real Chromium and CVE audit status; improve meaningful PDF report density without invented claims; run render/page-count/security regression; resolve exact skops license and owner-local Windows release evidence as feasible. Never mark manual gate passed by GitHub CI alone. All 3 SKU sales NO-GO, main untouched.
+
+
+### Post-capture final Chromium outcome (2026-10-26 KST)
+- [Pillow13 Chromium 40214031501](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40214031501) **SUCCESS** on executable SHA `5f94e026f31d17f625857ff934cb3b81693c6173`. Real Playwright Chromium selected file, clicked report/download and verified actual ZIP output: BASIC **479,693 bytes**, STANDARD **632,150 bytes**, PREMIUM **726,447 bytes**. These are synthetic CI-only artifacts, not a customer's Windows Chrome/Edge manual approval.
+- Latest verified matrix therefore Linux **105 PASS/1 SKIP**, native Windows **50 PASS**, Chromium **3 SKUs PASS**, Linux all-installed direct+transitive audit **52 packages / 0 known CVE reports**; all on relevant tested code/dependency state. Strict release progress remains **5/7 (71%)**, all tiers NO-GO until physical Windows, licensed distribution and design signoff.
