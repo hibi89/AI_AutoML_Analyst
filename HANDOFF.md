@@ -1,4 +1,4 @@
-# HANDOFF — AI AutoML Analyst / continue next P6B work
+# HANDOFF — AI AutoML Analyst / continue next P6C work
 Updated 2026-10-26 KST. **Single-command wake-up**: [AI AutoML Analyst 깃헙 레포지토리 보고 작업이어가셈] or ㄱ. Immediately start next task, do not ask prior decisions. Live GitHub branch `feature/kmong-v1`, repo `hibi89/AI_AutoML_Analyst` is source. Original `main@c80c874476f8d5deb4bf611761d89c6d72ca0a2d` must remain unchanged.
 
 ## 1. Locked objective
@@ -6,7 +6,7 @@ Local-first 3-tier Kmong data-analysis report and ML custom-delivery product (BA
 
 ## 2. Latest implementation stages
 P0 DONE, P1 PARTIAL (real Windows browser), P2 DONE, P3 BASIC DONE implementation, P4 STANDARD DONE implementation, P5 PREMIUM DONE implementation. **P6 IN PROGRESS, NOT ACCEPTED** (P6A visual redesign, local-only security and XLSX implemented and Linux CI passes; Windows and final QA still missing). Strict milestones **5/7 = 71%**, not subjective completion percentage. **All tiers NOT SALE READY.**
-Next precise READY task: **AUTO-KM-P6B**, see `docs/dispatch/ACTIVE_TASK.md`.
+Next precise READY task: **AUTO-KM-P6C**, see `docs/dispatch/ACTIVE_TASK.md`.
 
 ## 3. Current source progress and verification
 - `backend/app/services/chart_design.py` now creates higher-quality Korean, 155dpi graphs with consistent palette, actual column names (not N1), median line, percent labels, correlation values, anonymized categories with explicitly stated privacy notice, box plot/trend. `basic_p3.py` delegates chart generation to P6 shared designer and formats first-page KPIs into cards with consistent accent. `standard_delivery.py` P5 ML comparison plot already highlights selected model, hatches Dummy baseline and annotates scores. **All chart code shared across tiers.**
@@ -33,7 +33,7 @@ Next precise READY task: **AUTO-KM-P6B**, see `docs/dispatch/ACTIVE_TASK.md`.
 
 ## 6. Next action for ㄱ
 1. Confirm live dev SHA, original main SHA, open `ACTIVE_TASK.md`, `STATUS.md`, P6 QA, actual source/tests and GitHub Actions latest runs.
-2. Advance **P6B**: improve remaining PDF page density/labels/accessibility based on preview, prepare robust Windows/CLI test path and benchmark bounded data, analyze dependency/font rights, run real tests on a suitable environment, fix regressions. On no access, mark Windows/manual gate **OWNER ACTION REQUIRED** explicitly rather than claiming it passed. P7 listing only after P6 gates.
+2. Advance **P6C**: improve remaining PDF page density/labels/accessibility based on preview, prepare robust Windows/CLI test path and benchmark bounded data, analyze dependency/font rights, run real tests on a suitable environment, fix regressions. On no access, mark Windows/manual gate **OWNER ACTION REQUIRED** explicitly rather than claiming it passed. P7 listing only after P6 gates.
 3. Update `STATUS.md`, `HANDOFF.md`, `docs/dispatch/ACTIVE_TASK.md`, `docs/qa/P6_RELEASE.md` each work boundary with real SHA/CI and next precise task. Use connected GitHub app and GitHub Actions if direct container clone still blocked. A failed path repeated twice must pivot.
 4. Do not inflate progress 71% until P1 browser or P6 release acceptance is satisfied, no matter how many tests pass. No merge to main without approval.
 
@@ -45,3 +45,13 @@ BASIC `/basic-mvp`, STANDARD `/standard-mvp`, PREMIUM `/premium-mvp`; only acces
 **Last fact-check**: GitHub current code CI after P6 XLSX fix 40207446007. Document has no self-referential SHA; always read remote HEAD after commit.
 
 Latest UI-inclusive verification: [GitHub Actions 40207617902](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40207617902), executable/UI SHA `d883a3d655ea8328c61a7ba006159608ca54b096`, **70 PASS / 25 warnings**, PREMIUM 11 rendered pages; only docs changes afterwards. P6 remains IN PROGRESS and no tier sellable.
+
+## 8. NEW P6B outcomes (2026-10-26 KST) — authoritative latest
+- Linux full suite [40208598555](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40208598555), code SHA `7eb13ab31866902e1e2f24d31c4e3037d1cbf222`: **77 PASS /1 Windows-only SKIP /25 warnings**, all synthetic BASIC/STANDARD/PREMIUM output, PREMIUM 11 pages. BASIC 20k rows x 50 cols measured 1.00 seconds, 177,312 KiB (~173 MiB) peak RSS in one Linux runner. **Never extrapolate to STANDARD/PREMIUM tuning or real PC.**
+- Windows-native Python 3.11 [40208598494](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40208598494), same executable SHA: **39 PASS /6 warnings** incl **actual `cmd.exe` running shipped `predict.cmd`** on trusted synthetic model, successful 3-row output and duplicate-output prevention.
+- Important **real bug caught in Windows**: `"%~dp0"` quotes folder with trailing slash, causing Python argparse to swallow `--input` and `--output` (CI 40208475083 failed 1/39). Corrected to `"%~dp0."`, GitHub Windows CI 39/39 confirmed. Function `windows_predict_command()` in `premium_delivery.py` is single source for the ZIP and the native CI check. Reusing the previous old ZIP would reintroduce bug; only newly generated ZIPs contain corrected script.
+- Chart policy changed: valid dates prioritize monthly trend over redundant fifth boxplot; no-date fallback box remains, sparse dataset still no filler. Synthetic chart `charts/05_trend.png` and all eleven updated PREMIUM PDF pages retrieved and visually inspected; Korean text and plot data looked readable, some ML/Premium pages still too empty.
+- Official Naver font license and embedding review `docs/qa/FONT_LICENSE_REVIEW.md`: SIL OFL1.1, PDF embedding commercial use supported, no raw TTF bundle. Remaining dependency/version/license review.
+- Windows owner helper script `scripts/windows_release_qa.ps1` now includes `tests/test_p6_windows_compat.py` and chart-policy tests; command is NOT known to have been run on the owner's physical PC.
+- Historical P6B documentation `docs/qa/P6_RELEASE.md` appended with objective tests, initial CMD failure/correction and Windows/PDF caveats.
+- **P6 still IN PROGRESS**, exact strict progress **5/7 (71%)**, ALL SKUs NOT SELLABLE. Next READY `AUTO-KM-P6C` in `docs/dispatch/ACTIVE_TASK.md`: report page density, GUI/first install, STANDARD/PREMIUM performance/memory caps, stable dependencies, tier-specific go/no-go; owner Windows/browser cannot be marked passed absent direct evidence. Original main remains unchanged.
