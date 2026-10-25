@@ -58,7 +58,7 @@ form.addEventListener("submit",async(e)=>{
    const url=URL.createObjectURL(blob);
    const link=document.createElement("a");link.href=url;link.download="automl_basic_mvp.zip";
    document.body.append(link);link.click();link.remove();
-   URL.revokeObjectURL(url);
+   window.setTimeout(()=>URL.revokeObjectURL(url),5000);
    status.textContent="ZIP 다운로드 요청이 완료되었습니다. 파일 내용과 분석 한계를 확인하세요.";
  }catch(err){status.textContent="처리 실패: "+String(err.message||err);}
  finally{button.disabled=false;}
