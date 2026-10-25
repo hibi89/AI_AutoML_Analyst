@@ -10,6 +10,7 @@ on:
       - "tests/**"
       - "scripts/create_basic_preview.py"
       - "scripts/p6_benchmark.py"
+      - "scripts/p6c_model_benchmark.py"
       - "requirements-ci.txt"
       - ".github/workflows/baseline-smoke.yml"
   workflow_dispatch:
@@ -56,5 +57,14 @@ jobs:
         with:
           name: p6-synthetic-performance
           path: ci-benchmarks/p6_basic_20000x50.json
+          if-no-files-found: error
+          retention-days: 7
+      - name: Benchmark real CV and holdout (STANDARD and PREMIUM)
+        run: python -m scripts.p6c_model_benchmark
+      - name: Upload ML training time and RSS
+        uses: actions/upload-artifact@v4
+        with:
+          name: p6c-synthetic-ml-performance
+          path: ci-benchmarks/p6c_model_120_400.json
           if-no-files-found: error
           retention-days: 7
