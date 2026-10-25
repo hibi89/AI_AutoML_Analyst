@@ -152,6 +152,15 @@ def _append_ml_pdf(original: bytes, analysis: dict, chart_png: bytes) -> bytes:
         para("방법상 한계", "head"),
         para("무작위 분할은 반복 개인·미래 기록의 독립성을 보장하지 않습니다. "
              "그룹/시점에 따른 편향이나 목표 정보 누수는 추가 검토해야 합니다."),
+        Spacer(1, 15),
+        para("검증 데이터 구성", "head"),
+        para(f"전체 모델 비교 대상으로 사용된 행: {analysis['train_rows']:,}개 / "
+             f"최종 독립 평가 전까지 제외한 행: {analysis['holdout_rows']:,}개"),
+        para(f"데이터 분할 정책: {analysis['split_policy']} / "
+             f"CV 분할 횟수: {analysis['cv_splits']} / "
+             f"기준 지표: {analysis['primary_metric']}"),
+        para("모형 학습·전처리는 각 학습 부분집합에서만 적합합니다. "
+             "동일한 모델 계열이라도 추출 시점·반복 관측에 따라 오차가 달라질 수 있습니다.", "small"),
         PageBreak(),
         para("모델 비교 결과", "title"),
         para(f"주요 지표: {p} — 값이 클수록 좋음", "small"),
@@ -168,6 +177,8 @@ def _append_ml_pdf(original: bytes, analysis: dict, chart_png: bytes) -> bytes:
         para("독립 검증 및 해석", "title"),
         para(f"CV로 선택한 모델: {analysis['selected_model']}"),
         para(f"독립 검증 {p}: 선택 모델 {metrics[p]:.4f} / Dummy {dummy[p]:.4f}"),
+        para(f"선택 모델 − Dummy 차이: {metrics[p] - dummy[p]:+.4f} ({p}, 동일 분리 데이터)"),
+        para("차이가 양수여도 통계적 유의성이나 미래 일반화가 자동으로 입증되지는 않습니다.", "small"),
         para(f"CV 기준 Dummy 초과: {'예' if analysis['cv_beats_dummy'] else '아니오'} / "
              f"독립 검증 Dummy 초과: {'예' if analysis['holdout_beats_dummy'] else '아니오'}"),
         para("독립 검증 지표 상세", "head"),
