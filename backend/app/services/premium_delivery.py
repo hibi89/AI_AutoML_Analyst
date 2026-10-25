@@ -139,10 +139,12 @@ def build_premium_zip(
     model, raw_schema = _final_refit(df, analysis)
     model_data = sio.dumps(model)
     unknown_types = sio.get_untrusted_types(data=model_data)
-    if unknown_types:
+    allowed_types = {"numpy.dtype"}  # Explicitly reviewed NumPy scalar dtype metadata.
+    forbidden = set(unknown_types) - allowed_types
+    if forbidden:
         raise ValueError(
             "skops requires unapproved model types. No unsafe model bundle will be generated: "
-            + ", ".join(unknown_types[:5])
+            + ", ".join(sorted(forbidden)[:5])
         )
     schema = {
         "format": "automl-premium-v1",
