@@ -1,0 +1,215 @@
+"""STANDARD deliverable: P3 BASIC pages + independent, CV-selected ML evaluation."""
+from __future__ import annotations
+
+from io import BytesIO, StringIO
+from zipfile import ZIP_DEFLATED, ZipFile
+import csv
+import hashlib
+import json
+from xml.sax.saxutils import escape
+
+import pandas as pd
+
+from backend.app.services.basic_report import _csv_safe, build_basic_zip
+from backend.app.services.basic_p3 import _korean_font
+from backend.app.services.standard_engine import run_standard
+
+
+def _comparison_plot(analysis: dict) -> bytes:
+    import matplotlib
+    matplotlib.use("Agg")
+    from matplotlib import pyplot as plt
+
+    rows = [r for r in analysis["models"] if r["status"] == "success"]
+    fig, ax = plt.subplots(figsize=(8, 4.5))
+    try:
+        names = [r["model"].replace("_classifier", "").replace("_regressor", "") for r in rows]
+        vals = [r["cv_primary"] for r in rows]
+        bars = ax.barh(names, vals)
+        ax.invert_yaxis()
+        ax.set_xlabel(f"Training-CV {analysis['primary_metric']} (higher is better)")
+        ax.set_title("Model comparison: Dummy + up to 3 challengers")
+        ax.axvline(0, linewidth=0.75, color="black")
+        for i, rect in enumerate(bars):
+            if rows[i]["role"] == "baseline":
+                rect.set_hatch("//")
+        fig.tight_layout()
+        buf = BytesIO()
+        fig.savefig(buf, format="png", dpi=130)
+        return buf.getvalue()
+    finally:
+        plt.close(fig)
+
+
+def _append_ml_pdf(original: bytes, analysis: dict, chart_png: bytes) -> bytes:
+    from reportlab.lib import colors
+    from reportlab.lib.enums import TA_LEFT
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.styles import ParagraphStyle
+    from reportlab.lib.utils import ImageReader
+    from reportlab.platypus import (
+        SimpleDocTemplate, Paragraph, Spacer, PageBreak, Image, Table, TableStyle,
+    )
+    from pypdf import PdfReader, PdfWriter
+
+    font = _korean_font()
+    styles = {
+        "title": ParagraphStyle("s_title", fontName=font, fontSize=19, leading=26,
+                                textColor=colors.HexColor("#153d5c"), spaceAfter=18),
+        "head": ParagraphStyle("s_head", fontName=font, fontSize=12, leading=19,
+                               textColor=colors.HexColor("#135e8a"), spaceAfter=12),
+        "body": ParagraphStyle("s_body", fontName=font, fontSize=9.8, leading=17,
+                               spaceAfter=11, textColor=colors.HexColor("#253846")),
+        "small": ParagraphStyle("s_small", fontName=font, fontSize=8.4, leading=13,
+                                spaceAfter=7, textColor=colors.HexColor("#526778")),
+    }
+    def para(text, style="body"):
+        return Paragraph(escape(str(text)), styles[style])
+    def footer(c, doc):
+        c.saveState()
+        c.setFillColor(colors.HexColor("#647d8c"))
+        c.setFont(font, 8)
+        c.drawString(45, 31, "AI AutoML Analyst  |  STANDARD 모델 검증")
+        c.drawRightString(A4[0] - 45, 31, f"ML {doc.page}")
+        c.restoreState()
+
+    main_rows = [["후보 모델", "유형", "CV 평균", "CV 표준편차", "상태"]]
+    for r in analysis["models"]:
+        name = r["model"].replace("_classifier", "").replace("_regressor", "")
+        main_rows.append([
+            name[:22], "기준선" if r["role"] == "baseline" else "비교 모델",
+            f"{r['cv_primary']:.4f}" if r["cv_primary"] is not None else "-",
+            f"{r['cv_std']:.4f}" if r["cv_std"] is not None else "-",
+            "성공" if r["status"] == "success" else "제외",
+        ])
+    table = Table(main_rows, colWidths=[177, 82, 72, 81, 65], repeatRows=1)
+    table.setStyle(TableStyle([
+        ("FONTNAME", (0, 0), (-1, -1), font), ("FONTSIZE", (0, 0), (-1, -1), 8),
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#dcecf5")),
+        ("GRID", (0, 0), (-1, -1), 0.3, colors.HexColor("#cbdde6")),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("TOPPADDING", (0, 0), (-1, -1), 9),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 9),
+    ]))
+
+    metrics = analysis["selected_holdout_metrics"]
+    dummy = analysis["dummy_holdout_metrics"]
+    p = analysis["primary_metric"]
+    story = [
+        para("STANDARD — 모델 학습 및 검증", "title"),
+        para("검증 설계", "head"),
+        para(f"목표 변수: {analysis['target_column']} / 문제 유형: {analysis['task_type']}"),
+        para(f"분할 방식: {analysis['split_policy']} / 학습: {analysis['train_rows']}행 / "
+             f"독립 검증: {analysis['holdout_rows']}행"),
+        para(f"학습 파티션 내 교차검증 {analysis['cv_splits']}회. "
+             "전처리 및 모델 적합은 교차검증 각 학습 폴드 안에서만 수행했습니다."),
+        para("비교 모델은 최대 3종이며 Dummy는 별도의 무기술 기준선입니다. "
+             "모델 선발은 CV 평균 지표만으로 완료한 후 독립 검증 데이터에 단 한 번 평가합니다."),
+        para("분류: 가중 F1 / 회귀: R²를 주요 선발 지표로 사용했습니다.", "small"),
+        Spacer(1, 16),
+        para("방법상 한계", "head"),
+        para("무작위 분할은 반복 개인·미래 기록의 독립성을 보장하지 않습니다. "
+             "그룹/시점에 따른 편향이나 목표 정보 누수는 추가 검토해야 합니다."),
+        PageBreak(),
+        para("모델 비교 결과", "title"),
+        para(f"주요 지표: {p} — 값이 클수록 좋음", "small"),
+        table,
+        Spacer(1, 20),
+    ]
+    image = Image(BytesIO(chart_png))
+    image.drawWidth, image.drawHeight = 464, 261
+    story.extend([
+        image,
+        para("막대는 학습 파티션 CV 평균입니다. Dummy 기준선과 비교 모델은 "
+             "동일한 학습/검증 폴드로 평가했습니다.", "small"),
+        PageBreak(),
+        para("독립 검증 및 해석", "title"),
+        para(f"CV로 선택한 모델: {analysis['selected_model']}"),
+        para(f"독립 검증 {p}: 선택 모델 {metrics[p]:.4f} / Dummy {dummy[p]:.4f}"),
+        para(f"CV 기준 Dummy 초과: {'예' if analysis['cv_beats_dummy'] else '아니오'} / "
+             f"독립 검증 Dummy 초과: {'예' if analysis['holdout_beats_dummy'] else '아니오'}"),
+        para("독립 검증 지표 상세", "head"),
+    ])
+    for metric in metrics:
+        story.append(para(f"{metric}: 선택 모델 {metrics[metric]:.4f}, Dummy {dummy[metric]:.4f}"))
+    story.extend([Spacer(1, 8), para("유의사항", "head")])
+    for w in analysis["warnings"][:6]:
+        story.append(para("• " + w, "small"))
+    story.append(para("본 결과는 기술적 탐색·비교를 위한 것으로 계약상 예측 정확도 또는 미래 성과를 보장하지 않습니다.", "small"))
+
+    extra = BytesIO()
+    doc = SimpleDocTemplate(extra, pagesize=A4, leftMargin=46, rightMargin=46,
+                            topMargin=50, bottomMargin=55,
+                            title="STANDARD ML evaluation",
+                            author="AI AutoML Analyst")
+    doc.build(story, onFirstPage=footer, onLaterPages=footer)
+    writer = PdfWriter()
+    writer.append(PdfReader(BytesIO(original)))
+    writer.append(PdfReader(BytesIO(extra.getvalue())))
+    out = BytesIO()
+    writer.write(out)
+    return out.getvalue()
+
+
+def build_standard_zip(
+    df: pd.DataFrame,
+    target_column: str,
+    task_type: str | None = None,
+    split_policy: str = "random",
+    group_column: str | None = None,
+    time_column: str | None = None,
+    cv: int = 3,
+) -> bytes:
+    analysis = run_standard(
+        df, target_column, task_type, split_policy,
+        group_column, time_column, cv,
+    )
+    source_zip = build_basic_zip(df)
+    with ZipFile(BytesIO(source_zip)) as z:
+        parts = {name: z.read(name) for name in z.namelist()
+                 if name not in {"manifest.json", "report.pdf", "README.txt"}}
+        base_pdf = z.read("report.pdf")
+    chart = _comparison_plot(analysis)
+    parts["charts/06_ml_comparison.png"] = chart
+    parts["report.pdf"] = _append_ml_pdf(base_pdf, analysis, chart)
+    public = {k: v for k, v in analysis.items()
+              if k not in {"train_original_indices", "holdout_original_indices",
+                           "train_group_values", "holdout_group_values"}}
+    parts["standard_summary.json"] = json.dumps(
+        public, ensure_ascii=False, indent=2, allow_nan=False
+    ).encode("utf-8")
+    buffer = StringIO()
+    writer = csv.writer(buffer)
+    writer.writerow(["model", "role", "status", "cv_primary", "cv_std", "error"])
+    for row in analysis["models"]:
+        writer.writerow([
+            _csv_safe(row["model"]), row["role"], row["status"],
+            row["cv_primary"] if row["cv_primary"] is not None else "",
+            row["cv_std"] if row["cv_std"] is not None else "", row["error"] or "",
+        ])
+    parts["model_scores.csv"] = ("\ufeff" + buffer.getvalue()).encode("utf-8")
+    parts["README.txt"] = (
+        "AI AutoML Analyst STANDARD\n"
+        "report.pdf: BASIC 품질 진단 + STANDARD 모델 평가 결과.\n"
+        "model_scores.csv: 학습 데이터 내부 CV 평균/편차.\n"
+        "standard_summary.json: 선정 모델과 holdout 평가, 누수 경고.\n"
+        "Dummy 기준선은 3종 비교 모델에 포함되지 않습니다.\n"
+        "독립 검증 결과로 모델을 다시 고르지 않았습니다.\n"
+        "고객의 원본 CSV 또는 개별 관측 레코드는 포함하지 않습니다.\n"
+    ).encode("utf-8")
+    manifest = {
+        "format": "standard-v1", "tier": "STANDARD",
+        "no_raw_dataset": True,
+        "files": [
+            {"path": name, "bytes": len(payload), "sha256": hashlib.sha256(payload).hexdigest()}
+            for name, payload in sorted(parts.items())
+        ],
+    }
+    parts["manifest.json"] = json.dumps(
+        manifest, ensure_ascii=False, indent=2
+    ).encode("utf-8")
+    output = BytesIO()
+    with ZipFile(output, "w", compression=ZIP_DEFLATED) as z:
+        for name, payload in parts.items():
+            z.writestr(name, payload)
+    return output.getvalue()
