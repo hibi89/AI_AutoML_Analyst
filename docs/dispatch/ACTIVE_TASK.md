@@ -25,3 +25,13 @@ next_after_success: P7 Kmong listing DRAFT only after tier-specific release crit
 
 ## Reentry for next "ㄱ"
 Fetch live GitHub dev HEAD, this ACTIVE_TASK, HANDOFF, STATUS, prior QA, code, actual latest CI runs. Execute next prioritized task directly; do not ask already-known details or claim asynchronous work. Maintain strict validation percentage rather than subjective impressions.
+
+
+## P6E1 executed / P6E2 READY (2026-10-26 KST)
+PREMIUM last two pages now use real model/CV/untouched-holdout/Dummy numbers and compact runbook, schema counts, ZIP inventory, privacy/provenance caveats; no invented customer scores. Added P6E Korean long-header/privacy/two-page layout regression. [Linux Actions 40212675598](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40212675598) on code+test SHA `08dd90f244dc114f045284eb6d6f2b513d664b9b`: **91 PASS /1 Windows-only SKIP/34 warnings**, BASIC 6 / STANDARD 9 / PREMIUM 11 synthetic PDF pages generated. [Windows 40212557635](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40212557635) and [Chromium 40212557611](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40212557611) SUCCESS at executable SHA `38f68e9064acb3fc4d87193062748249a9026172`. PDF raster page creation verified; human visual signoff on these new pages NOT YET. Physical user's Windows Chrome/Edge/first-install/ZIP extraction still NOT TESTED. No external server deployment or customer data. P6E still IN PROGRESS; strict 5/7 (71%), all SKUs NO-GO. See `docs/qa/P6E_RELEASE.md`.
+
+### Next actionable task: AUTO-KM-P6E2
+1. Add negative tests for malicious/malformed CSV/XLSX, CSV formula escape, artifact member disclosure, model provenance warnings and safe failure; specifically distinguish safe synthetic categories from confidential labels. Inspect actual ZIP/PDF names rather than assume `no_raw_dataset=true` proves privacy.
+2. Review the new 11-page PREMIUM synthetic PDF visually from the latest Actions artifact; test rich vs sparse datasets, long header rendering and layout. Do not mistake raster success for owner design approval.
+3. Audit package transitive licenses/vulnerabilities where trustworthy evidence is accessible without sending customer data; record explicit not-checked fields.
+4. Owner physical Windows/Chrome/Edge flow with `scripts/windows_release_qa.ps1 -OpenBrowser` is still NOT RUN. No production, sale, merge, or acceptance claim. Update docs and CI after implementation.
