@@ -1,0 +1,16 @@
+# Python 3.11 exact DIRECT package versions from successful P6C Linux CI 40209596783.
+# Cross-platform transitive package resolution and license review still require tests.
+fastapi==0.162.0
+uvicorn==0.54.0
+pandas==2.3.3
+numpy==2.4.6
+scikit-learn==1.9.1
+python-multipart==0.0.32
+httpx==0.28.1
+pytest==9.1.1
+matplotlib==3.11.2
+reportlab==4.5.1
+pypdf==6.21.2
+Pillow==12.3.0
+skops==0.16.0
+openpyxl==3.1.5
