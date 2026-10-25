@@ -173,6 +173,8 @@ def _pdf(summary: dict, charts: list[tuple[str, bytes, str]]) -> bytes:
         w, h = A4
         canvas.setStrokeColor(colors.HexColor("#d4e3eb"))
         canvas.line(44, 45, w-44, 45)
+        canvas.setFillColor(colors.HexColor("#087f8c"))
+        canvas.rect(44, h-33, 45, 3, stroke=0, fill=1)
         canvas.setFont(font, 8)
         canvas.setFillColor(colors.HexColor("#6c8492"))
         canvas.drawString(44, 31, "AI AutoML Analyst  |  BASIC 데이터 진단 보고서")
@@ -180,18 +182,46 @@ def _pdf(summary: dict, charts: list[tuple[str, bytes, str]]) -> bytes:
         canvas.restoreState()
 
     story = [
-        Spacer(1, 28),
-        paragraph("AI AutoML Analyst", "small"),
+        Spacer(1, 16),
+        paragraph("AI AUTOML ANALYST   /   DATA INTELLIGENCE", "small"),
         paragraph("데이터 진단 및 핵심 인사이트", "title"),
-        paragraph("BASIC | 탐색적 데이터 분석"),
+        paragraph("BASIC  /  EXPLORATORY DATA REPORT", "small"),
         paragraph("이 보고서는 제공된 표형 데이터의 품질 및 관측 분포를 요약합니다. "
                   "ML 모델 학습이나 미래 예측, 인과관계 판단은 포함하지 않습니다.", "small"),
         Spacer(1, 14),
         heading("핵심 지표"),
     ]
-    for m in summary["metrics"]:
-        story.append(paragraph(f"• {m['name']}: {m['value']} ({m['basis']})"))
-    story.extend([Spacer(1, 15), heading("주요 발견")])
+    # Compact KPI scorecards make the first page useful at a glance.
+    metrics = summary["metrics"]
+    rows_kpi = []
+    for i in range(0, len(metrics), 2):
+        pair = metrics[i:i+2]
+        cells = []
+        for metric in pair:
+            label = paragraph(metric["name"] + "  ·  " + metric["basis"], "small")
+            value_style = ParagraphStyle(
+                f"kpi_value_{i}_{len(cells)}",
+                parent=styles["section"], fontSize=19, leading=27,
+                textColor=colors.HexColor("#173e58"), spaceAfter=1,
+            )
+            value = Paragraph(escape(str(metric["value"])), value_style)
+            cells.append([label, value])
+        while len(cells) < 2:
+            cells.append("")
+        rows_kpi.append(cells)
+    kpi_table = Table(rows_kpi, colWidths=[237, 237], hAlign="LEFT")
+    kpi_table.setStyle(TableStyle([
+        ("BACKGROUND", (0,0), (-1,-1), colors.HexColor("#F0F6F8")),
+        ("BOX", (0,0), (-1,-1), .5, colors.HexColor("#D5E7EA")),
+        ("INNERGRID", (0,0), (-1,-1), 4, colors.white),
+        ("TOPPADDING", (0,0), (-1,-1), 8),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 8),
+        ("LEFTPADDING", (0,0), (-1,-1), 14),
+        ("RIGHTPADDING", (0,0), (-1,-1), 12),
+        ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+    ]))
+    story.append(kpi_table)
+    story.extend([Spacer(1, 17), heading("주요 발견")])
     for line in summary["findings"][:3]:
         story.append(paragraph("• " + line))
 
@@ -216,9 +246,14 @@ def _pdf(summary: dict, charts: list[tuple[str, bytes, str]]) -> bytes:
     story.append(table)
     if len(summary["quality"]) > 18:
         story.append(paragraph("전체 열의 품질 진단은 summary.csv에 포함됩니다.", "small"))
-    story.append(Spacer(1, 20))
-    story.append(paragraph("수치형의 극단값·결측·중복은 데이터 오류가 아닐 수도 있습니다. "
-                           "원본 수집/측정 단위를 반드시 확인하세요.", "small"))
+    story.append(Spacer(1, 18))
+    story.append(heading("분석 해석의 전제"))
+    story.append(paragraph("관측 가능한 값만 정리했으며 누락, 극단값, 중복 기록을 오류로 단정하지 않습니다. "
+                           "자료의 수집 과정과 숫자 단위는 의뢰인이 확인해야 합니다.", "small"))
+    story.append(paragraph("데이터의 여러 열을 함께 살펴볼 경우에도 관측 상관관계가 원인이나 "
+                           "미래 변화에 대한 근거는 아닙니다.", "small"))
+    story.append(paragraph(f"선별된 그래프 {len(charts)}개는 다음 페이지에 수록되며, "
+                           "원본 데이터 행 및 실제 범주 이름은 이미지에 포함하지 않습니다.", "small"))
 
     chart_labels = {
         "distribution": "수치형 분포", "missing": "결측 현황",
@@ -235,7 +270,7 @@ def _pdf(summary: dict, charts: list[tuple[str, bytes, str]]) -> bytes:
             story.append(paragraph(f"{chart_index + 1:02d}  {label}", "small"))
             img = Image(BytesIO(png))
             # The source chart is 8 x 4.5 inches; preserve its aspect ratio.
-            img.drawWidth, img.drawHeight = 460, 258.75
+            img.drawWidth, img.drawHeight = 455, 254
             story.extend([img, Spacer(1, 7), paragraph(note, "small"),
                           Spacer(1, 10)])
 
