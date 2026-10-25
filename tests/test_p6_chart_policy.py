@@ -50,4 +50,4 @@ def test_overlong_or_control_character_headers_rejected_before_render():
     with pytest.raises(ValueError, match="at most 160"):
         validate_basic_frame(pd.DataFrame({"가" * 161: [1, 2, 3]}))
     with pytest.raises(ValueError, match="control characters"):
-        validate_basic_frame(pd.DataFrame({"name\\ninvalid": [1, 2, 3]}))
+        validate_basic_frame(pd.DataFrame({"name\ninvalid": [1, 2, 3]}))
