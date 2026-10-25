@@ -557,3 +557,55 @@ async def basic_report_download(request: Request, file: UploadFile = File(...)):
         media_type="application/zip",
         headers={"Content-Disposition": 'attachment; filename="automl_basic_mvp.zip"'},
     )
+
+
+# STANDARD commercial development preview: synthetic/authorized CSV only.
+# Reuse BASIC localhost/Host/Origin access guard; legacy APIs remain unsafe publicly.
+@app.get("/standard-mvp")
+def standard_mvp_page(request: Request):
+    from fastapi.responses import FileResponse
+
+    _require_local_mvp_request(request)
+    html_path = Path(__file__).resolve().parents[2] / "frontend" / "standard_mvp.html"
+    return FileResponse(html_path, media_type="text/html; charset=utf-8")
+
+
+@app.post("/api/standard-report")
+async def standard_report_download(
+    request: Request,
+    file: UploadFile = File(...),
+    target_column: str = Form(...),
+    task_type: str = Form("auto"),
+    split_policy: str = Form("random"),
+    group_column: str = Form(""),
+    time_column: str = Form(""),
+    cv: int = Form(3),
+):
+    from fastapi.responses import Response
+    from backend.app.services.basic_report import MAX_UPLOAD_BYTES
+    from backend.app.services.standard_delivery import build_standard_zip
+
+    _require_local_mvp_request(request)
+    if not (file.filename or "").lower().endswith(".csv"):
+        raise HTTPException(status_code=400, detail="STANDARD accepts CSV only.")
+    content = await file.read(MAX_UPLOAD_BYTES + 1)
+    if len(content) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="CSV must be at most 30 MiB.")
+    if not content:
+        raise HTTPException(status_code=400, detail="Empty CSV.")
+    try:
+        data = _read_csv_from_bytes(content)
+        payload = build_standard_zip(
+            data, target_column=target_column,
+            task_type=_normalize_task_type(task_type),
+            split_policy=split_policy,
+            group_column=group_column.strip() or None,
+            time_column=time_column.strip() or None,
+            cv=cv,
+        )
+    except (ValueError, pd.errors.ParserError, UnicodeError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return Response(
+        content=payload, media_type="application/zip",
+        headers={"Content-Disposition": 'attachment; filename="automl_standard_preview.zip"'},
+    )
