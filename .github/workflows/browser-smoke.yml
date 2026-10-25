@@ -8,6 +8,7 @@ on:
       - "frontend/**"
       - "scripts/p6_browser_smoke.py"
       - "requirements-ci.txt"
+      - "requirements-verified-py311.txt"
       - "requirements-browser.txt"
       - ".github/workflows/browser-smoke.yml"
   workflow_dispatch:
@@ -23,12 +24,12 @@ jobs:
         with:
           python-version: "3.11"
           cache: pip
-          cache-dependency-path: requirements-ci.txt
+          cache-dependency-path: requirements-verified-py311.txt
       - name: Install Korean font, Python and browser
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq fonts-nanum
-          python -m pip install -r requirements-ci.txt -r requirements-browser.txt
+          python -m pip install -r requirements-verified-py311.txt -r requirements-browser.txt
           python -m playwright install --with-deps chromium
       - name: Upload and download all SKU ZIPs through Chromium
         run: python -m scripts.p6_browser_smoke
