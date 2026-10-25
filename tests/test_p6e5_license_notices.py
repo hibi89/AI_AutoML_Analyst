@@ -4,7 +4,9 @@ from __future__ import annotations
 from hashlib import sha256
 from pathlib import Path
 
-from scripts.p6e5_license_notices import identify_license, notice_candidates, _UPSTREAM
+from scripts.p6e5_license_notices import (
+    identify_license, license_complexity_flags, notice_candidates, _UPSTREAM,
+)
 
 
 def test_generic_classifier_not_spdx_proof():
@@ -13,6 +15,22 @@ def test_generic_classifier_not_spdx_proof():
     assert identify_license("MIT", "", [])
     assert identify_license("", "", ["OSI Approved :: MIT License"])
     assert identify_license("", "Apache-2.0", [])
+
+
+def test_identified_license_may_still_require_obligation_review():
+    assert "FILE_LEVEL_COPYLEFT_NOTICE_REVIEW" in license_complexity_flags(
+        "MPL-2.0", "", []
+    )
+    assert "DUAL_LICENSE_CHOICE_REVIEW" in license_complexity_flags(
+        "", "Dual License", []
+    )
+    assert "COMPOSITE_SPDX_OBLIGATION_REVIEW" in license_complexity_flags(
+        "MIT OR Apache-2.0", "", []
+    )
+    assert "CUSTOM_OR_MULTIPART_LICENSE_TEXT_REVIEW" in license_complexity_flags(
+        "", "License agreement for matplotlib", []
+    )
+    assert license_complexity_flags("MIT", "", []) == []
 
 
 def test_skops_exact_version_upstream_evidence_not_unbounded_override():
