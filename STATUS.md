@@ -3,7 +3,7 @@ Updated: 2026-10-25 KST
 Repository: `hibi89/AI_AutoML_Analyst`
 Development branch: `feature/kmong-v1`; preserved original `main@c80c874476f8d5deb4bf611761d89c6d72ca0a2d`
 Entry: `WORKER_START_HERE.md`
-Next: `docs/dispatch/ACTIVE_TASK.md` (AUTO-KM-P6 READY).
+Next: `docs/dispatch/ACTIVE_TASK.md` (AUTO-KM-P6B READY; P6 release still IN PROGRESS).
 
 ## LOCKED products and method
 One existing local-first Python/FastAPI/scikit-learn engine; original `main` untouched. BASIC **60,000 KRW** (quality/KPI/chart/insight/PDF/ZIP), STANDARD **150,000 KRW** (+ 3 non-Dummy models + Dummy baseline), PREMIUM **300,000 KRW** (+ 5 challengers, trusted model, same-schema repeat prediction). Frozen details in `REQUIREMENTS.md` and `docs/product/SKU_MATRIX.md`. MVP first, fill spec gaps, final QA; 2026-10-26 to 2026-10-28 is TARGET not guarantee. No actual paid sales or external hosting before release gates.
@@ -18,7 +18,7 @@ One existing local-first Python/FastAPI/scikit-learn engine; original `main` unt
 | P3 BASIC report/ZIP | **DONE — implementation gate** | Korean searchable PDF **6 pages** on rich synthetic input, **5 meaningful charts**, summary CSV/JSON, integrity-manifest ZIP; GitHub Actions [40202695270](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40202695270) **42 tests PASS**; all six rendered pages visually reviewed, no obvious clipping. Windows/client sale QA belongs to P6. `docs/qa/BASIC_P3.md`. |
 | P4 STANDARD | **DONE — implementation gate** | 3 non-Dummy + Dummy, train-only CV, independent holdout, random/group/time split, Korean 9-page PDF, ML scores CSV, ZIP. GitHub Actions [40204087390](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40204087390): **55 PASS**, 16 warnings, all 9 page previews reviewed. Windows/security release QA pending. |
 | P5 PREMIUM | **DONE — implementation gate** | 5 challengers + Dummy, top-two CV tuning, trusted skops model, exact-schema CSV repeat runner, 11-page Korean PDF and 20-file ZIP. Python 3.11 [CI 40205977563](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40205977563): **59 PASS, 19 warnings**, all 11-page synthetic previews reviewed. Windows native run + release safety pending. `docs/qa/PREMIUM_P5.md`. |
-| P6 release | **READY** | User-required commercial graph/report design polish FIRST; then safety, licensing, performance, font and actual Windows/browser/predict runner gates. `docs/dispatch/ACTIVE_TASK.md`. |
+| P6 release | **IN PROGRESS — NOT ACCEPTED** | Shared branded Korean graph engine/KPI PDF, localhost/Origin/Host and legacy-path lockdown, bounded CSV/XLSX, Windows QA script prepared. [CI 40207446007](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40207446007): **70 PASS / 25 warnings**. Real Windows/browser/predict.cmd, font rights, high-volume benchmark and final visual density still NOT VERIFIED; see `docs/qa/P6_RELEASE.md`. |
 | P7 listing | OPTIONAL FUTURE | Kmong sample/listing after sellable tier passes. |
 
 **Accepted implementation milestones:** **5 / 7 (71%)** P0, P2, P3, P4, P5. P1 HTTP/API implementation passes but real browser interaction is pending and P1 is not counted fully accepted. This is not the percentage of total source code written. **Sale-ready:** BASIC NO, STANDARD NO, PREMIUM NO.
@@ -31,6 +31,14 @@ One existing local-first Python/FastAPI/scikit-learn engine; original `main` unt
 - P5 last verified executable commit `f975364a8f1b13d0a7d0074b8932fb9f1ebcd712`; [CI 40205977563](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40205977563): **59 passed, 0 failed, 19 warnings**, with 11-page Korean synthetic PREMIUM report & ZIP. Model, exact schema prediction, SHA tamper guards, CV-only top-two tuning tested. Original `main` remains unchanged.
 - Premium generated synthetic `premium_synthetic_demo.zip` includes 20 files incl. `model_pipeline.skops`, schema, `predict.py`, `predict.cmd`, exact requirements, comparison charts, PDF, output templates and manifest. Final selected model `ridge_classifier` alpha 0.5 and second tuned model logistic C 1.6 in this synthetic run; not customer evidence.
 - The remote HEAD must be fetched each turn; the doc is not a self-updating reference.
+
+## P6 security and design partial implementation (2026-10-26 KST)
+- New shared `chart_design.py` (Korean descriptions, visual scorecard and high-resolution real aggregate charts) used in BASIC + downstream tiers; KPI card layout and expanded quality cautions. **11-page PREMIUM synthetic PDF rendered and visually inspected**; chart better than default Matplotlib, overall report whitespace still being refined.
+- Legacy absolute-path browse/scan/analyze APIs blocked globally; no wildcard CORS, local Host/IP/Origin enforcement; old direct CSV upload now bounded. This is a localhost boundary, **not production web security approval**.
+- New `tabular_input.py`: CSV and **first-sheet XLSX**, bounded ZIP expansion, read-only, cached formula values, 50-column and 20k-row limits. HTML upload copy updated.
+- `scripts/windows_release_qa.ps1` prepared but NOT executed on Windows. Real Windows native Python/Chrome/Edge/predict.cmd gate remains.
+- Verified application-code SHA `7bee655575b060a32a2dea1a4d69283343b3f267` via [70 PASS CI 40207446007](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40207446007) (25 warnings); only UI text and documentation commits follow. Live HEAD and latest Actions run always override this snapshot. Details: `docs/qa/P6_RELEASE.md`.
+- **P6 not accepted, sale-ready BASIC / STANDARD / PREMIUM all NO, strict milestone progress remains 5/7=71%.** Next task: AUTO-KM-P6B practical Windows/render/benchmark/licensing and release QA.
 
 ## Risks, limitations, action
 - Pre-existing folder/path APIs and broad CORS are unsafe on open networks; **NEVER host externally** until hardened. Current local route restrictions do not resolve legacy exposure.
