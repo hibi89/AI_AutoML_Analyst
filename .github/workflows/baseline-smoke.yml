@@ -40,7 +40,7 @@ jobs:
       - name: Original AutoML and BASIC MVP HTTP smoke
         run: python -m pytest -q tests
       - name: Create synthetic PDF and full-page raster previews
-        run: python scripts/create_basic_preview.py
+        run: python -m scripts.create_basic_preview
       - name: Upload synthetic visual review artifacts
         uses: actions/upload-artifact@v4
         with:
