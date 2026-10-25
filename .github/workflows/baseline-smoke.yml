@@ -11,6 +11,7 @@ on:
       - "scripts/create_basic_preview.py"
       - "scripts/p6_benchmark.py"
       - "scripts/p6c_model_benchmark.py"
+      - "scripts/p6c_environment_audit.py"
       - "requirements-ci.txt"
       - ".github/workflows/baseline-smoke.yml"
   workflow_dispatch:
@@ -66,5 +67,16 @@ jobs:
         with:
           name: p6c-synthetic-ml-performance
           path: ci-benchmarks/p6c_model_120_400_2000.json
+          if-no-files-found: error
+          retention-days: 7
+      - name: Collect reproducible dependency and license inventory
+        run: python -m scripts.p6c_environment_audit
+      - name: Upload exact resolved versions and license declarations
+        uses: actions/upload-artifact@v4
+        with:
+          name: p6c-verified-dependency-versions
+          path: |
+            ci-benchmarks/p6c_dependency_inventory.json
+            ci-benchmarks/p6c_resolved_requirements.txt
           if-no-files-found: error
           retention-days: 7
