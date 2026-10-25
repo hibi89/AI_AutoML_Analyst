@@ -54,12 +54,16 @@ def test_premium_full_zip_and_five_challengers(bundle):
         assert info["tier"] == "PREMIUM"
         assert info["challenger_budget"] == 5
         assert len(info["models"]) == 6
+        assert len(info["tuning_experiments"]) >= 1
+        assert len(info["tuning_experiments"]) <= 2
+        assert "selected_hyperparameters" in info
         assert len([m for m in info["models"] if m["role"] == "baseline"]) == 1
         assert len([m for m in info["models"] if m["role"] == "challenger"]) == 5
         assert info["holdout_used_in_selection"] is False
         assert len(PdfReader(BytesIO(z.read("report.pdf"))).pages) >= 10
         schema = json.loads(z.read("model_schema.json"))
         assert schema["raw_feature_columns"] == ["visits", "revenue", "region"]
+        assert schema["selected_hyperparameters"] == info["selected_hyperparameters"]
         assert b"\x80\x04" not in z.read("model_pipeline.skops")[:2]
         assert z.read("sample_input.csv").decode("utf-8-sig").strip() == "visits,revenue,region"
         assert z.read("sample_predictions.csv") == b"prediction\r\n"
