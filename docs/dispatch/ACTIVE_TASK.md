@@ -2,7 +2,7 @@
 Updated: 2026-10-26 KST
 status: READY
 target_branch: feature/kmong-v1
-task_id: AUTO-KM-P6E
+task_id: AUTO-KM-P6E3
 predecessor: P0 P2 P3 P4 P5 implementation DONE, P1 PARTIAL (Linux Chromium real browser proven; owner Windows unverified), P6A/B/C/D engineering work verified, P6 release still IN PROGRESS.
 next_after_success: P7 Kmong listing DRAFT only after tier-specific release criteria satisfied and owner approves.
 
@@ -35,3 +35,16 @@ PREMIUM last two pages now use real model/CV/untouched-holdout/Dummy numbers and
 2. Review the new 11-page PREMIUM synthetic PDF visually from the latest Actions artifact; test rich vs sparse datasets, long header rendering and layout. Do not mistake raster success for owner design approval.
 3. Audit package transitive licenses/vulnerabilities where trustworthy evidence is accessible without sending customer data; record explicit not-checked fields.
 4. Owner physical Windows/Chrome/Edge flow with `scripts/windows_release_qa.ps1 -OpenBrowser` is still NOT RUN. No production, sale, merge, or acceptance claim. Update docs and CI after implementation.
+
+
+## P6E2 DONE / P6E3 READY (2026-10-26 KST)
+
+
+## P6E2 verified security and visual QA (2026-10-26 KST)
+- Code changes: CSV parser input bound + safe error redaction, model CV error private-string redaction, XLSX duplicate/case-variant macro/external-link rejection; new `tests/test_p6e_adversarial.py`. All synthetic.
+- [Linux 40213253212](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40213253212) at `801c4ddad9db2644604c79b7fde8277fad53a085`: **100 PASS /1 Windows-only SKIP/41 warnings**; BASIC 6/STANDARD 9/PREMIUM 11 PDF pages. [Windows 40213192384](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40213192384) and [Chromium 40213192440](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40213192440) SUCCESS at implementation SHA `76e60f256ff1c479dd815722b7aee58c1d26f913` (tests-only later).
+- Downloaded/visually inspected 11-page P6E1 PREMIUM PDF: no obvious Korean glyph failure/clipping at montage resolution; page 5/6/7/10/11 whitespace persists, aesthetic signoff still pending. Checked CI pip freeze **46 packages**, direct license metadata only 14; actual CVE scanner NOT RUN; skops exact upstream license still review.
+- Tier readiness **BASIC NO / STANDARD NO / PREMIUM NO**; P1 PARTIAL (owner physical Windows browser NOT RUN), P6 IN PROGRESS; strict **5/7=71%**. See `docs/qa/P6E2_RELEASE.md`.
+- **Next READY AUTO-KM-P6E3:** free reproducible CVE/transitive-license scan and triage, malformed/wide/memory boundary QA, final PDF layout and owner Windows check. No public deploy, main merge, sales release, paid services, or customer data access.
+
+Execution sequence for next `ㄱ`: 1) check exact live branch and CI, 2) version-scope third-party audit (do not guarantee zero vulnerabilities if tool not run), 3) adversarial near-boundary workload tests and truthful failure behavior, 4) new synthetic visual review, 5) update docs. Physical owner Windows/Chrome/Edge remains owner-action REQUIRED; P7 and P6 sale-go still blocked.
