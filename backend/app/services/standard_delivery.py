@@ -181,6 +181,31 @@ def _append_ml_pdf(original: bytes, analysis: dict, chart_png: bytes) -> bytes:
         Spacer(1, 8), method_table, Spacer(1, 9),
         para("모형 학습·전처리는 각 학습 부분집합에서만 적합합니다. "
              "동일한 모델 계열이라도 추출 시점·반복 관측에 따라 오차가 달라질 수 있습니다.", "small"),
+    ]
+    successes = sum(row["status"] == "success" for row in analysis["models"])
+    compared = len(analysis["models"])
+    # Measured train-CV scores; not independent holdout claims.
+    cv_audit = [
+        ["CV 검증 스냅샷", "학습 구간 관측치"],
+        ["실행 결과", f"{successes}/{compared} 모델 CV 성공 (Dummy 포함)"],
+        ["선정 모델 CV", f"{analysis['selected_model']} · {analysis['selected_cv_score']:.4f} ({p})"],
+        ["Dummy 기준선 CV", f"{analysis['dummy_model']} · {analysis['dummy_cv_score']:.4f} ({p})"],
+    ]
+    cv_audit_table = Table(cv_audit, colWidths=[130, 347], hAlign="LEFT")
+    cv_audit_table.setStyle(TableStyle([
+        ("FONTNAME", (0,0), (-1,-1), font),
+        ("FONTSIZE", (0,0), (-1,-1), 8.4),
+        ("BACKGROUND", (0,0), (-1,0), colors.HexColor("#DCECF5")),
+        ("ROWBACKGROUNDS", (0,1), (-1,-1), [colors.white, colors.HexColor("#F4F8FA")]),
+        ("LINEBELOW", (0,0), (-1,-2), .3, colors.HexColor("#D6E4EB")),
+        ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+        ("TOPPADDING", (0,0), (-1,-1), 6),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 6),
+    ]))
+    story.extend([
+        Spacer(1, 9), para("실제 학습 구간 CV 진단", "head"), cv_audit_table,
+        para("CV 점수는 모델을 고른 학습 구간의 평가입니다. "
+             "독립 holdout 결과와 동일하지 않으며 과적합 가능성을 검토해야 합니다.", "small"),
         PageBreak(),
         para("모델 비교 결과", "title"),
         para(f"주요 지표: {p} — 값이 클수록 좋음", "small"),
