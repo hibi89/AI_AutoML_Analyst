@@ -26,6 +26,9 @@ def validate_basic_frame(df: pd.DataFrame) -> None:
         raise ValueError("Duplicate column names are not supported.")
     if not all(isinstance(x, str) and x.strip() for x in df.columns):
         raise ValueError("All columns must have non-empty text names.")
+    # Extremely long/control-character headers can corrupt charts or PDF layout.
+    if any(len(name) > 160 or any(ord(ch) < 32 for ch in name) for name in df.columns):
+        raise ValueError("Column headers must be at most 160 characters and contain no control characters.")
 
 
 def _csv_safe(value: object) -> str:
