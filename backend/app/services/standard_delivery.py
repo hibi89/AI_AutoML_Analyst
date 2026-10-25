@@ -103,7 +103,7 @@ def _append_ml_pdf(original: bytes, analysis: dict, chart_png: bytes) -> bytes:
              f"독립 검증: {analysis['holdout_rows']}행"),
         para(f"학습 파티션 내 교차검증 {analysis['cv_splits']}회. "
              "전처리 및 모델 적합은 교차검증 각 학습 폴드 안에서만 수행했습니다."),
-        para("비교 모델은 최대 3종이며 Dummy는 별도의 무기술 기준선입니다. "
+        para(f"비교 모델은 최대 {analysis.get('challenger_budget', 3)}종이며 Dummy는 별도의 무기술 기준선입니다. "
              "모델 선발은 CV 평균 지표만으로 완료한 후 독립 검증 데이터에 단 한 번 평가합니다."),
         para("분류: 가중 F1 / 회귀: R²를 주요 선발 지표로 사용했습니다.", "small"),
         Spacer(1, 16),
