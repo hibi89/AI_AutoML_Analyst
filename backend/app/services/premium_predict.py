@@ -49,12 +49,14 @@ def _model_and_schema(folder: Path):
         raise ValueError("Python minor version differs from the model producer.")
     # Reject all unapproved object types. Do not auto-trust the archive's own list.
     unknown = sio.get_untrusted_types(data=model)
-    if unknown:
+    allowed_types = {"numpy.dtype"}  # Audited built-in type only; no archive-defined trust lists.
+    forbidden = set(unknown) - allowed_types
+    if forbidden:
         raise ValueError(
             "Model references unapproved types and will not be loaded: "
-            + ", ".join(unknown[:5])
+            + ", ".join(sorted(forbidden)[:5])
         )
-    return sio.loads(model, trusted=[]), schema
+    return sio.loads(model, trusted=sorted(allowed_types & set(unknown))), schema
 
 
 def _load_input(path: Path, schema: dict) -> pd.DataFrame:
