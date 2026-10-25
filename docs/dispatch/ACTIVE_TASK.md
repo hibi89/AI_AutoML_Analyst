@@ -1,25 +1,27 @@
-# ACTIVE TASK — P6D tier-specific last-mile release checks
+# ACTIVE TASK — AUTO-KM-P6E final product acceptance gate
 Updated: 2026-10-26 KST
 status: READY
-task_id: AUTO-KM-P6D
 target_branch: feature/kmong-v1
-predecessor: P0/P2/P3/P4/P5 implementation DONE; P1 PARTIAL Linux Chromium real browser passed (owner Windows pending); P6A/P6B/P6C technical checks passed but P6 release **NOT ACCEPTED**.
+task_id: AUTO-KM-P6E
+predecessor: P0 P2 P3 P4 P5 implementation DONE, P1 PARTIAL (Linux Chromium real browser proven; owner Windows unverified), P6A/B/C/D engineering work verified, P6 release still IN PROGRESS.
+next_after_success: P7 Kmong listing DRAFT only after tier-specific release criteria satisfied and owner approves.
 
-## Authoritative P6C evidence
-- [Linux Python 3.11 40210003500](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40210003500): **78 PASS/1 Windows-only SKIP/25 warnings**; normal synthetic PDF+ZIP, all 14 direct dependency versions pinned and pip check clean.
-- [Windows native 40210007786](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40210007786): **39 PASS**, exact pinned Python3.11 deps; actual trusted skops `cmd.exe` `predict.cmd` and collision refusal.
-- [Linux Chromium 40210012769](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40210012769): **BASIC/STANDARD/PREMIUM real browser file picker→click→download→verify ZIP all PASS**. Browser runs headless on Linux only; not owner's Windows.
-- [CI 40209596783](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40209596783) full baseline/pip+license inventory artifact, model benchmark: 2,000-row synthetic STD **~1.92s**, PREMIUM **~5.58s** (7 input features), not upper-limit capacity or real customer SLA. Direct dependency list pinned in `requirements-verified-py311.txt`.
-- Visually inspected 11-page PREMIUM PDF from final pinned preview artifact, Korean glyphs/plots visible; ML methodology now includes evidence table. Significant whitespace persists; cannot claim client design signoff.
-- User-local PowerShell `scripts/windows_release_qa.ps1 -OpenBrowser` launches uvicorn locally and opens all three pages after non-GUI preflight, but **not actually run on owner's PC**. No main merge or hosting.
-- Source documents `docs/qa/P6C_RELEASE.md`, `docs/qa/P6_RELEASE.md`, `STATUS.md`, `HANDOFF.md`. Strict accepted 5/7 = 71%; all SKUs NOT SELLABLE.
+## Exact latest proven P6D facts
+- Linux full integration [40211592836](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40211592836): **90 PASS, 1 Windows-only SKIP, 34 warnings**. BASIC/STANDARD/PREMIUM reports & PDF/ZIP generated with resource guards, confidential-category-safe ML feature ranking and explicit dropped input columns.
+- Real Linux CI near-cap supervised stress [40211135507](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40211135507): **STANDARD 5,000 rows × 50 columns 10.33 seconds peak 205,852 KiB; PREMIUM 3,000 × 50 10.79 seconds peak 215,136 KiB**, three-fold CV and independent holdout plus PREMIUM tuning, 69 estimated one-hot output features. Results limited to particular synthetic runner/data.
+- ML operational caps: `ml_workload_policy.py` STANDARD <=5,000 rows, <=180 estimated encoded features, <=600,000 train cells; PREMIUM <=3,000 rows, <=140 features, <=360,000 train cells. BASIC keeps <=20,000 descriptive rows. Early transparent errors, **no silent sampling**. Legacy `/api/analyze` likewise row-guarded. UI discloses these.
+- Latest successful Windows [40211572333](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40211572333) and Chromium [40211572238](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40211572238) for prior engine commit; actual Windows cmd.exe predict running tested in prior P6C. These are CI runner tests, NOT actual owner Windows Edge/Chrome.
+- P6D PDF importance is train-fitted tree impurity/absolute coefficients, only when meaningfully available, OneHot category labels aggregated by original column to keep private values out of reports, no causality claims. Dropped high-cardinality identifier columns now disclosed.
+- Preview from P6D PDF [40211407887](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40211407887): 11 pages, Korean chart glyphs readable, **pages 5/7/10/11 visually too sparse**. Not user approved. `docs/qa/P6D_RELEASE.md` detailed.
+- Direct dependency pins in `requirements-verified-py311.txt`; 14 direct license metadata entries and pip check clean. Full transitive vulnerability/licenses still review.
+- **No tiers sale ready**, strict milestone completion P0–P6 **5/7=71%** until owner's Windows browser (P1) and final P6 signoff. Do not merge main or publish listing without approval.
 
-## P6D exact prioritized next execution
-1. **Stress-test STANDARD/PREMIUM near plausible workload limits**: multiple category cardinalities/target classes, 5k–20k rows and 20–50 fields as allowed by system policy, record real time/RSS and early clean failure, do not overpromise 20k×50 model fit from prior 2k×7 result. Add explicit tier-specific resource guards if needed, communicate narrower listing scope before sale. Confirm no destructive cleanup or model trust bypass.
-2. **Windows fresh GUI QA**: run the owner script on actual Windows (Nanum licensed font installed; Python 3.11), browser click and ZIP extraction for all 3 tiers, PREMIUM new CSV `predict.cmd`, wrong-schema/tamper/error behavior. Add CI PowerShell syntax/launch tests as possible; do NOT claim owner's PC GUI done without evidence. Send a concise one-command owner checklist when a physical action is unavoidable.
-3. **Report and data issues**: remove excessive blank space from quality/ML pages without invented content, verify long legal/finance headers, Unicode and 50-column table overflow, share final report for user's subjective design approval; check charts' truthful labels, unit annotations, ML metric/feature importance if appropriate.
-4. **Security and reproducibility**: reject pathological XLSX/CSV/corrupted zip/oversize multipart, benchmark peak RSS/cancellation, review exact Python direct and transitive licenses + vulnerabilities and font distribution terms; require locally trusted model source. Evaluate fixed ZIP contents against frozen SKU and verify safe CSV outputs.
-5. **Tier-specific GO/NO-GO**: document actual runtime, Windows/GUI, font/legal, final asset contents, merchant claims/limits. Update `STATUS.md`, `HANDOFF.md`, `ACTIVE_TASK.md`, P6 QA docs with observed CI SHA. P6 accepted only when no critical gate remains; move to listings only with user approval.
+## Next task P6E — PRIORITY ORDER
+1. **Final report and chart design**: visually review all pages of actual BASIC (6), STANDARD (9), PREMIUM (11) sample and reduce excessive whitespace on pages 5/7/10/11 using real data-grounded content, not fake findings or blank padding. Preserve privacy and PDF page targets BASIC 6–8, STANDARD 8–12, PREMIUM 10–15 for representative rich data. Do PDF raster/overlap/long-name/Unicode tests; ask owner for style signoff only on actual improved sample.
+2. **Physical Windows first-run**: owner must run `scripts/windows_release_qa.ps1 -OpenBrowser` on actual Windows Python3.11 with a licensed Nanum font, inspect actual Chrome/Edge downloaded ZIP for each SKU, unpack and execute PREMIUM `predict.cmd` new CSV, tamper and wrong-schema. If not physically available, record BLOCKED (not passed). GitHub Windows runner and Linux Chromium are separate evidence.
+3. **Adversarial privacy/legal security**: audit all exported ZIP members and PDF for privacy-sensitive categories/raw rows; fail safely on malformed/oversized XLSX/CSV/formula injection; model `skops` trustworthy provenance; Python transitive license and package vulnerability checking; memory/time/row limits and error redaction. No public hosting.
+4. **SKU specification diff & actual customer service boundaries**: claims and prices BASIC 60k STD150k PREM300k, number of models and charts only when data warrants; ML caps narrower than BASIC, communicate explicitly. Optional feature importance delivered only when valid; no unsupported importance or accuracy guarantees. Draft a tier-wise go/no-go based on verified evidence.
+5. **Close P6 if and only if actual release gates succeed**. Update `STATUS.md`, `HANDOFF.md`, `ACTIVE_TASK.md`, `docs/qa/P6_RELEASE.md` and new P6E evidence. Main remains unchanged, no production deploy, credentials/data upload, paid API or real customer sale without approval.
 
-## Safety invariants
-All development on `feature/kmong-v1`, `main` unchanged, no public hosting, paid calls, real customer data or repo visibility changes. Missing proof == BLOCKED, not PASS. SHA-256 is an integrity check and does not authenticate model origin. CV leakage and customer data semantics still require human verification. The 71% milestone percentage is an evidence criterion and not an estimate of time.
+## Reentry for next "ㄱ"
+Fetch live GitHub dev HEAD, this ACTIVE_TASK, HANDOFF, STATUS, prior QA, code, actual latest CI runs. Execute next prioritized task directly; do not ask already-known details or claim asynchronous work. Maintain strict validation percentage rather than subjective impressions.
