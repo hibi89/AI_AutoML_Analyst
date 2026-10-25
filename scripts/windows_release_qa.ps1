@@ -33,9 +33,26 @@ if ($LASTEXITCODE -ne 0) { throw "Dependency installation failed." }
 & $exe @argsPrefix -m pytest -q tests/test_original_smoke.py tests/test_basic_mvp.py tests/test_p2_ml_validity.py tests/test_p4_standard_delivery.py tests/test_p5_premium.py tests/test_p6_security.py tests/test_p6_xlsx.py tests/test_p6_windows_compat.py tests/test_p6_chart_policy.py
 if ($LASTEXITCODE -ne 0) { throw "Windows smoke tests failed; do not list product for sale." }
 
-Write-Host "Windows non-GUI tests passed. Browser click/download and actual predict.cmd are STILL unverified." -ForegroundColor Yellow
+Write-Host "Non-GUI checks passed. Owner browser clicks/downloads still require manual verification." -ForegroundColor Yellow
 if ($OpenBrowser) {
-    Write-Host "Start the server separately: py -3.11 -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000"
+    $serverArgs = @()
+    if ($exe -eq "py") { $serverArgs += "-3.11" }
+    $serverArgs += @("-m", "uvicorn", "backend.app.main:app", "--host", "127.0.0.1", "--port", "8000")
+    $server = Start-Process -FilePath $exe -ArgumentList $serverArgs -WorkingDirectory (Get-Location).Path -WindowStyle Hidden -PassThru
+    $ready = $false
+    for ($i = 0; $i -lt 25; $i++) {
+        if ($server.HasExited) { throw "Local server exited during startup." }
+        try {
+            $response = Invoke-WebRequest "http://127.0.0.1:8000/health" -UseBasicParsing -TimeoutSec 1
+            if ($response.StatusCode -eq 200) { $ready = $true; break }
+        } catch { Start-Sleep -Milliseconds 300 }
+    }
+    if (-not $ready) {
+        Stop-Process -Id $server.Id -Force -ErrorAction SilentlyContinue
+        throw "Local server did not pass health check."
+    }
+    Write-Host "Local server PID: $($server.Id). To stop later: Stop-Process -Id $($server.Id)" -ForegroundColor Green
+    Write-Host "Manually test all three uploads, ZIP download/extraction, and PREMIUM predict.cmd."
     Start-Process "http://127.0.0.1:8000/basic-mvp"
     Start-Process "http://127.0.0.1:8000/standard-mvp"
     Start-Process "http://127.0.0.1:8000/premium-mvp"
