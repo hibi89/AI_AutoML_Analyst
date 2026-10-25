@@ -151,7 +151,7 @@ def windows_predict_command() -> bytes:
     return (
         '@echo off\r\n'
         'if "%~2"=="" (echo Usage: predict.cmd new_data.csv predicted.csv & exit /b 2)\r\n'
-        'python "%~dp0predict.py" --model-dir "%~dp0" --input "%~1" --output "%~2"\r\n'
+        'python "%~dp0predict.py" --model-dir "%~dp0." --input "%~1" --output "%~2"\r\n'
     ).encode("utf-8")
 
 
