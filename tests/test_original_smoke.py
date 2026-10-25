@@ -72,20 +72,17 @@ def test_missing_target_rejected() -> None:
         )
 
 
-def test_constant_target_cannot_produce_successful_logistic_model() -> None:
+def test_constant_target_rejected_before_model_fitting() -> None:
     data = classification_frame()
     data["outcome"] = 1
-    # Baseline audit: the old code may return a failed model rather than
-    # reject this invalid target up front. P2 must improve user-facing errors.
-    result = run_automl_experiment(
-        data,
-        target_column="outcome",
-        task_type="classification",
-        model_candidates={"logistic_regression": LogisticRegression(max_iter=300)},
-        cv=3,
-    )
-    assert result.best_result is None
-    assert result.results[0].status == "failed"
+    with pytest.raises(ValueError, match="two distinct"):
+        run_automl_experiment(
+            data,
+            target_column="outcome",
+            task_type="classification",
+            model_candidates={"logistic_regression": LogisticRegression(max_iter=300)},
+            cv=3,
+        )
 
 
 def test_health_endpoint() -> None:
