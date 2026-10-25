@@ -16,7 +16,7 @@ def _make(tier: str, added: dict[str, bytes] | None = None, *, tamper: bool = Fa
         "report.pdf": b"%PDF-TEST-ONLY",
         "summary.csv": b"column,count\nage,9\n",
         "summary.json": b"{}",
-        "README.txt": b"synthetic",
+        "README.txt": b"synthetic NAVER SIL Open Font License 1.1",
         "charts/01_distribution.png": b"\x89PNG",
     }
     if tier == "STANDARD":
@@ -79,6 +79,11 @@ def test_fail_closed_on_unaudited_or_executable_members(name):
 def test_premium_model_is_not_allowed_in_basic_or_standard():
     with pytest.raises(ValueError, match="Unexpected or bundled"):
         verify_shipping_zip(_make("BASIC", {"model_pipeline.skops": b"LEAK"}), "BASIC")
+
+
+def test_missing_font_notice_blocks_shipping():
+    with pytest.raises(ValueError, match="font attribution"):
+        verify_shipping_zip(_make("BASIC", {"README.txt": b"notice-missing"}), "BASIC")
 
 
 def test_manifest_sha_tampering_is_rejected():
