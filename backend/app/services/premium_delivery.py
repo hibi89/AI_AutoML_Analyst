@@ -55,9 +55,12 @@ def _final_refit(df: pd.DataFrame, analysis: dict):
     for name in bool_cols:
         processed[name] = processed[name].astype(float)
     processed = processed.reindex(columns=prep.X.columns)
+    final_estimator = clone(selection.models[winner])
+    if analysis.get("selected_hyperparameters"):
+        final_estimator.set_params(**analysis["selected_hyperparameters"])
     fitted = Pipeline([
         ("preprocess", clone(prep.preprocessor)),
-        ("model", clone(selection.models[winner])),
+        ("model", final_estimator),
     ]).fit(processed, data[target])
     # Final deployment refit includes holdout ONLY after model selection and
     # holdout evaluation. Holdout scores are not valid metrics of this refit.
@@ -170,6 +173,7 @@ def build_premium_zip(
         "format": "automl-premium-v1",
         "model_sha256": sha256(model_data).hexdigest(),
         "selected_model": analysis["selected_model"],
+        "selected_hyperparameters": analysis["selected_hyperparameters"],
         "target_column": target_column,
         "task_type": analysis["task_type"],
         "training_strategy": "Refit CV-selected model on all labelled rows after untouched holdout evaluation",
