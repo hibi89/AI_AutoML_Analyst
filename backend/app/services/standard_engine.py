@@ -233,8 +233,79 @@ def run_standard(
     baseline = next((r for r in model_rows if r["role"] == "baseline"), None)
     if not challengers or baseline is None or baseline["status"] != "success":
         raise ValueError("ML evaluation infeasible: no valid challenger or Dummy baseline completed CV.")
+    tuned_params: dict[str, dict[str, Any]] = {}
+    tuning_log: list[dict[str, Any]] = []
+    if max_challengers == 5:
+        # PREMIUM-only: limited CV search among the top two challengers.
+        # The untouched holdout never enters tuning or model selection.
+        from sklearn.model_selection import GridSearchCV
+        search_spaces = {
+            "logistic_regression": {"model__C": [0.4, 1.6]},
+            "ridge_classifier": {"model__alpha": [0.5, 2.0]},
+            "random_forest_classifier": {"model__max_depth": [6, None]},
+            "extra_trees_classifier": {"model__max_depth": [6, None]},
+            "gradient_boosting_classifier": {"model__learning_rate": [0.05, 0.12]},
+            "hist_gradient_boosting_classifier": {"model__learning_rate": [0.05, 0.12]},
+            "linear_regression": {"model__fit_intercept": [True, False]},
+            "ridge": {"model__alpha": [0.5, 2.0]},
+            "lasso": {"model__alpha": [0.2, 1.0]},
+            "random_forest_regressor": {"model__max_depth": [6, None]},
+            "extra_trees_regressor": {"model__max_depth": [6, None]},
+            "gradient_boosting_regressor": {"model__learning_rate": [0.05, 0.12]},
+            "hist_gradient_boosting_regressor": {"model__learning_rate": [0.05, 0.12]},
+        }
+        for row in sorted(challengers, key=lambda item: item["cv_primary"], reverse=True)[:2]:
+            name = row["model"]
+            grid = search_spaces.get(name)
+            if not grid:
+                continue
+            runner = Pipeline([
+                ("preprocess", clone(prep.preprocessor)),
+                ("model", clone(selection.models[name])),
+            ])
+            try:
+                search = GridSearchCV(
+                    runner, param_grid=grid, scoring=scoring.scoring,
+                    refit=scoring.primary_metric, cv=cv_splits,
+                    n_jobs=1, error_score="raise",
+                )
+                search.fit(X_train, y_train)
+                best_idx = search.best_index_
+                if not math.isfinite(float(search.best_score_)):
+                    raise ValueError("Non-finite tuning CV score.")
+                # All tuned metric averages refer to the SAME winning parameter set.
+                row["cv_metrics"] = {}
+                for metric_name in scoring.scoring:
+                    mean = float(search.cv_results_[f"mean_test_{metric_name}"][best_idx])
+                    std = float(search.cv_results_[f"std_test_{metric_name}"][best_idx])
+                    display = metric_name
+                    if metric_name == "neg_mae":
+                        display, mean = "mae", -mean
+                    elif metric_name == "neg_rmse":
+                        display, mean = "rmse", -mean
+                    row["cv_metrics"][display] = {"mean": mean, "std": std}
+                row["cv_primary"] = float(search.best_score_)
+                row["cv_std"] = float(search.cv_results_[
+                    f"std_test_{scoring.primary_metric}"][best_idx])
+                tuned_params[name] = dict(search.best_params_)
+                tuning_log.append({
+                    "model": name, "best_params": dict(search.best_params_),
+                    "cv_primary": row["cv_primary"],
+                    "cv_grid_candidates": len(search.cv_results_["params"]),
+                })
+            except Exception as exc:
+                warnings.append(f"PREMIUM 탐색적 튜닝 실패({name}): {type(exc).__name__}. 기존 CV 평가로 계속합니다.")
+        warnings.append(
+            "PREMIUM 튜닝·모델 선택에 동일 CV 데이터를 사용했으므로 CV 값은 낙관적일 수 있습니다. "
+            "결과 해석에는 별도 holdout 평가를 우선하세요."
+        )
     winner = max(challengers, key=lambda r: r["cv_primary"])
-    estimator = selection.models[winner["model"]]
+    estimator = clone(selection.models[winner["model"]])
+    if winner["model"] in tuned_params:
+        estimator.set_params(**{
+            k.replace("model__", "", 1): v
+            for k, v in tuned_params[winner["model"]].items()
+        })
     baseline_estimator = selection.models[baseline["model"]]
 
     def fit_holdout(est):
@@ -258,7 +329,12 @@ def run_standard(
         "selection_basis": "CV only (training partition)", "holdout_used_in_selection": False,
         "train_rows": len(train), "holdout_rows": len(holdout), "cv_splits": len(cv_splits),
         "primary_metric": primary, "model_selection": selection.to_dict(),
-        "models": model_rows, "selected_model": winner["model"],
+        "models": model_rows, "tuning_experiments": tuning_log,
+        "selected_hyperparameters": {
+            k.replace("model__", "", 1): v
+            for k, v in tuned_params.get(winner["model"], {}).items()
+        },
+        "selected_model": winner["model"],
         "dummy_model": baseline["model"], "selected_cv_score": winner["cv_primary"],
         "dummy_cv_score": baseline["cv_primary"],
         "selected_holdout_metrics": best_holdout, "dummy_holdout_metrics": dummy_holdout,
