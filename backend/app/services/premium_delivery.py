@@ -146,6 +146,15 @@ def _premium_page(analysis: dict, model_name: str, raw_schema: dict) -> bytes:
     return out.getvalue()
 
 
+def windows_predict_command() -> bytes:
+    """Exactly the batch file shipped to customers; exercise in Windows CI."""
+    return (
+        '@echo off\\r\\n'
+        'if "%~2"=="" (echo Usage: predict.cmd new_data.csv predicted.csv & exit /b 2)\\r\\n'
+        'python "%~dp0predict.py" --model-dir "%~dp0" --input "%~1" --output "%~2"\\r\\n'
+    ).encode("utf-8")
+
+
 def build_premium_zip(
     df: pd.DataFrame,
     target_column: str,
@@ -220,11 +229,7 @@ def build_premium_zip(
     parts["sample_input.csv"] = ("\ufeff" + input_example.getvalue()).encode("utf-8")
     parts["sample_predictions.csv"] = b"prediction\r\n"
     parts["predict.py"] = Path(__file__).with_name("premium_predict.py").read_bytes()
-    parts["predict.cmd"] = (
-        '@echo off\r\n'
-        'if "%~2"=="" (echo Usage: predict.cmd new_data.csv predicted.csv & exit /b 2)\r\n'
-        'python "%~dp0predict.py" --model-dir "%~dp0" --input "%~1" --output "%~2"\r\n'
-    ).encode("utf-8")
+    parts["predict.cmd"] = windows_predict_command()
     v = schema["versions"]
     parts["requirements-premium.txt"] = (
         f"numpy=={v['numpy']}\npandas=={v['pandas']}\nscikit-learn=={v['sklearn']}\n"
