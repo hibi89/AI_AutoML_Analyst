@@ -31,3 +31,27 @@ Run / automate Windows non-GUI checks, inspect actual fresh client-like inputs, 
 
 ## Latest UI-inclusive CI confirmation
 - [Actions 40207617902](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40207617902) on commit `d883a3d655ea8328c61a7ba006159608ca54b096`: **70 passed, 0 failed, 25 warnings in 11.11s**, PREMIUM 11-page synthetic PDF preview generated. Changes since earlier code SHA were upload page copy/accept filters. Docs-only commits afterward do not affect code.
+
+## P6B follow-through — measured evidence, 2026-10-26 KST
+
+### Native Windows Python and actual CMD delivery
+- [Windows Actions 40208130115](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40208130115): **38 PASS / 6 warnings**, Python 3.11, without GUI/font; direct trusted skops model serialization and reload, strict schema, integrity and version validation, legacy HTTP tests.
+- Added a **real cmd.exe** test for the exact shipped `predict.cmd`. First execution [40208475083](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40208475083) failed **1 / 39**: Windows path `"%~dp0"` has a trailing backslash before the closing quote; subsequent CLI flags became part of the model folder argument. Fixed the batch template to `"%~dp0."`, centralizing `windows_predict_command()` in `premium_delivery.py` and testing those precise bytes.
+- [Windows Actions 40208598494](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40208598494), executable SHA `7eb13ab31866902e1e2f24d31c4e3037d1cbf222`: **39 PASS / 6 warnings**, includes real `cmd.exe` running `predict.cmd` against a trusted locally generated skops model, output file content and failure to overwrite an existing output. Test platform is Windows GitHub runner, **not the user's PC or interactive Edge/Chrome**.
+
+### Maximum supported BASIC dataset benchmark
+- `scripts/p6_benchmark.py` generates **synthetic 20,000 rows × 50 columns**, invokes the actual full BASIC PDF/chart/ZIP generator and records elapsed and peak process RSS.
+- [Linux Actions 40208598555](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40208598555): full suite **77 PASS / 1 SKIP (Windows-only CMD test) / 25 warnings**, Python 3.11. Max-size BASIC processing **1.00s**, **177,312 KiB ~173.2 MiB process peak RSS**, output ZIP **486,955 bytes**, five charts. These are one synthetic Linux runner execution, NOT performance or memory guarantees on Windows or customer datasets, and NOT a PREMIUM/ STANDARD fit benchmark.
+- Similar previous [40208195474](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40208195474) achieved 74/74 Linux and 1.54s / 176,920 KiB before P6B-specific tests and time-chart priority.
+
+### Visual design changes and observed PDF
+- `chart_design.py` now prioritizes a **valid monthly trend** over a redundant box plot when 5 chart slots would otherwise fill; a box remains for no-date datasets. Added `tests/test_p6_chart_policy.py` (time trend, fallback and sparse no-filler). Chart data are actual month-group means; no filled area implying misleading baseline.
+- Retrieved final rendered synthetic ZIP from Linux Actions 40208598555. Examined actual `charts/05_trend.png` and full PREMIUM 11-page raster montage. The Korean time labels, graph lines, axes and source-unit notice display without obvious clipping, and the PDF remains 11 pages. Other PDF pages remain sparse; design remains commercially unapproved.
+- `scripts/windows_release_qa.ps1` now includes P6B Windows model command and chart policy tests for owner-local preflight; this script has NOT run on the owner's physical machine.
+
+### Font-use source and compliance
+- NAVER's official terms: https://help.naver.com/service/30016/contents/18088?lang=ko&osType=PC . NAVER says Nanum fonts may be used commercially and are OFL 1.1; embedding in generated PDF is permitted, font sold separately prohibited, and font-program redistribution with software requires notices/conditions. Full specific review `docs/qa/FONT_LICENSE_REVIEW.md`.
+- We **do not distribute standalone font files** to customers. Remaining release requirements include transitive Python package licenses/pins and Windows font installation validation. This is an engineering source review, not a legal certification.
+
+### Honest release gate
+P6B is advanced but NOT accepted. **BASIC/STANDARD/PREMIUM remain NOT SELLABLE** until actual GUI upload/download (preferably owner's Windows Chrome/Edge), first-install/local font test, full commercial PDF design review, full STANDARD/PREMIUM performance and resource bounds, dependency reproducibility and error cases pass. `main` unmodified; no external deployment or actual customer data used.
