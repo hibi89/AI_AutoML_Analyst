@@ -36,3 +36,6 @@ Updated: 2026-10-26 KST. Branch `feature/kmong-v1`. All evidence synthetic. **No
 
 ## Remaining final gate
 **All three tiers NO-GO** pending user's physical Windows font, Chrome/Edge GUI/ZIP/model-reuse and first-install run, page-density/client design approval, adversarial privacy/security and transitive dependency vulnerability check, actual price/delivery terms. Accept P6 only on observed evidence; original `main` preserved. Next P6E should prioritize those remaining gates and tier-specific sale readiness, not expand arbitrary features.
+
+## Final CI update
+[Linux Actions 40211592836](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40211592836) on SHA `7b5fb8edf8ef061855a80137ac7f3c17734b3200`: **90 tests passed, 1 Windows-only skipped, 34 warnings, 16.63 seconds**, generated 11-page PREMIUM synthetic PDF. [Windows Actions 40211572333](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40211572333) and [Chromium Actions 40211572238](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40211572238) PASS at earlier engineering SHA before latest identifier-drop test; only Linux final suite includes the last test, hence do not conflate exact SHAs. Target scope remains conservative. P6E queued in ACTIVE_TASK.
