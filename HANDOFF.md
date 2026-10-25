@@ -1,4 +1,4 @@
-# HANDOFF — AI AutoML Analyst / continue next P6D work
+# HANDOFF — AI AutoML Analyst / continue next P6E work
 Updated 2026-10-26 KST. **Single-command wake-up**: [AI AutoML Analyst 깃헙 레포지토리 보고 작업이어가셈] or ㄱ. Immediately start next task, do not ask prior decisions. Live GitHub branch `feature/kmong-v1`, repo `hibi89/AI_AutoML_Analyst` is source. Original `main@c80c874476f8d5deb4bf611761d89c6d72ca0a2d` must remain unchanged.
 
 ## 1. Locked objective
@@ -6,7 +6,7 @@ Local-first 3-tier Kmong data-analysis report and ML custom-delivery product (BA
 
 ## 2. Latest implementation stages
 P0 DONE, P1 PARTIAL (real Windows browser), P2 DONE, P3 BASIC DONE implementation, P4 STANDARD DONE implementation, P5 PREMIUM DONE implementation. **P6 IN PROGRESS, NOT ACCEPTED** (P6A visual redesign, local-only security and XLSX implemented and Linux CI passes; Windows and final QA still missing). Strict milestones **5/7 = 71%**, not subjective completion percentage. **All tiers NOT SALE READY.**
-Next precise READY task: **AUTO-KM-P6D**, see `docs/dispatch/ACTIVE_TASK.md`.
+Next precise READY task: **AUTO-KM-P6E**, see `docs/dispatch/ACTIVE_TASK.md`.
 
 ## 3. Current source progress and verification
 - `backend/app/services/chart_design.py` now creates higher-quality Korean, 155dpi graphs with consistent palette, actual column names (not N1), median line, percent labels, correlation values, anonymized categories with explicitly stated privacy notice, box plot/trend. `basic_p3.py` delegates chart generation to P6 shared designer and formats first-page KPIs into cards with consistent accent. `standard_delivery.py` P5 ML comparison plot already highlights selected model, hatches Dummy baseline and annotates scores. **All chart code shared across tiers.**
@@ -64,4 +64,14 @@ Latest UI-inclusive verification: [GitHub Actions 40207617902](https://github.co
 - Inspected the actual pinned CI PDF preview `premium/report.pdf` and all 11 raster pages; Korean fonts and charts legible, still sparse pages P2/P5/P7/P9/P10/P11. This is an automated-development sample, **not design signed off by owner**.
 - `scripts/windows_release_qa.ps1 -OpenBrowser` now installs pinned requirements, runs non-GUI tests, starts localhost uvicorn, polls `/health`, opens three pages and prints PID. The script is authored but **not validated end-to-end on the owner's PC**. Do not claim owner's browser PASS.
 - Evidence `docs/qa/P6C_RELEASE.md`. P6 still **IN PROGRESS, ALL 3 SKUs NOT SELLABLE, strict P0–P6 5/7=71%**. `main` unchanged.
-- **Next `ㄱ`: AUTO-KM-P6D** from `docs/dispatch/ACTIVE_TASK.md`: stress STANDARD/PREMIUM with larger/categorical tables & safe workload policy, polish page density, validate local Windows UX and dependencies, final tier-specific security/licenses/distribution gate. No client-sensitive data or unapproved public deployment. If physical Windows interaction unavailable, record owner action rather than fake PASS.
+- **Next `ㄱ`: AUTO-KM-P6E** from `docs/dispatch/ACTIVE_TASK.md`: stress STANDARD/PREMIUM with larger/categorical tables & safe workload policy, polish page density, validate local Windows UX and dependencies, final tier-specific security/licenses/distribution gate. No client-sensitive data or unapproved public deployment. If physical Windows interaction unavailable, record owner action rather than fake PASS.
+
+## P6D closure + next P6E (2026-10-26 KST)
+- Latest accepted **Linux 40211592836** at code SHA `7b5fb8edf8ef061855a80137ac7f3c17734b3200`: **90 PASS /1 Windows-only SKIP /34 warnings**; regression suites P0–P6D, Korean synthetic tier PDFs/ZIPs, privacy-safe feature ranking, ML resource cap and dropped-identifier disclosure. Docs-only commits follow; always fetch live SHA.
+- New conservative `ml_workload_policy.py`: STANDARD row<=5,000/OHE<=180/train cells<=600k, PREMIUM row<=3,000/OHE<=140/train cells<=360k; BASIC descriptive remains <=20k rows. Early explicit error rather than unbounded CV, including old `/api/analyze`. Marketing/UI row labels updated. This *narrows supervised offering*, not the frozen upper bound for descriptive analysis.
+- [Near-cap synthetic Actions 40211135507](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40211135507): STD 5k×50, 69 encoded features, 10.33s/205852 KiB peak RSS; PREM 3k×50, 69 encoded, 10.79s/215136 KiB. CV+holdout plus Premium tuning genuinely ran, but only synthetic data and one Linux environment.
+- Importance in ML PDF only for trained estimator supporting tree impurity/absolute coefficients; OneHot original CATEGORY VALUES (which may be confidential) are collapsed to source column labels. Real sensitivity regression `test_p6d_importance.py`. Group/time split assumptions and arbitrary customer data still require human judgment. Dropped identifier-like features now explicit.
+- Latest full P6D PDF visual review at `/mnt/data/automl_p6d_review/premium_montage.png` (tool working container; not part of repository) and [CI 40211407887](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40211407887) 11 pages: visible white space, most notably pages 5/7/10/11; this is NOT sale-grade design signoff. Use new fresh synthetic CI artifacts after modifications for P6E.
+- Prior Windows [40211572333](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40211572333) and Linux Chromium [40211572238](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40211572238) success on preceding app SHA, physical owner's Windows/Edge/Chrome still untested; `scripts/windows_release_qa.ps1 -OpenBrowser` exists.
+- QA full `docs/qa/P6D_RELEASE.md`, cumulative `docs/qa/P6_RELEASE.md`. STATUS and ACTIVE_TASK now point to **AUTO-KM-P6E**. All tiers still NO-GO, strict P0–P6 completion **5/7=71%**. Main preserved. No user approval to merge/deploy/sell.
+- When user says `ㄱ` execute P6E final PDF design (reduce whitespace with defensible data content), client Windows GUI verification (or explicit manual gate), privacy/dependency security, final go/no-go. Do not inflate progress or fabricate Windows manual evidence.
