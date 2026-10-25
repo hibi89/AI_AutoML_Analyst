@@ -26,7 +26,7 @@ if (-not $font) {
 }
 $env:AUTOML_KOREAN_FONT_PATH = $font
 
-& $exe @argsPrefix -m pip install -r requirements-ci.txt
+& $exe @argsPrefix -m pip install -r requirements-verified-py311.txt
 if ($LASTEXITCODE -ne 0) { throw "Dependency installation failed." }
 
 # No Poppler required for these tests. P3 full PDF raster tests run in Linux CI.
