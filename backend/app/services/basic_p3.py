@@ -23,6 +23,15 @@ from backend.app.services.basic_report import (
 )
 
 
+# ReportLab may embed a subset of the owner's installed NanumGothic font.
+# This attribution travels inside the customer report ZIP; font binaries do not.
+NANUM_FONT_CREDIT = (
+    "한글 PDF 글꼴: NAVER 나눔고딕(NanumGothic) / "
+    "Copyright (c) 2010 NAVER Corporation / SIL Open Font License 1.1\\n"
+    "라이선스: https://help.naver.com/service/30016/contents/18088\\n"
+)
+
+
 def _number(value: object) -> str:
     return f"{float(value):,.2f}"
 
@@ -414,7 +423,8 @@ def build_basic_delivery(df: pd.DataFrame) -> bytes:
         "summary.json": json.dumps(summary, ensure_ascii=False, indent=2, allow_nan=False).encode("utf-8"),
         "README.txt": ("AI AutoML Analyst BASIC\n이 파일은 기술통계 및 시각화 결과입니다.\n"
                        "인과분석/ML 학습/정확도 보장이 아닙니다.\n"
-                       "누락/중복은 오류로 단정할 수 없습니다.\n").encode("utf-8"),
+                       "누락/중복은 오류로 단정할 수 없습니다.\n"
+                       + NANUM_FONT_CREDIT).encode("utf-8"),
     }
     parts.update({name: content for name, content, _ in charts})
     import hashlib
