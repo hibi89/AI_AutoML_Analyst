@@ -60,7 +60,17 @@ def test_premium_full_zip_and_five_challengers(bundle):
         assert len([m for m in info["models"] if m["role"] == "baseline"]) == 1
         assert len([m for m in info["models"] if m["role"] == "challenger"]) == 5
         assert info["holdout_used_in_selection"] is False
-        assert len(PdfReader(BytesIO(z.read("report.pdf"))).pages) >= 10
+        pages = PdfReader(BytesIO(z.read("report.pdf"))).pages
+        assert 10 <= len(pages) <= 15
+        # P6E handover stays on two substantive pages without overflow/blank spill.
+        handover = pages[-2].extract_text() or ""
+        schema_guide = pages[-1].extract_text() or ""
+        assert "모델 검증 스냅샷" in handover
+        assert "독립 검증 점수" in handover
+        assert "새 CSV로 예측하기" in handover
+        assert "입력 계약 요약" in schema_guide
+        assert "필수 열 미리보기" in schema_guide
+        assert "model_schema.json" in schema_guide
         schema = json.loads(z.read("model_schema.json"))
         assert schema["raw_feature_columns"] == ["visits", "revenue", "region"]
         assert schema["selected_hyperparameters"] == info["selected_hyperparameters"]
