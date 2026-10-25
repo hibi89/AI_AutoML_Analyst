@@ -87,8 +87,8 @@ def generate_markdown_report(
     if baseline_result:
         lines.append("### Independent Dummy Baseline")
         lines.append("")
-        lines.append(f"- Baseline: \`{baseline_result['model_name']}\`")
-        lines.append(f"- Baseline score: \`{_fmt(baseline_result['primary_score_mean'])}\`")
+        lines.append(f"- Baseline: `{baseline_result['model_name']}`")
+        lines.append(f"- Baseline score: `{_fmt(baseline_result['primary_score_mean'])}`")
         if output.get("beats_dummy_baseline") is False:
             lines.append("- No challenger beat this Dummy baseline in CV. Do not claim predictive signal.")
         lines.append("")
