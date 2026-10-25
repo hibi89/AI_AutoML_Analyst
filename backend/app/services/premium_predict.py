@@ -14,6 +14,7 @@ import json
 import sys
 
 import pandas as pd
+import numpy as np
 import sklearn
 import skops
 import skops.io as sio
@@ -43,7 +44,8 @@ def _model_and_schema(folder: Path):
     versions = schema["versions"]
     if (versions.get("sklearn") != sklearn.__version__
             or versions.get("skops") != skops.__version__
-            or versions.get("pandas") != pd.__version__):
+            or versions.get("pandas") != pd.__version__
+            or versions.get("numpy") != np.__version__):
         raise ValueError("Dependency versions differ. Install exact requirements-premium.txt first.")
     if schema.get("python_minor") != f"{sys.version_info.major}.{sys.version_info.minor}":
         raise ValueError("Python minor version differs from the model producer.")
