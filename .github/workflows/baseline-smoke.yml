@@ -6,6 +6,7 @@ on:
       - feature/kmong-v1
     paths:
       - "backend/**"
+      - "frontend/**"
       - "tests/**"
       - "requirements-ci.txt"
       - ".github/workflows/baseline-smoke.yml"
