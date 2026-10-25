@@ -48,8 +48,10 @@ def read_xlsx_bounded(data: bytes) -> pd.DataFrame:
         sheet = workbook.worksheets[0]
         if sheet.max_column > MAX_COLUMNS or sheet.max_row > MAX_ROWS + 1:
             raise ValueError(f"XLSX limit exceeded: {MAX_ROWS} data rows and {MAX_COLUMNS} columns.")
-        records = sheet.iter_rows(values_only=True, max_row=MAX_ROWS + 2,
-                                 max_col=MAX_COLUMNS + 1)
+        # Read actual dimensions, not the maximum budget width: openpyxl
+        # pads rows to max_col and would mistake the padding for blank headers.
+        records = sheet.iter_rows(values_only=True, max_row=sheet.max_row,
+                                 max_col=sheet.max_column)
         first = next(records, None)
         if first is None or not first:
             raise ValueError("XLSX has no header row.")
