@@ -80,69 +80,121 @@ def _final_refit(df: pd.DataFrame, analysis: dict):
 
 
 def _premium_page(analysis: dict, model_name: str, raw_schema: dict) -> bytes:
-    from pypdf import PdfReader, PdfWriter
+    """Two-page, data-grounded PREMIUM handover; no invented performance claims."""
     from reportlab.lib import colors
     from reportlab.lib.pagesizes import A4
     from reportlab.lib.styles import ParagraphStyle
-    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, PageBreak
+    from reportlab.platypus import (
+        SimpleDocTemplate, Paragraph, Spacer, PageBreak, Table, TableStyle,
+    )
     from xml.sax.saxutils import escape
     from backend.app.services.basic_p3 import _korean_font
 
     font = _korean_font()
-    body = ParagraphStyle(
-        "premium_body", fontName=font, fontSize=10, leading=19,
-        textColor=colors.HexColor("#253b4d"), spaceAfter=13,
-    )
-    heading = ParagraphStyle(
-        "premium_heading", fontName=font, fontSize=20, leading=30,
-        textColor=colors.HexColor("#163f61"), spaceAfter=22,
-    )
-    def p(text, heading_style=False):
-        return Paragraph(escape(text), heading if heading_style else body)
+    ink = colors.HexColor("#233B4D")
+    blue = colors.HexColor("#163F61")
+    teal = colors.HexColor("#087F8C")
+    styles = {
+        "title": ParagraphStyle("premium_title", fontName=font, fontSize=19,
+                                leading=27, textColor=blue, spaceAfter=11),
+        "head": ParagraphStyle("premium_head", fontName=font, fontSize=12,
+                               leading=18, textColor=teal, spaceBefore=10, spaceAfter=7),
+        "body": ParagraphStyle("premium_body", fontName=font, fontSize=9.2,
+                               leading=15, textColor=ink, spaceAfter=6),
+        "small": ParagraphStyle("premium_small", fontName=font, fontSize=8.2,
+                                leading=13, textColor=ink, spaceAfter=4),
+    }
+
+    def p(value: object, style: str = "body"):
+        return Paragraph(escape(str(value)), styles[style])
+
+    def panel(rows: list[tuple[str, str]]) -> Table:
+        # Paragraphs, rather than unwrapped strings, allow long column names to
+        # wrap without intruding into the adjacent PDF column.
+        data = [[p(a, "small"), p(b, "small")] for a, b in rows]
+        table = Table(data, colWidths=[127, 368], hAlign="LEFT")
+        table.setStyle(TableStyle([
+            ("ROWBACKGROUNDS", (0, 0), (-1, -1),
+             [colors.HexColor("#F0F6F8"), colors.white]),
+            ("LINEBELOW", (0, 0), (-1, -2), 0.3, colors.HexColor("#D8E6ED")),
+            ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#CFDFE7")),
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ("LEFTPADDING", (0, 0), (-1, -1), 10),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 9),
+            ("TOPPADDING", (0, 0), (-1, -1), 6),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+        ]))
+        return table
+
+    primary = analysis["primary_metric"]
+    selected_score = analysis["selected_holdout_metrics"][primary]
+    baseline_score = analysis["dummy_holdout_metrics"][primary]
+    columns = raw_schema["raw_feature_columns"]
+    example_names = ", ".join(str(col)[:34] for col in columns[:8])
+    if len(columns) > 8:
+        example_names += f" 외 {len(columns) - 8}개 (전체는 model_schema.json)"
     story = [
-        p("PREMIUM — 재예측 모델과 사용 안내", True),
-        p("CV에서 비교한 모델: 최대 5종 + Dummy 기준선."),
-        p("최종 선택 모델: " + model_name),
-        p("선정 근거: 학습 파티션의 교차검증 성능. 독립 검증 데이터는 선정에 사용하지 않았습니다."),
-        p("중요: 독립 검증 점수는 학습 파티션 모델의 점수입니다. "
-          "PREMIUM 납품 모델은 평가 완료 후 전체 라벨 보유 데이터에 재학습한 별도 모델이므로, "
-          "동일한 독립 검증 점수라고 주장하지 않습니다."),
-        Spacer(1, 18),
-        p("재예측 실행 순서", True),
-        p("1. 신뢰하는 원본 ZIP 파일을 로컬에서 압축 해제하세요."),
-        p("2. Windows에서 Python 및 requirements-premium.txt의 정확한 버전을 설치하세요."),
-        p("3. sample_input.csv와 정확히 같은 열 이름·순서를 가진 새 CSV를 준비하세요."),
-        p("4. predict.cmd new_data.csv predicted.csv 를 실행하세요. 기존 출력 파일은 덮어쓰지 않습니다."),
-        p("5. 결과 CSV에는 prediction 열만 있습니다. 개인 데이터/특정 행은 자동 전송되지 않습니다."),
-        Spacer(1, 10),
-        p("보안 및 해석", True),
-        p("skops 모델은 신뢰한 원본만 열어야 합니다. SHA-256은 무결성 검사용이며 "
-          "출처를 보증하는 디지털 서명이 아닙니다."),
-        p("고객·시간 단위의 독립성, 목표값에서 파생된 변수, 수집 편향 및 미래 성능은 사용 전 확인해야 합니다."),
+        p("PREMIUM / 재사용 모델 인수인계", "title"),
+        p("학습된 모델과 재예측 도구의 사용 조건을 확인하는 납품 설명서입니다.", "small"),
+        p("모델 검증 스냅샷", "head"),
+        panel([
+            ("선정 모델", model_name),
+            ("목표 / 문제 유형", f"{analysis['target_column']} / {analysis['task_type']}"),
+            ("선발 기준", f"학습 내부 {analysis['cv_splits']}폴드 CV / {primary}"),
+            ("평가 데이터", f"학습 {analysis['train_rows']:,}행 · 독립 검증 {analysis['holdout_rows']:,}행"),
+            ("독립 검증 점수", f"선정 모델 {selected_score:.4f} / Dummy {baseline_score:.4f} ({primary})"),
+        ]),
+        p("이 점수는 독립 검증 시점의 학습 모델에 대한 것입니다. "
+          "납품 모델은 평가 완료 후 전체 라벨 보유 데이터로 다시 학습하므로 "
+          "같은 점수를 보장하지 않습니다.", "small"),
+        p("새 CSV로 예측하기", "head"),
+        panel([
+            ("01 / 원본 확인", "발신자와 전달 경로를 확인한 신뢰 가능한 ZIP만 압축 해제"),
+            ("02 / 환경 설치", "Python과 requirements-premium.txt의 호환 버전 설치"),
+            ("03 / 입력 작성", "sample_input.csv의 필수 열 이름과 순서를 그대로 유지하여 새 CSV 작성"),
+            ("04 / 실행", "Windows: predict.cmd new_data.csv predicted.csv"),
+            ("05 / 결과 확인", "prediction 열을 검토하고 원본 입력과 함께 안전하게 보관"),
+        ]),
+        p("실행 전 주의", "head"),
+        p("기존 결과 파일은 덮어쓰지 않습니다. 모델 및 스키마 파일을 수정했거나 "
+          "잘못된 열 순서로 입력하면 실행을 중단해야 합니다."),
+        p("skops 파일 내부에는 학습 범주 메타데이터가 남을 수 있으므로 "
+          "모델 ZIP은 해당 고객에게만 비공개 전달해야 합니다.", "small"),
+        p("SHA-256은 무결성을 점검할 뿐 발신자를 인증하는 서명이 아닙니다.", "small"),
         PageBreak(),
-        p("PREMIUM — 입력 스키마 및 운영 체크리스트", True),
-        p("필수 CSV 컬럼 (순서 고정)"),
-        p(", ".join(raw_schema["raw_feature_columns"])),
-        p("숫자형 컬럼: " + (", ".join(raw_schema["numeric_raw_columns"]) or "없음")),
-        p("날짜형 컬럼: " + (", ".join(raw_schema["datetime_features"]) or "없음")),
-        p("불리언 컬럼: " + (", ".join(raw_schema["boolean_raw_columns"]) or "없음")),
-        Spacer(1, 14),
-        p("반복 예측 전 확인할 사항", True),
-        p("1. 입력 행마다 모든 필수 컬럼이 있고 컬럼 순서와 유형이 동일한지 확인합니다."),
-        p("2. 목표 컬럼은 새 CSV에 포함하지 않습니다. 고객 식별자 및 시점 컬럼은 학습 정책에 맞춰 처리합니다."),
-        p("3. 새 데이터가 학습 당시와 크게 달라졌다면 CV/holdout 성능을 인용하지 않습니다."),
-        p("4. 예측 결과가 의사결정에 사용된다면 독립적인 업무 검증과 위험 점검을 거칩니다."),
-        p("5. 출력 CSV는 예측치만 보관합니다. 원본 CSV는 별도로 보호하고 접근 권한을 관리합니다."),
-        Spacer(1, 14),
-        p("재현성·보안 제약", True),
-        p("모델 로딩에는 학습 환경과 일치하는 Python·pandas·scikit-learn·skops 버전이 필요합니다. "
-          "폴더에 포함된 requirements-premium.txt를 참고하세요."),
-        p("해시 검증과 skops 타입 검사는 훼손 및 일반적인 비신뢰 객체 위험을 줄이지만 "
-          "악성 ZIP의 출처 자체를 인증하지 않습니다. 제공자를 확인하세요."),
+        p("PREMIUM / 입력 스키마와 검수", "title"),
+        p("입력 계약 요약", "head"),
+        panel([
+            ("필수 입력 열", f"{len(columns)}개 · 순서와 이름이 정확히 일치해야 함"),
+            ("숫자형 입력", f"{len(raw_schema['numeric_raw_columns'])}개"),
+            ("날짜형 변환", f"{len(raw_schema['datetime_features'])}개"),
+            ("불리언 입력", f"{len(raw_schema['boolean_raw_columns'])}개"),
+            ("학습용 전처리 열", f"{len(raw_schema['prepared_feature_columns'])}개"),
+        ]),
+        p("필수 열 미리보기", "head"),
+        p(example_names or "필수 입력 열 없음"),
+        p("전체 순서·유형 정보는 동봉된 model_schema.json이 기준입니다. "
+          "목표 변수는 새로운 예측 CSV에 포함하지 않습니다.", "small"),
+        p("납품 구성품", "head"),
+        panel([
+            ("model_pipeline.skops", "학습된 전처리 + 예측 모델; 신뢰된 원본만 로드"),
+            ("model_schema.json", "입력 열 순서, 유형, 버전 및 모델 해시"),
+            ("predict.py / predict.cmd", "동일 스키마 새 CSV를 예측하는 로컬 실행 도구"),
+            ("sample_input.csv", "실제 고객 행을 담지 않은 빈 헤더 템플릿"),
+            ("sample_predictions.csv", "예시 예측값을 조작하지 않은 빈 결과 헤더"),
+        ]),
+        p("반복 예측 전 체크", "head"),
+        p("① 원본 발신자 확인  ② Python/라이브러리 버전 일치  "
+          "③ 열 이름·순서 확인  ④ 출력 경로 중복 확인"),
+        p("시간·고객별 반복 관측, 목표 누수, 데이터 분포 변화가 있다면 "
+          "CV/holdout 점수를 실제 미래 성능처럼 사용하지 마세요.", "small"),
+        p("중요한 의사결정에는 별도의 업무 검수 및 모델 위험 평가가 필요합니다.", "small"),
     ]
     out = BytesIO()
     SimpleDocTemplate(out, pagesize=A4, leftMargin=49, rightMargin=49,
-                      topMargin=48, bottomMargin=52).build(story)
+                      topMargin=48, bottomMargin=52,
+                      title="AI AutoML Analyst PREMIUM handover",
+                      author="AI AutoML Analyst").build(story)
     return out.getvalue()
 
 
