@@ -1,0 +1,36 @@
+name: AutoML P6D near-cap ML stress
+on:
+  push:
+    branches:
+      - feature/kmong-v1
+    paths:
+      - "scripts/p6d_ml_stress.py"
+      - "backend/app/services/ml_workload_policy.py"
+      - ".github/workflows/p6d-ml-stress.yml"
+      - "requirements-verified-py311.txt"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  synthetic-near-cap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements-verified-py311.txt
+      - name: Install verified dependencies
+        run: python -m pip install -r requirements-verified-py311.txt
+      - name: Real 50-column CV/holdout/tuning at tier row limits
+        run: |
+          OPENBLAS_NUM_THREADS=2 OMP_NUM_THREADS=2 python -m scripts.p6d_ml_stress
+      - name: Retain empirical time/memory evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: p6d-50column-ml-stress
+          path: ci-benchmarks/p6d_near_capacity.json
+          if-no-files-found: error
+          retention-days: 7
