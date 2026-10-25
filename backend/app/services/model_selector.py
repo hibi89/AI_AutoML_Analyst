@@ -243,14 +243,6 @@ def _select_classification_models(
     ]
     selected_names = [name for name in priority if name in selected_names]
 
-    priority = [
-        "dummy_regressor", "linear_regression",
-        "random_forest_regressor", "hist_gradient_boosting_regressor",
-        "gradient_boosting_regressor", "extra_trees_regressor",
-        "ridge", "lasso", "elastic_net", "sgd_regressor", "linear_svr", "svr",
-    ]
-    selected_names = [name for name in priority if name in selected_names]
-
     selected_models = {
         name: all_models[name]
         for name in selected_names
@@ -364,6 +356,14 @@ def _select_regression_models(
     else:
         excluded.append("hist_gradient_boosting_regressor")
         policy["rules"].append("범주형 인코딩으로 sparse matrix 가능성이 있어 HistGradientBoostingRegressor는 제외했습니다.")
+
+    priority = [
+        "dummy_regressor", "linear_regression",
+        "random_forest_regressor", "hist_gradient_boosting_regressor",
+        "gradient_boosting_regressor", "extra_trees_regressor",
+        "ridge", "lasso", "elastic_net", "sgd_regressor", "linear_svr", "svr",
+    ]
+    selected_names = [name for name in priority if name in selected_names]
 
     selected_models = {
         name: all_models[name]
