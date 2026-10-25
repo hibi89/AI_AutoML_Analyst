@@ -43,6 +43,11 @@ def inventory() -> dict:
         # License-File metadata may list files; we record only filenames,
         # never the referenced font or license binaries themselves.
         license_files = msg.get_all("License-File", [])
+        # Generic classifiers such as "OSI Approved" do not identify which
+        # license terms govern redistribution; treat them as manual review.
+        specific_classifiers = [label for label in classifiers
+                                if label not in {"OSI Approved", "Other/Proprietary License"}]
+        identifiable = bool(expression or legacy or specific_classifiers)
         rows.append({
             "name": name,
             "version": dist.version,
@@ -51,7 +56,7 @@ def inventory() -> dict:
             "legacy_license": legacy[:240],
             "license_classifiers": classifiers,
             "license_file_names": license_files[:12],
-            "requires_human_review": not bool(expression or legacy or classifiers),
+            "requires_human_review": not identifiable,
         })
     rows.sort(key=lambda item: item["name"].lower())
     missing_direct = sorted(DIRECT - {normalize_name(r["name"]) for r in rows})
