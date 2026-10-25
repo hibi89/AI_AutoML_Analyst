@@ -22,3 +22,11 @@
 
 ## Next READY task AUTO-KM-P6E2
 Run adversarial privacy and malformed-input tests against exported report ZIP/PDF and data routes; inspect preview image design; record dependency and owner Windows manual gates honestly. Keep feature branch; main untouched. No approval to launch, deploy, or merge.
+
+
+## P6E2 verified security and visual QA (2026-10-26 KST)
+- Code changes: CSV parser input bound + safe error redaction, model CV error private-string redaction, XLSX duplicate/case-variant macro/external-link rejection; new `tests/test_p6e_adversarial.py`. All synthetic.
+- [Linux 40213253212](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40213253212) at `801c4ddad9db2644604c79b7fde8277fad53a085`: **100 PASS /1 Windows-only SKIP/41 warnings**; BASIC 6/STANDARD 9/PREMIUM 11 PDF pages. [Windows 40213192384](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40213192384) and [Chromium 40213192440](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40213192440) SUCCESS at implementation SHA `76e60f256ff1c479dd815722b7aee58c1d26f913` (tests-only later).
+- Downloaded/visually inspected 11-page P6E1 PREMIUM PDF: no obvious Korean glyph failure/clipping at montage resolution; page 5/6/7/10/11 whitespace persists, aesthetic signoff still pending. Checked CI pip freeze **46 packages**, direct license metadata only 14; actual CVE scanner NOT RUN; skops exact upstream license still review.
+- Tier readiness **BASIC NO / STANDARD NO / PREMIUM NO**; P1 PARTIAL (owner physical Windows browser NOT RUN), P6 IN PROGRESS; strict **5/7=71%**. See `docs/qa/P6E2_RELEASE.md`.
+- **Next READY AUTO-KM-P6E3:** free reproducible CVE/transitive-license scan and triage, malformed/wide/memory boundary QA, final PDF layout and owner Windows check. No public deploy, main merge, sales release, paid services, or customer data access.
