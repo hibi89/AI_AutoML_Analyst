@@ -29,3 +29,11 @@ As of 2026-10-26 KST. All files on `feature/kmong-v1`; main original preserved.
 4. Release only tiers explicitly approved after remaining gates. Do **not** auto-merge, launch a Kmong listing, publish a public service or move model/customer files to GitHub.
 
 Full package/source review: `docs/qa/P6E6_LICENSE_DISTRIBUTION.md`.
+
+
+### P6E6 final observed CI + shipped ZIP sample inspection (2026-10-26 KST)
+- [Latest Linux 40218159484](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40218159484), code+test SHA `bef8bc7b55efe0f9f6c51c5407417e0599ea9eea`: **125 PASS / 1 Windows-only SKIP / 41 warnings**, report generation BASIC 6 / STANDARD 9 / PREMIUM 11 pages, synthetic owner pack and ZIP manifest validation PASS. P6E6 negative tests run.
+- [Windows native 40218115665](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40218115665): **52 PASS /9 warnings**, on executable SHA `3e6ea05658f1d7e0428872ece8482f4326c1aeda` (same README font credits; preceding policy-only tests). [Real Linux Chromium 40218115671](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40218115671): **SUCCESS**, actual BASIC 481,877, STD 636,499, PREM 729,714 byte ZIP downloads on same executable SHA. Linux full tests cover later policy changes.
+- Downloaded **actual latest Linux CI synthetic preview artifact 12608308778**, inspected each tier shipping ZIP directly. BASIC **10 members** / STANDARD **13** / PREMIUM **20**. All README files actually contain NAVER, SIL Open Font License 1.1 and official URL; all manifest SHA-256 entries verified; zero .whl/.ttf/.otf/.dll/.exe/.pyd/.so loose files. This is direct inspection of output bytes, not only metadata asserted by tests.
+- License document `docs/qa/P6E6_LICENSE_DISTRIBUTION.md` covers 10 pinned flagged packages, separating independently installed Python deps from bundled wheel/EXE scenarios. No claim of legal clearance for future bundling or embedded PDF font beyond official OFL source terms.
+- Final owner's physical Windows UI, PDF aesthetic acceptance and exact delivered `predict.cmd` replay **NOT RUN BY OWNER**. All tiers remain sale NO-GO; strict 5/7 (71%), main untouched. GitHub HEAD may be docs-only newer than tested code; always distinguish SHA.
