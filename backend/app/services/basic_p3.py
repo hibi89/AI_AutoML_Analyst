@@ -27,8 +27,8 @@ from backend.app.services.basic_report import (
 # This attribution travels inside the customer report ZIP; font binaries do not.
 NANUM_FONT_CREDIT = (
     "한글 PDF 글꼴: NAVER 나눔고딕(NanumGothic) / "
-    "Copyright (c) 2010 NAVER Corporation / SIL Open Font License 1.1\\n"
-    "라이선스: https://help.naver.com/service/30016/contents/18088\\n"
+    "Copyright (c) 2010 NAVER Corporation / SIL Open Font License 1.1\n"
+    "라이선스: https://help.naver.com/service/30016/contents/18088\n"
 )
 
 
