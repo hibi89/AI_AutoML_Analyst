@@ -205,6 +205,36 @@ def _append_ml_pdf(original: bytes, analysis: dict, chart_png: bytes) -> bytes:
     ])
     for metric in metrics:
         story.append(para(f"{metric}: 선택 모델 {metrics[metric]:.4f}, Dummy {dummy[metric]:.4f}"))
+    importance = analysis.get("training_feature_importance", [])
+    if importance:
+        story.extend([Spacer(1, 12), para("모델별 변수 기여도 참고", "head")])
+        method_names = {
+            "tree_impurity": "트리 불순도 기반",
+            "absolute_coefficient": "전처리 후 계수 절댓값 합",
+        }
+        method = method_names.get(importance[0]["method"], "모델 내부 순위")
+        story.append(para(
+            f"{method} 순위입니다. 학습된 선정 모델 내부의 중요도이며, "
+            "범주 값은 원본 컬럼 단위로 합산해 익명화했습니다. "
+            "값의 단위·크기는 다른 모델과 비교하거나 인과관계로 해석할 수 없습니다.",
+            "small",
+        ))
+        rows = [["원본 변수명", "모델 내부 기여도"]]
+        for item in importance[:6]:
+            rows.append([para(str(item["feature"]), "small"),
+                         f"{item['importance']:.5g}"])
+        tbl = Table(rows, colWidths=[322, 155], repeatRows=1, hAlign="LEFT")
+        tbl.setStyle(TableStyle([
+            ("FONTNAME", (0,0), (-1,-1), font),
+            ("FONTSIZE", (0,0), (-1,-1), 8),
+            ("BACKGROUND", (0,0), (-1,0), colors.HexColor("#dcecf5")),
+            ("ROWBACKGROUNDS", (0,1), (-1,-1),
+             [colors.white, colors.HexColor("#f3f8fa")]),
+            ("GRID", (0,0), (-1,-1), .3, colors.HexColor("#d6e5ed")),
+            ("TOPPADDING", (0,0), (-1,-1), 5),
+            ("BOTTOMPADDING", (0,0), (-1,-1), 5),
+        ]))
+        story.append(tbl)
     story.extend([Spacer(1, 8), para("유의사항", "head")])
     for w in analysis["warnings"][:6]:
         story.append(para("• " + w, "small"))
