@@ -16,26 +16,68 @@ from backend.app.services.standard_engine import run_standard
 
 
 def _comparison_plot(analysis: dict) -> bytes:
+    """Compact, annotated CV scorecard with clear model/baseline distinctions."""
     import matplotlib
     matplotlib.use("Agg")
     from matplotlib import pyplot as plt
+    from matplotlib import font_manager
+    from pathlib import Path
+    import os
+
+    font_paths = [
+        os.environ.get("AUTOML_KOREAN_FONT_PATH", ""),
+        "/usr/share/fonts/truetype/nanum/NanumGothic.ttf",
+        "C:/Windows/Fonts/malgun.ttf",
+    ]
+    font_path = next((p for p in font_paths if p and Path(p).is_file()), None)
+    korean_font = font_manager.FontProperties(fname=font_path) if font_path else None
+    font_options = {"fontproperties": korean_font} if korean_font else {}
 
     rows = [r for r in analysis["models"] if r["status"] == "success"]
-    fig, ax = plt.subplots(figsize=(8, 4.5))
+    names = [r["model"].replace("_classifier", "").replace("_regressor", "")
+             .replace("_", " ").title() for r in rows]
+    values = [r["cv_primary"] for r in rows]
+    fig, ax = plt.subplots(figsize=(8.6, 4.85), facecolor="#F5F8FC")
     try:
-        names = [r["model"].replace("_classifier", "").replace("_regressor", "") for r in rows]
-        vals = [r["cv_primary"] for r in rows]
-        bars = ax.barh(names, vals)
+        ax.set_facecolor("#FFFFFF")
+        left = min(0.0, min(values) - .12) if values else 0
+        right = max(0.1, max(values) + .18) if values else 1
+        span = right - left
+        selected = analysis["selected_model"]
+        palette = [
+            "#AAB9C9" if r["role"] == "baseline"
+            else "#147D99" if r["model"] == selected
+            else "#80BAC8" for r in rows
+        ]
+        bars = ax.barh(range(len(rows)), values, color=palette, height=.52,
+                       edgecolor="none", zorder=3)
         ax.invert_yaxis()
-        ax.set_xlabel(f"Training-CV {analysis['primary_metric']} (higher is better)")
-        ax.set_title(f"Model comparison: Dummy + {analysis.get('challenger_budget', 3)} challengers")
-        ax.axvline(0, linewidth=0.75, color="black")
-        for i, rect in enumerate(bars):
-            if rows[i]["role"] == "baseline":
-                rect.set_hatch("//")
-        fig.tight_layout()
+        ax.set_xlim(left, right)
+        ax.set_yticks(range(len(names)), names, fontsize=9, color="#263D53")
+        ax.tick_params(axis="y", length=0, pad=11)
+        ax.tick_params(axis="x", colors="#688092", length=0, labelsize=8)
+        ax.xaxis.grid(True, color="#E3EBF2", linewidth=.9, zorder=0)
+        ax.axvline(0, linewidth=.8, color="#748DA2", alpha=.5)
+        for edge in ax.spines.values():
+            edge.set_visible(False)
+        for row, bar, value in zip(rows, bars, values):
+            ax.text(value + .018 * span, bar.get_y() + bar.get_height()/2,
+                    f"{value:.3f}", va="center", ha="left",
+                    fontsize=9, color="#17364B", fontweight="bold")
+            if row["role"] == "baseline":
+                bar.set_hatch("///")
+        metric = analysis["primary_metric"]
+        heading = "학습 데이터 교차검증 · 모델 비교" if korean_font else "Training cross-validation · model scorecard"
+        fig.text(.075, .935, heading, fontsize=15, fontweight="bold",
+                 color="#17364B", **font_options)
+        subtitle = ("기준선(Dummy) / CV 선정 모델 / 기타 후보" if korean_font
+                    else "Dummy baseline / CV-selected model / other candidates")
+        fig.text(.075, .884, subtitle, fontsize=9, color="#5C7386", **font_options)
+        ax.set_xlabel(f"{metric}  |  CV mean (higher = better)",
+                      fontsize=9, color="#48637B", labelpad=12)
+        fig.subplots_adjust(left=.32, right=.92, top=.77, bottom=.19)
         buf = BytesIO()
-        fig.savefig(buf, format="png", dpi=130)
+        fig.savefig(buf, format="png", dpi=145, facecolor=fig.get_facecolor())
         return buf.getvalue()
     finally:
         plt.close(fig)
