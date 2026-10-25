@@ -89,3 +89,31 @@ def test_dependency_version_mismatch_rejected(trusted_bundle):
     schema.write_text(json.dumps(data), encoding="utf-8")
     with pytest.raises(ValueError, match="Dependency versions differ"):
         predict_csv(folder, source, folder / "result.csv")
+
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="requires Windows cmd.exe")
+def test_packaged_windows_cmd_real_prediction_and_collision(trusted_bundle):
+    import shutil
+    import subprocess
+    from backend.app.services.premium_delivery import windows_predict_command
+    from backend.app.services import premium_predict
+
+    folder, source = trusted_bundle
+    batch = folder / "predict.cmd"
+    batch.write_bytes(windows_predict_command())
+    shutil.copyfile(Path(premium_predict.__file__), folder / "predict.py")
+    output = folder / "predictions from cmd.csv"
+
+    result = subprocess.run(
+        ["cmd.exe", "/d", "/c", str(batch), str(source), str(output)],
+        cwd=folder, capture_output=True, text=True, timeout=45,
+    )
+    assert result.returncode == 0, (result.stdout, result.stderr)
+    assert len(pd.read_csv(output)) == 3
+
+    second = subprocess.run(
+        ["cmd.exe", "/d", "/c", str(batch), str(source), str(output)],
+        cwd=folder, capture_output=True, text=True, timeout=45,
+    )
+    assert second.returncode != 0, (second.stdout, second.stderr)
