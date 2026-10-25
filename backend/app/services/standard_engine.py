@@ -343,14 +343,31 @@ def run_standard(
                 best_pipeline.named_steps["preprocess"].get_feature_names_out()
             )
             if len(feature_names) == len(raw_importance):
-                ranked = sorted(
-                    [(str(name), float(v)) for name, v in zip(feature_names, raw_importance)
-                     if math.isfinite(float(v))],
-                    key=lambda item: item[1], reverse=True
+                # OneHotEncoder feature names embed category *values*, which
+                # may be personal/confidential. Aggregate category-level scores
+                # back to the user-supplied column name before reporting.
+                merged: dict[str, float] = {}
+                categorical_names = sorted(
+                    [str(c) for c in prep.categorical_features], key=len, reverse=True
                 )
+                for raw_name, raw_score in zip(feature_names, raw_importance):
+                    if not math.isfinite(float(raw_score)):
+                        continue
+                    name = str(raw_name)
+                    if name.startswith("categorical__"):
+                        encoded = name.removeprefix("categorical__")
+                        name = next(
+                            (c for c in categorical_names if encoded.startswith(c + "_")),
+                            "범주형 변수 (식별값 비공개)",
+                        )
+                    else:
+                        name = name.split("__", 1)[-1]
+                    merged[name] = merged.get(name, 0.0) + float(raw_score)
                 feature_importance = [
                     {"feature": name, "importance": round(score, 6), "method": kind}
-                    for name, score in ranked[:8]
+                    for name, score in sorted(
+                        merged.items(), key=lambda item: item[1], reverse=True
+                    )[:8]
                 ]
         except (ValueError, AttributeError, TypeError):
             # Intentionally do not fabricate importance when feature mapping fails.
