@@ -25,7 +25,7 @@ aside{margin-top:26px;border-left:3px solid #b7cad6;padding-left:16px}
 <section class="panel">
 <form id="upload">
 <label for="csv">분석할 CSV 파일 선택</label>
-<input id="csv" type="file" accept=".csv,text/csv" required>
+<input id="csv" type="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required>
 <small>현재 한도: 파일 30MiB · 20,000행 · 50열. 원본 CSV는 분석 ZIP에 포함하지 않습니다.</small>
 <div><button type="submit" id="run">분석하고 ZIP 받기</button></div>
 <div id="status" role="status" aria-live="polite"></div>
