@@ -1,31 +1,36 @@
-# ACTIVE TASK — authoritative next work item
-Updated: 2026-10-25 KST
+# ACTIVE TASK — AUTO-KM-P6 commercial release gate
+Updated: 2026-10-26 KST
 status: READY
-task_id: AUTO-KM-P4
+task_id: AUTO-KM-P6
 target_branch: feature/kmong-v1
-role: lead-engineer-and-implementer
-predecessor: P0 done, P1 API MVP passed (real Windows browser pending), P2 done (36/36), P3 BASIC PDF/ZIP implementation passed 42/42 CI (manual PDF visual/font+Windows sale QA pending).
-next_after_success: AUTO-KM-P5 (PREMIUM model serialization and same-schema predictions)
+role: lead-engineer, QA owner
+predecessor: P0 DONE, P1 PARTIAL (real browser pending), P2 DONE, P3 DONE implementation, P4 DONE implementation, P5 DONE implementation with 59/59 CI; no tier sellable.
+next_after_success: P7 Kmong listings only for truly verified sellable tiers.
 
-## Objective — STANDARD (₩150,000) end-to-end
-Extend the existing FastAPI local workflow with a **STANDARD** package using the same data engine:
-BASIC quality report and charts + user-approved target + **at most 3 non-Dummy** ML challengers + independent Dummy baseline, defensive cross-validation / holdout and a single PDF 8–12 pages + ML comparison table/plot/ZIP. Do not manufacture scores if infeasible.
+## Priority 0: report/graph polish before listing — user explicitly requested
+Current BASIC graphs are intentionally functional MVP plots and **not commercial-quality**. Rewrite visual design coherently across BASIC/STANDARD/PREMIUM:
+- Korean title/axis/unit, consistent font/color and chart sizes, legible labels and dynamic ticks, sensible typography/layout and high-DPI PNG embedding.
+- Only honest, schema-supported charts, no filler (5 charts when data supports, fewer otherwise), no unlabeled 'N1'/'Group 1' without a clear privacy explanation. Protect customer category identities where user hasn't approved export.
+- Fix sparse pages and overlarge whitespace, improve executive summary and chart annotations, stronger insight-to-chart mapping, meaningful highlight/KPI boxes without fabricated causal claims.
+- Render every page of representative CSVs, compare generated PNG/page previews visually, check Korean glyphs/overlap and chart accuracy. Show user polished sample before listing.
 
-## Ordered implementation
-1. Read live HEAD, HANDOFF, STATUS, AGENTS, REQUIREMENTS, SKU_MATRIX, source and P0/P1/P2/P3 QA. Ensure GitHub Actions latest P3 tests still PASS; also note the temporary synthetic PDF preview artifact.
-2. Design and implement explicit classifier/regressor & target selection, retain existing model_selector and P2 guards. **No unconditional auto guessing** for ambiguous numeric targets. Budget max 3 non-Dummy for STANDARD, Dummy distinct.
-3. Split before fit; use train subset for cross-validation and held-out subset for independent final evaluation where viable. Choose random stratified for classification by default, and require user context or explicit policy for group/time-ordered data rather than false future-generalization claims. Add warnings/no-score when leak-safe split is impossible.
-4. Preprocessing must remain inside sklearn Pipeline fitted within train/CV only. Evaluate same metrics fairly and distinguish CV metrics vs holdout metrics, baseline comparisons, uncertainty/limits. **Do not select on holdout**. Expose no-skill outcome transparently.
-5. Reuse BASIC P3 ZIP/PDF/chart code for shared delivery. Add true ML score CSV, comparison chart, Korean result interpretation, target leakage warnings, and STANDARD report 8–12 pages when data supports it. Preserve existing routes; add local-only endpoint/UI without exposing dangerous legacy folder path API. No model serialization in STANDARD.
-6. Add synthetic tests including normal classification/regression, ambiguous target 400, constant/rare class 400, group/time future leakage warnings, row/feature/size controls, baseline exactly once, CV/holdout separation, ZIP/PDF extractability, Korean glyphs and client errors. Avoid customer data and paid APIs.
-7. Execute GitHub Actions Python 3.11 full suite, inspect logs, capture actual SHA and artifact manifest, record failures honestly, fix minimal bugs. Update STATUS/HANDOFF/ACTIVE_TASK.
+## Priority 1: release safety + public exposure hardening
+- Legacy `/api/folders/browse`, `/api/folder/scan`, `/api/analyze-path`, original `/api/analyze` and `/api/results` currently have broad CORS / filesystem and unbounded work. Deny/disable dangerous routes for commercial interface or enforce local origin/host/method and explicit scoped filesystem access; avoid breaking original saved tests without replacement.
+- Harden input parsing (CSV/XLSX if promised), formula injection, target/column duplicate, unknown dtypes, huge row/col sizes, incomplete CSV, path traversal and ZIP-bomb, file rename/collision, bounded processing and error redaction. Add adversarial, regression, concurrency and performance tests.
+- Reject unsafe/untrusted model bundles, signed provenance if truly needed (SHA only integrity), model-size and version compatibility, do not accept arbitrary pickle. Review `skops` allowlist and package dependency/font licenses. Keep real data local.
+- Untrusted user-owned CSV/XLSX handled only on localhost and never committed. No hosting, payments, external data transfer or main merge without user approval.
 
-## Acceptance
-- Functional local API/upload -> genuine STANDARD ZIP with BASIC + ML comparison, honest scores, corresponding Korean PDF, and all required source controls.
-- Python 3.11 all existing **42 P0/P1/P2/P3 tests** plus new P4 tests PASS and actual HTTP/PDF/ZIP tests PASS.
-- Group/time leakage either properly handled or explicitly prohibited/caveated. No false holdout-based model selection.
-- No real customer files or secrets in GitHub. main intact. Windows/browser/security QA remain release gate P6; **STANDARD NOT SALE READY** until verified.
+## Priority 2: Windows/browser/portability
+- Test actual Windows Python 3.11 install/first-run for all three tiers, font detection, Chrome/Edge `fetch`/download ZIP and output files, PowerShell/CMD prediction runner on a fresh same-schema CSV, wrong-schema and tampered-artifact rejection.
+- If actual physical Windows environment is unavailable to the assistant, do not fake it; prepare a deterministic one-command local QA script and report owner action needed as final blocker.
+- CI with Windows runner when possible to exercise non-GUI checks, plus Linux Python3.11 full suite (currently **59** tests).
 
-## Explicit future
-P5 PREMIUM: up to 5 challengers, trusted serialized pipeline and identical-schema CSV repeat prediction with Windows script, no unsafe pickle from customers.
-P6 final gates: Windows real browser, Korean PDF visual review/page overflow, dependency licenses, CORS/filesystem/path hardening, sizing/performance, artifact verification.
+## Priority 3: frozen SKU alignment, go/no-go
+- BASIC 60k: CSV/XLSX accepted or narrow listing claim; 6–8 page PDF on supported sample, 5–10 actual KPIs and justified graphs.
+- STANDARD 150k: 3 challengers + Dummy, independent holdout, 8–12 page PDF and appropriate chart/CSV/ZIP.
+- PREMIUM 300k: 5 challengers + Dummy, top-two limited CV tuning, 10–15 page PDF, trusted skops, exact-version predict CLI, sample input schema and real tested repeat predictions. No accuracy guarantee.
+- Document actual QA evidence and remaining blockers in `docs/qa/P6_RELEASE.md`, update STATUS/HANDOFF/ACTIVE_TASK and verify CI. Allow P7 listing only after P6 evidence passes; do not self-declare release ready.
+- Keep `main` unchanged until separately approved. Continue on `feature/kmong-v1`.
+
+## Current evidence to recheck
+P5 Python 3.11 Actions run: https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40205977563 — 59 PASS, 19 warnings, 11-page PREMIUM synthetic PDF with 5+Dummy and top-two CV tuning. QA details `docs/qa/PREMIUM_P5.md`. Generated preview is synthetic, not customer data.
