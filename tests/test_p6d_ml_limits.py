@@ -36,7 +36,7 @@ def test_basic_still_accepts_large_data_for_diagnostics():
 def test_high_cardinality_encoded_matrix_refused_before_fit():
     n=150
     rng=np.arange(n)
-    data={f"category_{i}":pd.Series([f"segment_{v%65}" for v in rng])
+    data={f"category_{i}":pd.Series([f"segment_{v%45}" for v in rng])
           for i in range(8)}
     data["target"]=rng%2
     df=pd.DataFrame(data)
