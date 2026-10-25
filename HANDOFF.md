@@ -1,4 +1,4 @@
-# HANDOFF — AI AutoML Analyst / continue next P6C work
+# HANDOFF — AI AutoML Analyst / continue next P6D work
 Updated 2026-10-26 KST. **Single-command wake-up**: [AI AutoML Analyst 깃헙 레포지토리 보고 작업이어가셈] or ㄱ. Immediately start next task, do not ask prior decisions. Live GitHub branch `feature/kmong-v1`, repo `hibi89/AI_AutoML_Analyst` is source. Original `main@c80c874476f8d5deb4bf611761d89c6d72ca0a2d` must remain unchanged.
 
 ## 1. Locked objective
@@ -6,7 +6,7 @@ Local-first 3-tier Kmong data-analysis report and ML custom-delivery product (BA
 
 ## 2. Latest implementation stages
 P0 DONE, P1 PARTIAL (real Windows browser), P2 DONE, P3 BASIC DONE implementation, P4 STANDARD DONE implementation, P5 PREMIUM DONE implementation. **P6 IN PROGRESS, NOT ACCEPTED** (P6A visual redesign, local-only security and XLSX implemented and Linux CI passes; Windows and final QA still missing). Strict milestones **5/7 = 71%**, not subjective completion percentage. **All tiers NOT SALE READY.**
-Next precise READY task: **AUTO-KM-P6C**, see `docs/dispatch/ACTIVE_TASK.md`.
+Next precise READY task: **AUTO-KM-P6D**, see `docs/dispatch/ACTIVE_TASK.md`.
 
 ## 3. Current source progress and verification
 - `backend/app/services/chart_design.py` now creates higher-quality Korean, 155dpi graphs with consistent palette, actual column names (not N1), median line, percent labels, correlation values, anonymized categories with explicitly stated privacy notice, box plot/trend. `basic_p3.py` delegates chart generation to P6 shared designer and formats first-page KPIs into cards with consistent accent. `standard_delivery.py` P5 ML comparison plot already highlights selected model, hatches Dummy baseline and annotates scores. **All chart code shared across tiers.**
@@ -33,7 +33,7 @@ Next precise READY task: **AUTO-KM-P6C**, see `docs/dispatch/ACTIVE_TASK.md`.
 
 ## 6. Next action for ㄱ
 1. Confirm live dev SHA, original main SHA, open `ACTIVE_TASK.md`, `STATUS.md`, P6 QA, actual source/tests and GitHub Actions latest runs.
-2. Advance **P6C**: improve remaining PDF page density/labels/accessibility based on preview, prepare robust Windows/CLI test path and benchmark bounded data, analyze dependency/font rights, run real tests on a suitable environment, fix regressions. On no access, mark Windows/manual gate **OWNER ACTION REQUIRED** explicitly rather than claiming it passed. P7 listing only after P6 gates.
+2. Advance **P6D**: improve remaining PDF page density/labels/accessibility based on preview, prepare robust Windows/CLI test path and benchmark bounded data, analyze dependency/font rights, run real tests on a suitable environment, fix regressions. On no access, mark Windows/manual gate **OWNER ACTION REQUIRED** explicitly rather than claiming it passed. P7 listing only after P6 gates.
 3. Update `STATUS.md`, `HANDOFF.md`, `docs/dispatch/ACTIVE_TASK.md`, `docs/qa/P6_RELEASE.md` each work boundary with real SHA/CI and next precise task. Use connected GitHub app and GitHub Actions if direct container clone still blocked. A failed path repeated twice must pivot.
 4. Do not inflate progress 71% until P1 browser or P6 release acceptance is satisfied, no matter how many tests pass. No merge to main without approval.
 
@@ -55,3 +55,13 @@ Latest UI-inclusive verification: [GitHub Actions 40207617902](https://github.co
 - Windows owner helper script `scripts/windows_release_qa.ps1` now includes `tests/test_p6_windows_compat.py` and chart-policy tests; command is NOT known to have been run on the owner's physical PC.
 - Historical P6B documentation `docs/qa/P6_RELEASE.md` appended with objective tests, initial CMD failure/correction and Windows/PDF caveats.
 - **P6 still IN PROGRESS**, exact strict progress **5/7 (71%)**, ALL SKUs NOT SELLABLE. Next READY `AUTO-KM-P6C` in `docs/dispatch/ACTIVE_TASK.md`: report page density, GUI/first install, STANDARD/PREMIUM performance/memory caps, stable dependencies, tier-specific go/no-go; owner Windows/browser cannot be marked passed absent direct evidence. Original main remains unchanged.
+
+## 9. NEW P6C outcomes and next (2026-10-26 KST)
+- **Actual browser contract now proven on CI**: `scripts/p6_browser_smoke.py` uses Playwright Chromium to select file, click real UI, download ZIP and verify PDF/manifest for BASIC, STANDARD, PREMIUM. Latest verified pinned CI [40210012769](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40210012769) **3/3 tiers PASS**. Earlier [40209289729](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40209289729) confirmed ZIP sizes BASIC 479,695 B / STANDARD 626,494 B / PREMIUM 722,198 B. **Not owner's Windows GUI**, therefore P1 still PARTIAL.
+- **Exact direct dependency versions** from Linux Python3.11, now in `requirements-verified-py311.txt` (14 packages incl pandas2.3.3, numpy2.4.6, sklearn1.9.1, skops0.16.0, ReportLab4.5.1). Pinned smoke CI works across Linux, Windows and Chromium: [Linux 40210003500](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40210003500) 78 PASS/1 Windows-only SKIP, [Windows 40210007786](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40210007786) 39 PASS incl real cmd.exe, [Chromium 40210012769](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40210012769) full three-tier UI downloads. `scripts/p6c_environment_audit.py` collects `pip check`, license metadata and Linux pip freeze. Transitive licensing/vulnerability risks still not certified.
+- **STANDARD/PREMIUM measured CV/holdout and tuning**: [40209531361](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40209531361) Linux synthetic with 7 features: STD 0.851/0.896/1.503 seconds vs PREMIUM 2.570/2.590/4.370 seconds at 120/400/2,000 rows. On pinned CI [40210003500](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40210003500) 2,000-row STD 1.976s / PREMIUM 5.664s. **Do not project to 20k x50.**
+- STANDARD PDF methodology now has a table of actual selection data/untouched holdout, holdout-vs-Dummy difference with statistical/causal caveat. Shared input guard rejects column headers >160 characters or with control characters. A newly added test accidentally used literal backslash-n (three intermediate CI failures) then fixed; final 78/78 Python tests PASS.
+- Inspected the actual pinned CI PDF preview `premium/report.pdf` and all 11 raster pages; Korean fonts and charts legible, still sparse pages P2/P5/P7/P9/P10/P11. This is an automated-development sample, **not design signed off by owner**.
+- `scripts/windows_release_qa.ps1 -OpenBrowser` now installs pinned requirements, runs non-GUI tests, starts localhost uvicorn, polls `/health`, opens three pages and prints PID. The script is authored but **not validated end-to-end on the owner's PC**. Do not claim owner's browser PASS.
+- Evidence `docs/qa/P6C_RELEASE.md`. P6 still **IN PROGRESS, ALL 3 SKUs NOT SELLABLE, strict P0–P6 5/7=71%**. `main` unchanged.
+- **Next `ㄱ`: AUTO-KM-P6D** from `docs/dispatch/ACTIVE_TASK.md`: stress STANDARD/PREMIUM with larger/categorical tables & safe workload policy, polish page density, validate local Windows UX and dependencies, final tier-specific security/licenses/distribution gate. No client-sensitive data or unapproved public deployment. If physical Windows interaction unavailable, record owner action rather than fake PASS.
