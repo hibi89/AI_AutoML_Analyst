@@ -6,7 +6,7 @@ from typing import Any
 
 import pandas as pd
 
-from fastapi import FastAPI, File, Form, HTTPException, Query, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, Query, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse
 
@@ -502,3 +502,58 @@ def get_report(job_id: str) -> PlainTextResponse:
             status_code=400,
             detail=str(e),
         ) from e
+
+# Commercial MVP preview: local-only access, no raw upload persistence.
+# Legacy filesystem routes above remain unchanged and must never be hosted publicly.
+def _require_local_mvp_request(request: Request) -> None:
+    from urllib.parse import urlsplit
+
+    client_host = request.client.host if request.client else ""
+    host = (request.url.hostname or "").lower()
+    if client_host not in {"127.0.0.1", "::1", "testclient"}:
+        raise HTTPException(status_code=403, detail="BASIC MVP requires localhost access.")
+    if host not in {"127.0.0.1", "localhost", "::1", "testserver"}:
+        raise HTTPException(status_code=403, detail="BASIC MVP requires a local Host.")
+    origin = request.headers.get("origin")
+    if origin:
+        parsed_origin = urlsplit(origin)
+        if (
+            parsed_origin.scheme not in {"http", "https"}
+            or (parsed_origin.hostname or "").lower() not in {"127.0.0.1", "localhost", "::1"}
+        ):
+            raise HTTPException(status_code=403, detail="Cross-origin upload is not allowed.")
+
+
+@app.get("/basic-mvp")
+def basic_mvp_page(request: Request):
+    from fastapi.responses import FileResponse
+
+    _require_local_mvp_request(request)
+    html_path = Path(__file__).resolve().parents[2] / "frontend" / "basic_mvp.html"
+    return FileResponse(html_path, media_type="text/html; charset=utf-8")
+
+
+@app.post("/api/basic-report")
+async def basic_report_download(request: Request, file: UploadFile = File(...)):
+    from fastapi.responses import Response
+
+    from backend.app.services.basic_report import MAX_UPLOAD_BYTES, build_basic_zip
+
+    _require_local_mvp_request(request)
+    if not (file.filename or "").lower().endswith(".csv"):
+        raise HTTPException(status_code=400, detail="BASIC MVP accepts only CSV.")
+    data = await file.read(MAX_UPLOAD_BYTES + 1)
+    if len(data) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="CSV must be at most 30 MiB.")
+    if not data:
+        raise HTTPException(status_code=400, detail="Empty CSV.")
+    try:
+        df = _read_csv_from_bytes(data)
+        payload = build_basic_zip(df)
+    except (ValueError, pd.errors.ParserError, UnicodeError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return Response(
+        content=payload,
+        media_type="application/zip",
+        headers={"Content-Disposition": 'attachment; filename="automl_basic_mvp.zip"'},
+    )
