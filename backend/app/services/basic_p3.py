@@ -338,6 +338,37 @@ def _pdf(summary: dict, charts: list[tuple[str, bytes, str]]) -> bytes:
     story.extend([Spacer(1, 14), heading("ML 적용 가능성")])
     story.append(paragraph("분류/회귀의 목적 변수와 관측 시점, 미래 정보 누수 여부를 먼저 정의해야 합니다. "
                            "이 BASIC 보고서에는 모델 적합, 정확도 비교, 자동 목표 확정이 포함되지 않습니다."))
+    profiles = summary.get("numeric_profiles", [])
+    if profiles:
+        # Quantitative candidates are only inspection aids, never automatic ML
+        # target recommendations, task-type inference, or feasibility promises.
+        story.extend([Spacer(1, 9), heading("목표열 검토 전 확인할 수치형 현황")])
+        quality_by_name = {_display_name(q["column"]): q for q in summary["quality"]}
+        audit_rows = [[paragraph("수치형 열", "small"), paragraph("유효 행", "small"),
+                       paragraph("고유값", "small"), paragraph("결측률", "small")]]
+        for p in profiles:
+            q = quality_by_name.get(p["column"], {})
+            audit_rows.append([
+                paragraph(str(p["column"])[:24], "small"),
+                f'{p["observed"]:,}',
+                str(q.get("unique", "-")),
+                f'{q.get("missing_pct", 0):.1f}%',
+            ])
+        audit = Table(audit_rows, colWidths=[224, 84, 84, 84], hAlign="LEFT")
+        audit.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#DCECF5")),
+            ("ROWBACKGROUNDS", (0, 1), (-1, -1),
+             [colors.white, colors.HexColor("#F4F8FA")]),
+            ("BOX", (0, 0), (-1, -1), .3, colors.HexColor("#D6E4EB")),
+            ("LINEBELOW", (0, 0), (-1, -2), .3, colors.HexColor("#D6E4EB")),
+            ("FONTNAME", (0, 0), (-1, -1), font),
+            ("FONTSIZE", (0, 0), (-1, -1), 8),
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ("TOPPADDING", (0, 0), (-1, -1), 5),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+        ]))
+        story.append(audit)
+        story.append(paragraph("위 열 목록은 관측 요약일 뿐 ML 목표 변수나 분석 목적을 추천하지 않습니다.", "small"))
     story.extend([Spacer(1, 10),
                   paragraph("방법: 데이터프레임의 관측 행 수, 결측률, 고유값, 중복행, 기술통계 및 "
                             "지원되는 차트를 생성했습니다. 범주 값과 개별 행은 ZIP에 넣지 않습니다.", "small"),
