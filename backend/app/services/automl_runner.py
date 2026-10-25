@@ -22,6 +22,7 @@ from backend.app.services.model_selector import (
     ModelSelectionResult,
     select_model_candidates,
 )
+from backend.app.services.task_detector import detect_task
 
 
 @dataclass
@@ -33,11 +34,13 @@ class AutoMLRunResult:
     ranked_results: list[dict[str, Any]]
     best_result: ExperimentResult | None
     model_selection: ModelSelectionResult | None = None
+    task_detection: dict[str, Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
             "target_column": self.target_column,
             "task_type": self.task_type,
+            "task_detection": self.task_detection,
             "preprocessing_summary": self.preprocessing.summary(),
             "model_selection": (
                 self.model_selection.to_dict()
@@ -47,7 +50,24 @@ class AutoMLRunResult:
             "results": experiment_results_to_dict(self.results),
             "ranked_results": self.ranked_results,
             "best_result": self.best_result.to_dict() if self.best_result else None,
+            "baseline_result": next(
+                (r.to_dict() for r in self.results
+                 if r.model_name.startswith("dummy_")), None
+            ),
+            "beats_dummy_baseline": self._beats_dummy(),
         }
+
+    def _beats_dummy(self) -> bool | None:
+        if not self.best_result or self.best_result.primary_score_mean is None:
+            return None
+        baseline = next(
+            (r for r in self.results if r.model_name.startswith("dummy_")
+             and r.status == "success" and r.primary_score_mean is not None),
+            None,
+        )
+        if baseline is None:
+            return None
+        return self.best_result.primary_score_mean > baseline.primary_score_mean
 
 
 def get_default_model_candidates(
@@ -79,6 +99,7 @@ def run_automl_experiment(
     model_candidates: Any | None = None,
     cv: int = 5,
     random_state: int = 42,
+    max_challengers: int = 3,
 ) -> AutoMLRunResult:
     """
     AutoML 핵심 실행 함수.
@@ -91,13 +112,17 @@ def run_automl_experiment(
         5. best model 선택
     """
 
+    detected = detect_task(
+        df=df,
+        target_column=target_column,
+        requested_task_type=task_type,
+    )
+    effective_task_type = detected["task_type"]
     prep = build_preprocessing_pipeline(
         df=df,
         target_column=target_column,
-        task_type=task_type,
+        task_type=effective_task_type,
     )
-
-    effective_task_type = prep.task_type or task_type or "classification"
 
     model_selection: ModelSelectionResult | None = None
 
@@ -108,6 +133,7 @@ def run_automl_experiment(
             n_features=prep.X.shape[1],
             has_categorical_features=bool(prep.categorical_features),
             random_state=random_state,
+            max_models=max_challengers,
         )
 
         model_candidates = model_selection.models
@@ -123,7 +149,10 @@ def run_automl_experiment(
     )
 
     ranked = ranked_summary(results)
-    best = get_best_model_result(results)
+    # Dummy is a comparator, never a recommended trained challenger.
+    best = get_best_model_result(
+        [r for r in results if not r.model_name.startswith("dummy_")]
+    )
 
     return AutoMLRunResult(
         target_column=target_column,
@@ -133,4 +162,5 @@ def run_automl_experiment(
         ranked_results=ranked,
         best_result=best,
         model_selection=model_selection,
+        task_detection=detected,
     )
