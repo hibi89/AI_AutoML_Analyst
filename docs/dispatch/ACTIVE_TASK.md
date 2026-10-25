@@ -2,7 +2,7 @@
 Updated: 2026-10-26 KST
 status: READY
 target_branch: feature/kmong-v1
-task_id: AUTO-KM-P6E5
+task_id: AUTO-KM-P6E6
 predecessor: P0 P2 P3 P4 P5 implementation DONE, P1 PARTIAL (Linux Chromium real browser proven; owner Windows unverified), P6A/B/C/D engineering work verified, P6 release still IN PROGRESS.
 next_after_success: P7 Kmong listing DRAFT only after tier-specific release criteria satisfied and owner approves.
 
@@ -80,3 +80,17 @@ P6E4 success criteria: inspect latest real Chromium and CVE audit status; improv
 - Next READY **AUTO-KM-P6E5**: final visual owner signoff and remaining explicit whitespace policy, transitive license NOTICE inventory and physical Windows release evidence; honest GO/NO-GO.
 
 P6E5 acceptance: physical Windows owner tests/explicit approval if available, source licensing and real-client PDF visual quality; keep all SKU commercial GO/NO-GO closed until every applicable acceptance gate passes. Compare `docs/qa/P6E4_TIER_RELEASE_GATE.md` and update per-tier decisions from actual evidence, not optimism. No main merge, external deploy, visibility change, or payment.
+
+
+## P6E5 implementation verified / P6E6 READY (2026-10-26 KST)
+
+## P6E5 engineering verified / sale NOT approved (2026-10-26 KST)
+- Full license/NOTICE inventory: 52 installed Linux packages with file metadata/hash evidence, 10 packages flagged for targeted legal notice analysis (MPL, dual, custom, compound terms), no source license bytes in artifacts. [Audit 40216690129](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40216690129) SUCCESS, 0 known advisory findings in this scan. Metadata availability is NOT legal clearance.
+- Windows owner preflight script now uses gitignored project-only '.venv-automl-qa' (no global pip installation), runs tests and generates a fresh synthetic three-tier pack. 'qa-preview/' ignored; generated model/ZIP not shared by CI.
+- Portable 'scripts/p6e5_windows_demo.py' generates BASIC 6 / STANDARD 9 / PREMIUM 11 pages, verifies ZIP hashes and replays 3 synthetic PREMIUM rows; actual Windows predict.cmd replay is guarded by platform and requires execution on Windows.
+- [Linux full 40216591008](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40216591008) at '0a5988e0d847' **110 passed, 1 skipped**, synthetic ZIP/PDF and Python model replay PASS. [Windows 40216847015](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40216847015) at code 'a0741885e481' **52 passed, 9 warnings**; static PowerShell parse/Windows tests PASS, NOT owner physical execution. The subsequent [Linux 40216846990](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40216846990) on 'a0741885e481' was still running at evidence write; check conclusion before claiming final Linux PASS.
+- 'docs/qa/P6E5_RELEASE.md' and 'docs/qa/P6E5_WINDOWS_OWNER_RUNBOOK.md' contain all evidence and user-machine procedure. P6E4's intentional whitespace remains; no fabricated fillers added; final aesthetic signoff NOT GIVEN.
+- All three SKUs (60k/150k/300k KRW) still **NO-GO**, strict milestone progress **5/7 (71%)**. P1 owner Windows PARTIAL, P6 release IN PROGRESS. Original 'main@c80c8744' unchanged. No production/Vercel deployment (NOT APPLICABLE). No real customer data, secrets, payments or public model ZIP.
+- Next READY: AUTO-KM-P6E6: finish ten targeted license obligations and actual selected delivery method; collect real physical Windows/Edge/Chrome + PDF owner approval only when available; no merge/listing until gates are passed.
+
+P6E6 next acceptance work: actual version-scoped 10 package licensing/NOTICE obligations by distribution modality, final latest Linux CI confirmation, actual physical Windows owned browser/ZIP/PDF/command approval. Keep automated Windows runner distinct from physical owner. P7 listing and per-tier GO require owner permission. No customer data or global software changes.
