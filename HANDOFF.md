@@ -43,3 +43,5 @@ On Python3.11 with installed NanumGothic TTF:
 BASIC `/basic-mvp`, STANDARD `/standard-mvp`, PREMIUM `/premium-mvp`; only accessible from localhost. `scripts/windows_release_qa.ps1` authored for Windows but its actual execution was not confirmed.
 
 **Last fact-check**: GitHub current code CI after P6 XLSX fix 40207446007. Document has no self-referential SHA; always read remote HEAD after commit.
+
+Latest UI-inclusive verification: [GitHub Actions 40207617902](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40207617902), executable/UI SHA `d883a3d655ea8328c61a7ba006159608ca54b096`, **70 PASS / 25 warnings**, PREMIUM 11 rendered pages; only docs changes afterwards. P6 remains IN PROGRESS and no tier sellable.
