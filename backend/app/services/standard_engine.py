@@ -335,6 +335,7 @@ def run_standard(
         "selection_basis": "CV only (training partition)", "holdout_used_in_selection": False,
         "train_rows": len(train), "holdout_rows": len(holdout), "cv_splits": len(cv_splits),
         "primary_metric": primary, "model_selection": selection.to_dict(),
+        "resource_budget": workload_budget,
         "models": model_rows, "tuning_experiments": tuning_log,
         "selected_hyperparameters": {
             k.replace("model__", "", 1): v
