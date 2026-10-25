@@ -9,6 +9,7 @@ on:
       - "frontend/**"
       - "tests/**"
       - "scripts/create_basic_preview.py"
+      - "scripts/p6e5_windows_demo.py"
       - "scripts/p6_benchmark.py"
       - "scripts/p6c_model_benchmark.py"
       - "scripts/p6c_environment_audit.py"
@@ -50,6 +51,15 @@ jobs:
         with:
           name: basic-synthetic-pdf-review
           path: ci-preview/
+          if-no-files-found: error
+          retention-days: 7
+      - name: Build cross-platform synthetic owner review pack (never upload ZIP or model)
+        run: python -m scripts.p6e5_windows_demo --summary ci-benchmarks/p6e5_local_review_summary.json
+      - name: Upload redacted synthetic review summary only
+        uses: actions/upload-artifact@v4
+        with:
+          name: p6e5-local-review-summary
+          path: ci-benchmarks/p6e5_local_review_summary.json
           if-no-files-found: error
           retention-days: 7
       - name: Benchmark synthetic BASIC upper-bound 20k rows x 50 columns
