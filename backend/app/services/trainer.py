@@ -148,23 +148,18 @@ def _make_cv(
                 random_state=random_state,
             ), effective_splits
 
-        # 클래스가 너무 불균형해서 StratifiedKFold가 불가능하면 일반 KFold로 fallback.
-        fallback_splits = min(requested_splits, n_samples)
+        raise ValueError(
+            "Stratified cross-validation needs at least 2 observations per class; "
+            "rare classes cannot safely fall back to random KFold."
+        )
 
-        if fallback_splits < 2:
-            raise ValueError("Not enough samples for KFold.")
-
-        return KFold(
-            n_splits=fallback_splits,
-            shuffle=True,
-            random_state=random_state,
-        ), fallback_splits
-
-    # regression
-    effective_splits = min(requested_splits, n_samples)
-
+    # R2 requires >=2 held-out observations per fold.
+    effective_splits = min(requested_splits, n_samples // 2)
     if effective_splits < 2:
-        raise ValueError("Not enough samples for KFold.")
+        raise ValueError(
+            "Regression cross-validation requires at least 4 target observations "
+            "to provide >=2 test observations per fold."
+        )
 
     return KFold(
         n_splits=effective_splits,
