@@ -34,8 +34,9 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    # Only exact same-origin UI is used in the local commercial app.
+    allow_origins=[],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -225,7 +226,7 @@ def browse_folders(
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=f"Internal server error: {e}",
+            detail="Internal server error.",
         ) from e
 
 
@@ -248,12 +249,16 @@ async def analyze_dataset(
         normalized_task_type = _normalize_task_type(task_type)
         normalized_cv = _normalize_cv(cv)
 
-        content = await file.read()
+        from backend.app.services.basic_report import MAX_UPLOAD_BYTES, validate_basic_frame
+        content = await file.read(MAX_UPLOAD_BYTES + 1)
+        if len(content) > MAX_UPLOAD_BYTES:
+            raise HTTPException(status_code=413, detail="CSV exceeds 30 MiB upload limit.")
 
         if not content:
             raise ValueError("Uploaded file is empty.")
 
         df = _read_csv_from_bytes(content)
+        validate_basic_frame(df)
 
         if df.empty:
             raise ValueError("CSV file has no rows.")
@@ -313,7 +318,7 @@ async def analyze_dataset(
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=f"Internal server error: {e}",
+            detail="Internal server error.",
         ) from e
 
 
@@ -349,7 +354,7 @@ def scan_folder(
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=f"Internal server error: {e}",
+            detail="Internal server error.",
         ) from e
 
 
@@ -443,7 +448,7 @@ def analyze_csv_by_path(
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=f"Internal server error: {e}",
+            detail="Internal server error.",
         ) from e
 
 
@@ -657,3 +662,39 @@ async def premium_report_download(
         content=payload, media_type="application/zip",
         headers={"Content-Disposition": 'attachment; filename="automl_premium_preview.zip"'},
     )
+
+
+# P6 safety boundary: disable legacy arbitrary-file-path endpoints altogether.
+# All remaining services require same-machine clients and local Host/Origin.
+@app.middleware("http")
+async def _local_commercial_boundary(request: Request, call_next):
+    from fastapi.responses import JSONResponse
+    from urllib.parse import urlsplit
+
+    def forbidden(reason: str):
+        return JSONResponse({"detail": reason}, status_code=403)
+
+    peer = request.client.host if request.client else ""
+    host = (request.url.hostname or "").lower()
+    if peer not in {"127.0.0.1", "::1", "testclient"}:
+        return forbidden("Local-only service. Remote clients are not supported.")
+    if host not in {"127.0.0.1", "localhost", "::1", "testserver"}:
+        return forbidden("Invalid Host. Use localhost.")
+    origin = request.headers.get("origin")
+    if origin:
+        try:
+            parsed = urlsplit(origin)
+            expected_port = request.url.port
+            if (parsed.scheme != request.url.scheme
+                    or parsed.hostname != host
+                    or parsed.port != expected_port
+                    or parsed.username is not None
+                    or parsed.password is not None):
+                return forbidden("Cross-origin request refused.")
+        except ValueError:
+            return forbidden("Invalid Origin.")
+    if request.url.path in {
+        "/api/folders/browse", "/api/folder/scan", "/api/analyze-path",
+    }:
+        return forbidden("Legacy direct filesystem access is disabled. Upload an authorized CSV instead.")
+    return await call_next(request)
