@@ -43,24 +43,21 @@ app.add_middleware(
 
 
 def _read_csv_from_bytes(content: bytes) -> pd.DataFrame:
-    encodings = [
-        "utf-8-sig",
-        "utf-8",
-        "cp949",
-        "euc-kr",
-        "latin1",
-        "ISO-8859-1",
-    ]
+    """Bound parsing effort and do not reflect customer row contents in errors."""
+    from backend.app.services.basic_report import MAX_ROWS
 
-    last_error: Exception | None = None
-
+    if b"\x00" in content:
+        raise ValueError("CSV contains NUL bytes; use a supported text CSV encoding.")
+    encodings = ["utf-8-sig", "utf-8", "cp949", "euc-kr", "latin1"]
     for encoding in encodings:
         try:
-            return pd.read_csv(BytesIO(content), encoding=encoding)
-        except Exception as e:
-            last_error = e
-
-    raise ValueError(f"Failed to read CSV file. Last error: {last_error}")
+            # MAX_ROWS+1 proves over-limit input without silently sampling it.
+            return pd.read_csv(BytesIO(content), encoding=encoding, nrows=MAX_ROWS + 1)
+        except UnicodeError:
+            continue
+        except (pd.errors.ParserError, pd.errors.EmptyDataError, ValueError) as exc:
+            raise ValueError("Invalid CSV structure or encoding; check the source CSV.") from exc
+    raise ValueError("Unsupported CSV encoding; use UTF-8 or CP949.")
 
 
 def _normalize_task_type(task_type: str | None) -> str | None:
