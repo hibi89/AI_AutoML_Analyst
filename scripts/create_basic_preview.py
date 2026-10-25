@@ -14,6 +14,7 @@ import pandas as pd
 
 from backend.app.services.basic_report import build_basic_zip
 from backend.app.services.standard_delivery import build_standard_zip
+from backend.app.services.premium_delivery import build_premium_zip
 
 
 def main() -> None:
@@ -66,6 +67,25 @@ def main() -> None:
         check=True, timeout=120,
     )
     print("Rendered STANDARD page previews:", len(list(standard_dir.glob("page-*.png"))))
+
+    premium_dir = folder / "premium"
+    premium_dir.mkdir(exist_ok=True)
+    premium_zip = build_premium_zip(
+        standard_data, target_column="구매",
+        task_type="classification", split_policy="random", cv=3,
+    )
+    (premium_dir / "premium_synthetic_demo.zip").write_bytes(premium_zip)
+    with ZipFile(BytesIO(premium_zip)) as delivered:
+        premium_pdf = delivered.read("report.pdf")
+        (premium_dir / "report.pdf").write_bytes(premium_pdf)
+        print("Generated PREMIUM synthetic ZIP bytes:", len(premium_zip))
+        print("Generated PREMIUM PDF bytes:", len(premium_pdf))
+    subprocess.run(
+        ["pdftoppm", "-scale-to", "1100", "-png",
+         str(premium_dir / "report.pdf"), str(premium_dir / "page")],
+        check=True, timeout=120,
+    )
+    print("Rendered PREMIUM page previews:", len(list(premium_dir.glob("page-*.png"))))
 
 
 if __name__ == "__main__":
