@@ -546,17 +546,18 @@ async def basic_report_download(request: Request, file: UploadFile = File(...)):
     from fastapi.responses import Response
 
     from backend.app.services.basic_report import MAX_UPLOAD_BYTES, build_basic_zip
+    from backend.app.services.tabular_input import read_uploaded_table
 
     _require_local_mvp_request(request)
-    if not (file.filename or "").lower().endswith(".csv"):
-        raise HTTPException(status_code=400, detail="BASIC MVP accepts only CSV.")
+    if not (file.filename or "").lower().endswith((".csv", ".xlsx")):
+        raise HTTPException(status_code=400, detail="BASIC accepts CSV or XLSX only.")
     data = await file.read(MAX_UPLOAD_BYTES + 1)
     if len(data) > MAX_UPLOAD_BYTES:
-        raise HTTPException(status_code=413, detail="CSV must be at most 30 MiB.")
+        raise HTTPException(status_code=413, detail="Input must be at most 30 MiB.")
     if not data:
         raise HTTPException(status_code=400, detail="Empty CSV.")
     try:
-        df = _read_csv_from_bytes(data)
+        df = read_uploaded_table(data, file.filename or "")
         payload = build_basic_zip(df)
     except (ValueError, pd.errors.ParserError, UnicodeError) as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -592,17 +593,18 @@ async def standard_report_download(
     from fastapi.responses import Response
     from backend.app.services.basic_report import MAX_UPLOAD_BYTES
     from backend.app.services.standard_delivery import build_standard_zip
+    from backend.app.services.tabular_input import read_uploaded_table
 
     _require_local_mvp_request(request)
-    if not (file.filename or "").lower().endswith(".csv"):
-        raise HTTPException(status_code=400, detail="STANDARD accepts CSV only.")
+    if not (file.filename or "").lower().endswith((".csv", ".xlsx")):
+        raise HTTPException(status_code=400, detail="STANDARD accepts CSV or XLSX only.")
     content = await file.read(MAX_UPLOAD_BYTES + 1)
     if len(content) > MAX_UPLOAD_BYTES:
-        raise HTTPException(status_code=413, detail="CSV must be at most 30 MiB.")
+        raise HTTPException(status_code=413, detail="Input must be at most 30 MiB.")
     if not content:
         raise HTTPException(status_code=400, detail="Empty CSV.")
     try:
-        data = _read_csv_from_bytes(content)
+        data = read_uploaded_table(content, file.filename or "")
         payload = build_standard_zip(
             data, target_column=target_column,
             task_type=_normalize_task_type(task_type),
@@ -643,17 +645,18 @@ async def premium_report_download(
     from fastapi.responses import Response
     from backend.app.services.basic_report import MAX_UPLOAD_BYTES
     from backend.app.services.premium_delivery import build_premium_zip
+    from backend.app.services.tabular_input import read_uploaded_table
 
     _require_local_mvp_request(request)
-    if not (file.filename or "").lower().endswith(".csv"):
-        raise HTTPException(status_code=400, detail="PREMIUM accepts CSV only.")
+    if not (file.filename or "").lower().endswith((".csv", ".xlsx")):
+        raise HTTPException(status_code=400, detail="PREMIUM accepts CSV or XLSX only.")
     raw = await file.read(MAX_UPLOAD_BYTES + 1)
     if len(raw) > MAX_UPLOAD_BYTES:
-        raise HTTPException(status_code=413, detail="CSV must be at most 30 MiB.")
+        raise HTTPException(status_code=413, detail="Input must be at most 30 MiB.")
     if not raw:
         raise HTTPException(status_code=400, detail="Empty CSV.")
     try:
-        df = _read_csv_from_bytes(raw)
+        df = read_uploaded_table(raw, file.filename or "")
         payload = build_premium_zip(
             df, target_column=target_column, task_type=_normalize_task_type(task_type),
             split_policy=split_policy, group_column=group_column.strip() or None,
