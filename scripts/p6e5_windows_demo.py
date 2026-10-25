@@ -126,6 +126,27 @@ def create_review_pack(root: Path = Path("qa-preview"), summary: Path | None = N
     if n_pred != 3:
         raise RuntimeError("PREMIUM local prediction count mismatch")
     outputs[-1]["python_prediction_rows"] = n_pred
+    if sys.platform == "win32":
+        # On a real Windows machine, exercise the exact delivered batch file,
+        # not just predict_csv() from Python. The parent QA launcher adds its
+        # isolated venv to PATH; Python version/schema checks still apply.
+        import subprocess
+
+        cmd_output = trusted / "cmd_predictions.csv"
+        completed = subprocess.run(
+            ["cmd.exe", "/d", "/c", str(trusted / "predict.cmd"),
+             str(predictions_input), str(cmd_output)],
+            cwd=trusted, capture_output=True, text=True, timeout=90,
+        )
+        if completed.returncode != 0:
+            # Deliberately avoid reflecting any row or path from stderr.
+            raise RuntimeError("Windows predict.cmd synthetic replay failed.")
+        observed = pd.read_csv(cmd_output)
+        if len(observed) != n_pred or list(observed.columns) != ["prediction"]:
+            raise RuntimeError("Windows predict.cmd produced incorrect synthetic output.")
+        outputs[-1]["windows_cmd_replay"] = "PASS"
+    else:
+        outputs[-1]["windows_cmd_replay"] = "NOT_RUN_NON_WINDOWS"
 
     evidence = {
         "format": "p6e5-owner-review-v1",
