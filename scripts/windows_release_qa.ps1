@@ -14,8 +14,22 @@ if (Get-Command py -ErrorAction SilentlyContinue) {
 }
 $exe = $launcher[0]
 $argsPrefix = if ($launcher.Length -gt 1) { $launcher[1..($launcher.Length-1)] } else { @() }
-& $exe @argsPrefix --version
-if ($LASTEXITCODE -ne 0) { throw "Python failed." }
+& $exe @argsPrefix -c "import sys; assert sys.version_info[:2] == (3, 11), 'Python 3.11 required'"
+if ($LASTEXITCODE -ne 0) { throw "Python 3.11 is required for this release gate." }
+
+# No global pip writes. A dedicated, gitignored environment leaves the owner's
+# other Python installations and their existing packages intact.
+$venvRoot = Join-Path (Get-Location).Path ".venv-automl-qa"
+$venvPython = Join-Path $venvRoot "Scripts\python.exe"
+if (-not (Test-Path $venvPython)) {
+    & $exe @argsPrefix -m venv $venvRoot
+    if ($LASTEXITCODE -ne 0) { throw "Failed to create the isolated project QA environment." }
+}
+$exe = $venvPython
+$argsPrefix = @()
+& $exe -c "import sys; assert sys.version_info[:2] == (3, 11), 'Python 3.11 required'"
+if ($LASTEXITCODE -ne 0) { throw "Existing QA venv is not Python 3.11. Preserve it and investigate." }
+$env:PATH = (Join-Path $venvRoot "Scripts") + ";" + $env:PATH
 
 $font = @(
     "$env:WINDIR\Fonts\NanumGothic.ttf",
