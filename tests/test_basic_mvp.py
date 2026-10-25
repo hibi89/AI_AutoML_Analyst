@@ -39,13 +39,14 @@ def test_csv_to_zip_contains_factual_diagnostics() -> None:
     assert response.headers["content-type"].startswith("application/zip")
     with ZipFile(BytesIO(response.content)) as archive:
         filenames = set(archive.namelist())
-        assert {"report.md", "summary.csv", "summary.json", "README.txt", "charts/01_distribution.png"} <= filenames
+        assert {"report.pdf", "summary.csv", "summary.json", "README.txt", "manifest.json", "charts/01_distribution.png"} <= filenames
         values = json.loads(archive.read("summary.json"))
         assert values["rows"] == 45
         assert values["columns"] == 3
         assert values["missing_cells"] == 1
         assert len(values["findings"]) >= 3
-        assert "최종 유료 PDF" in archive.read("report.md").decode("utf-8")
+        assert archive.read("report.pdf").startswith(b"%PDF-")
+        assert values["chart_count"] >= 1
         assert archive.read("charts/01_distribution.png").startswith(b"\\x89PNG\\r\\n\\x1a\\n".decode("unicode_escape").encode("latin1"))
         assert "sample.csv" not in filenames
 
