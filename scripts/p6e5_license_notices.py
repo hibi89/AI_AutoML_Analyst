@@ -49,6 +49,23 @@ def identify_license(expression: str, legacy: str, classifiers: list[str]) -> bo
     return any(c.strip().lower() not in generic for c in classifiers)
 
 
+def license_complexity_flags(expression: str, legacy: str, classifiers: list[str]) -> list[str]:
+    """Flag license *obligations* that metadata presence alone cannot clear."""
+    combined = " ".join([expression, legacy, *classifiers]).lower()
+    flags = []
+    if "mpl-" in combined or "mozilla public license" in combined:
+        flags.append("FILE_LEVEL_COPYLEFT_NOTICE_REVIEW")
+    if "dual license" in combined or "dual-license" in combined:
+        flags.append("DUAL_LICENSE_CHOICE_REVIEW")
+    if re.search(r"\b(?:and|or)\b", expression, re.I):
+        flags.append("COMPOSITE_SPDX_OBLIGATION_REVIEW")
+    # Some packages publish license agreements or full historical copyright
+    # notices in metadata rather than a short SPDX identifier.
+    if len(legacy.strip()) > 180 or "license agreement" in legacy.lower():
+        flags.append("CUSTOM_OR_MULTIPART_LICENSE_TEXT_REVIEW")
+    return flags
+
+
 def notice_candidates(dist) -> list[dict]:
     """Safe in-place hashing; avoid writing local file paths or license contents."""
     candidates = []
@@ -101,6 +118,7 @@ def build_inventory() -> dict:
             reasons.append("NO_LOCAL_LICENSE_OR_NOTICE_FILE_IDENTIFIED")
         if any(row["status"] != "PRESENT_NOT_REDISTRIBUTED" for row in notices):
             reasons.append("NOTICE_FILE_NOT_HASHED")
+        reasons.extend(license_complexity_flags(expression, legacy, classifiers))
         entries.append({
             "name": name, "version": version, "direct": key in DIRECT,
             "license_expression": expression, "legacy_license": legacy,
