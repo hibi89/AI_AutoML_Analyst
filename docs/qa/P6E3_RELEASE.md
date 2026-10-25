@@ -27,3 +27,8 @@ Downloaded `basic-synthetic-pdf-review` from successful Pillow13 Linux run 40213
 2. Refine blank-heavy report pages with **real aggregate content** only, preserve BASIC 6–8 / STANDARD 8–12 / PREMIUM 10–15 pages, render each changed tier and inspect for clipping.
 3. Finalize exact skops source LICENSE and transitive license obligations; check Windows dependency environment as feasible. Do not certify legally without evidence.
 4. Prepare tier-specific GO/NO-GO and physical Windows owner approval workflow. No main merge, public deployment or selling without approval.
+
+
+### Post-capture final Chromium outcome (2026-10-26 KST)
+- [Pillow13 Chromium 40214031501](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40214031501) **SUCCESS** on executable SHA `5f94e026f31d17f625857ff934cb3b81693c6173`. Real Playwright Chromium selected file, clicked report/download and verified actual ZIP output: BASIC **479,693 bytes**, STANDARD **632,150 bytes**, PREMIUM **726,447 bytes**. These are synthetic CI-only artifacts, not a customer's Windows Chrome/Edge manual approval.
+- Latest verified matrix therefore Linux **105 PASS/1 SKIP**, native Windows **50 PASS**, Chromium **3 SKUs PASS**, Linux all-installed direct+transitive audit **52 packages / 0 known CVE reports**; all on relevant tested code/dependency state. Strict release progress remains **5/7 (71%)**, all tiers NO-GO until physical Windows, licensed distribution and design signoff.
