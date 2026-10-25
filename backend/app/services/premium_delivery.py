@@ -76,12 +76,12 @@ def _final_refit(df: pd.DataFrame, analysis: dict):
     }
 
 
-def _premium_page(analysis: dict, model_name: str) -> bytes:
+def _premium_page(analysis: dict, model_name: str, raw_schema: dict) -> bytes:
     from pypdf import PdfReader, PdfWriter
     from reportlab.lib import colors
     from reportlab.lib.pagesizes import A4
     from reportlab.lib.styles import ParagraphStyle
-    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, PageBreak
     from xml.sax.saxutils import escape
     from backend.app.services.basic_p3 import _korean_font
 
@@ -116,6 +116,26 @@ def _premium_page(analysis: dict, model_name: str) -> bytes:
         p("skops 모델은 신뢰한 원본만 열어야 합니다. SHA-256은 무결성 검사용이며 "
           "출처를 보증하는 디지털 서명이 아닙니다."),
         p("고객·시간 단위의 독립성, 목표값에서 파생된 변수, 수집 편향 및 미래 성능은 사용 전 확인해야 합니다."),
+        PageBreak(),
+        p("PREMIUM — 입력 스키마 및 운영 체크리스트", True),
+        p("필수 CSV 컬럼 (순서 고정)"),
+        p(", ".join(raw_schema["raw_feature_columns"])),
+        p("숫자형 컬럼: " + (", ".join(raw_schema["numeric_raw_columns"]) or "없음")),
+        p("날짜형 컬럼: " + (", ".join(raw_schema["datetime_features"]) or "없음")),
+        p("불리언 컬럼: " + (", ".join(raw_schema["boolean_raw_columns"]) or "없음")),
+        Spacer(1, 14),
+        p("반복 예측 전 확인할 사항", True),
+        p("1. 입력 행마다 모든 필수 컬럼이 있고 컬럼 순서와 유형이 동일한지 확인합니다."),
+        p("2. 목표 컬럼은 새 CSV에 포함하지 않습니다. 고객 식별자 및 시점 컬럼은 학습 정책에 맞춰 처리합니다."),
+        p("3. 새 데이터가 학습 당시와 크게 달라졌다면 CV/holdout 성능을 인용하지 않습니다."),
+        p("4. 예측 결과가 의사결정에 사용된다면 독립적인 업무 검증과 위험 점검을 거칩니다."),
+        p("5. 출력 CSV는 예측치만 보관합니다. 원본 CSV는 별도로 보호하고 접근 권한을 관리합니다."),
+        Spacer(1, 14),
+        p("재현성·보안 제약", True),
+        p("모델 로딩에는 학습 환경과 일치하는 Python·pandas·scikit-learn·skops 버전이 필요합니다. "
+          "폴더에 포함된 requirements-premium.txt를 참고하세요."),
+        p("해시 검증과 skops 타입 검사는 훼손 및 일반적인 비신뢰 객체 위험을 줄이지만 "
+          "악성 ZIP의 출처 자체를 인증하지 않습니다. 제공자를 확인하세요."),
     ]
     out = BytesIO()
     SimpleDocTemplate(out, pagesize=A4, leftMargin=49, rightMargin=49,
@@ -172,7 +192,7 @@ def build_premium_zip(
     from pypdf import PdfReader, PdfWriter
     writer = PdfWriter()
     writer.append(PdfReader(BytesIO(standard_pdf)))
-    writer.append(PdfReader(BytesIO(_premium_page(analysis, analysis["selected_model"]))))
+    writer.append(PdfReader(BytesIO(_premium_page(analysis, analysis["selected_model"], raw_schema))))
     merged = BytesIO()
     writer.write(merged)
 
