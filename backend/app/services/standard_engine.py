@@ -24,6 +24,7 @@ from sklearn.pipeline import Pipeline
 from backend.app.services.basic_report import validate_basic_frame
 from backend.app.services.evaluator import get_scoring_config, summarize_cv_scores
 from backend.app.services.model_selector import select_model_candidates
+from backend.app.services.ml_workload_policy import check_rows, estimate_training_matrix
 from backend.app.services.preprocessor import (
     build_preprocessing_pipeline, _expand_datetime_features,
 )
@@ -60,6 +61,8 @@ def run_standard(
     if max_challengers not in (3, 5) or isinstance(max_challengers, bool):
         raise ValueError("Only STANDARD=3 or PREMIUM=5 challengers are supported.")
     validate_basic_frame(df)
+    # P6D: STANDARD/PREMIUM fit caps differ from BASIC report input caps.
+    check_rows(len(df), max_challengers)
     detected = detect_task(df, target_column, task_type)
     task = detected["task_type"]
     if split_policy not in ("random", "group", "time"):
@@ -167,6 +170,9 @@ def run_standard(
     for name in raw_test_features.select_dtypes(include=["bool"]).columns:
         raw_test_features[name] = raw_test_features[name].astype(float)
     X_train = prep.X
+    workload_budget = estimate_training_matrix(
+        X_train, prep.numeric_features, prep.categorical_features, max_challengers
+    )
     X_test = raw_test_features.reindex(columns=X_train.columns)
     y_train = prep.y
     y_test = holdout[target_column]
