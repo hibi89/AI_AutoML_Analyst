@@ -162,6 +162,14 @@ def run_standard(
         train_features.assign(**{target_column: train[target_column]}),
         target_column=target_column, task_type=task,
     )
+    if prep.dropped_features:
+        warnings.append(
+            "전처리 과정에서 제외된 입력 열: "
+            + ", ".join(str(name) for name in prep.dropped_features[:12])
+            + (" 외 추가 열" if len(prep.dropped_features) > 12 else "")
+            + ". 결측·상수·고유값 비율 규칙에 따라 학습에서 제외되며 "
+            "단순히 누락된 행을 제거한 것은 아닙니다."
+        )
 
     # Feature definitions and missingness-based inclusion were learned on TRAIN only.
     raw_test_features = holdout.drop(columns=list(excluded)).copy()
@@ -398,6 +406,7 @@ def run_standard(
         "cv_beats_dummy": better_cv, "holdout_beats_dummy": better_holdout,
         "warnings": warnings,
         "feature_columns": list(X_train.columns),
+        "dropped_feature_columns": [str(c) for c in prep.dropped_features],
         "train_original_indices": [int(i) for i in i_train], "holdout_original_indices": [int(i) for i in i_test],
         "train_group_values": sorted(set(train[group_column].astype(str))) if split_policy == "group" else None,
         "holdout_group_values": sorted(set(holdout[group_column].astype(str))) if split_policy == "group" else None,
