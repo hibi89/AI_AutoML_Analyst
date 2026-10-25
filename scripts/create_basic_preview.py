@@ -13,6 +13,7 @@ from zipfile import ZipFile
 import pandas as pd
 
 from backend.app.services.basic_report import build_basic_zip
+from backend.app.services.standard_delivery import build_standard_zip
 
 
 def main() -> None:
@@ -43,6 +44,28 @@ def main() -> None:
         check=True, timeout=120,
     )
     print("Rendered page previews:", len(list(folder.glob("page-*.png"))))
+
+    # Reuse the same synthetic dataset with a synthetic binary outcome for STANDARD.
+    standard_data = frame.copy()
+    standard_data["구매"] = [i % 2 for i in range(n)]
+    standard_dir = folder / "standard"
+    standard_dir.mkdir(exist_ok=True)
+    standard_zip = build_standard_zip(
+        standard_data, target_column="구매",
+        task_type="classification", split_policy="random", cv=3,
+    )
+    (standard_dir / "standard_synthetic_demo.zip").write_bytes(standard_zip)
+    with ZipFile(BytesIO(standard_zip)) as output:
+        standard_pdf = output.read("report.pdf")
+        (standard_dir / "report.pdf").write_bytes(standard_pdf)
+        print("Generated STANDARD synthetic ZIP bytes:", len(standard_zip))
+        print("Generated STANDARD PDF bytes:", len(standard_pdf))
+    subprocess.run(
+        ["pdftoppm", "-scale-to", "1100", "-png",
+         str(standard_dir / "report.pdf"), str(standard_dir / "page")],
+        check=True, timeout=120,
+    )
+    print("Rendered STANDARD page previews:", len(list(standard_dir.glob("page-*.png"))))
 
 
 if __name__ == "__main__":
