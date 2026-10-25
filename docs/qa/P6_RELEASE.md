@@ -28,3 +28,6 @@
 
 ## Next focused P6 subtask
 Run / automate Windows non-GUI checks, inspect actual fresh client-like inputs, stabilize PDF spacing and detailed chart accessibility, benchmark large bounded dataset, pin versions/audit font and model trust, independently verify actual ZIP and CMD runner. Then update STATUS/HANDOFF/ACTIVE_TASK, compute evidence-backed tier-specific GO/NO-GO. Do not start P7 sale/listing or merge main while blockers remain.
+
+## Latest UI-inclusive CI confirmation
+- [Actions 40207617902](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40207617902) on commit `d883a3d655ea8328c61a7ba006159608ca54b096`: **70 passed, 0 failed, 25 warnings in 11.11s**, PREMIUM 11-page synthetic PDF preview generated. Changes since earlier code SHA were upload page copy/accept filters. Docs-only commits afterward do not affect code.
