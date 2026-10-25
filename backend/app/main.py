@@ -259,6 +259,10 @@ async def analyze_dataset(
 
         df = _read_csv_from_bytes(content)
         validate_basic_frame(df)
+        # The legacy endpoint also trains models: cap it independently from
+        # BASIC's 20k-row descriptive-report limit.
+        from backend.app.services.ml_workload_policy import check_rows
+        check_rows(len(df), 3)
 
         if df.empty:
             raise ValueError("CSV file has no rows.")
