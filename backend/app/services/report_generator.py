@@ -76,6 +76,23 @@ def generate_markdown_report(
                 lines.append(f"- {rule}")
             lines.append("")
 
+    if model_selection and model_selection.get("policy", {}).get("warnings"):
+        lines.append("### Evaluation Limitations")
+        lines.append("")
+        for warning in model_selection["policy"]["warnings"]:
+            lines.append(f"- {warning}")
+        lines.append("")
+
+    baseline_result = output.get("baseline_result")
+    if baseline_result:
+        lines.append("### Independent Dummy Baseline")
+        lines.append("")
+        lines.append(f"- Baseline: \`{baseline_result['model_name']}\`")
+        lines.append(f"- Baseline score: \`{_fmt(baseline_result['primary_score_mean'])}\`")
+        if output.get("beats_dummy_baseline") is False:
+            lines.append("- No challenger beat this Dummy baseline in CV. Do not claim predictive signal.")
+        lines.append("")
+
     if prep["numeric_features"]:
         lines.append("## 4. Numeric Features")
         lines.append("")
