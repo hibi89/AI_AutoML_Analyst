@@ -1,30 +1,30 @@
 # ACTIVE TASK — authoritative next work item
 Updated: 2026-10-25 KST
 status: READY
-task_id: AUTO-KM-P0
+task_id: AUTO-KM-P2
 target_branch: feature/kmong-v1
 role: lead-engineer-and-implementer
-predecessor: Documentation setup committed; **NO commercial code task completed**.
-next_after_success: AUTO-KM-P1 in docs/dispatch/ROADMAP.md
+predecessor: P0 verified (6/6 CI), P1 BASIC MVP code/API verified (13/13 CI); browser UI interaction remains NOT VERIFIED.
+next_after_success: AUTO-KM-P3 in docs/dispatch/ROADMAP.md
 
-## Task — establish exact ORIGINAL application baseline
-Purpose: make the existing `main` FastAPI + AutoML run reproducibly and identify any real failures before the MVP feature slice.
+## Task — ML correctness before commercial tier wiring
+Make the existing trainer/model_selector/runner produce defensible classification/regression selection and baseline comparison, without breaking P0/P1.
 
-### Do now — ordered steps
-1. Read `WORKER_START_HERE.md`, `AGENTS.md`, `REQUIREMENTS.md`, `STATUS.md`, `HANDOFF.md`, `docs/architecture/TARGET_DESIGN.md` and source: `backend/app/main.py`, `backend/app/services/{automl_runner,model_selector,task_detector,preprocessor,trainer,evaluator,report_generator,storage}.py`, `frontend/index.html`, `pyproject.toml`.
-2. Using connected GitHub, inspect all *current* source/testing files and latest remote development SHA, not past chat summaries. Base edits on that source and preserve existing routes.
-3. Add practical reproducible Python 3.11 dependency install and a **small synthetic-data original-code pytest**: one classification, one regression, missing/constant target, plus FastAPI `/health` and upload path if readily achievable.
-4. Execute original tests. Since the prior container could not resolve github.com, try a committed GitHub Actions workflow (Python 3.11) and inspect the **actual workflow run result** using connected GitHub actions. If Actions access is missing, mark tests NOT RUN and code changes as unverified, rather than claiming pass.
-5. Record exact failures and environment evidence in `docs/qa/BASELINE.md`; only fix critical execution blockers within scope. Continue toward MVP if blocked but with clear test constraints.
-6. Update `STATUS.md`, `HANDOFF.md`, this file to next READY ID, and commit all changes to `feature/kmong-v1`. Provide actual commit SHA.
+### Scope, ordered
+1. Re-fetch live HEAD, source, STATUS, HANDOFF, REQUIREMENTS and `docs/qa/{BASELINE,MVP_P1}.md`; check newest CI for HEAD.
+2. Add explicit target validation: missing/constant/too-rare classes; numeric <=20-unique can be ambiguous — prompt the caller to select classification vs regression rather than silently defaulting classification. Preserve explicit `task_type` choices. Avoid auto-inference with unverifiable semantics.
+3. Separate Dummy baseline from non-Dummy challenger budget and preserve a diverse challenger set; eliminate the HistGradientBoosting append-then-truncate issue with deterministic, documented policy. Check existing registry vs selector to avoid diverging definitions.
+4. Reject invalid StratifiedKFold conditions with readable error; no silently misleading KFold fallback for rare classes. Evaluate preprocessing inside CV as currently implemented. If group/time split remains unsupported, visibly warn; leave full group/time/holdout support to P4.
+5. Add P2 synthetic tests: binary/multiclass, numeric ambiguous target, rare class, regression, 3/5 challenger caps independent of Dummy; no paid APIs or real customer data.
+6. Execute Python 3.11 GitHub Actions test suite, inspect job logs and commit SHA. Record failure counts, warnings and limitations. Minimal edits only.
+7. Update `STATUS.md`, `HANDOFF.md`, this task and QA results; commit. Preserve `main` untouched.
 
-### Acceptance (P0 is DONE only if ALL met)
-- Original FastAPI app import/start and a sample original `run_automl_experiment` invocation successfully executed in a trusted environment (not a standalone mimic).
-- At least one reproducible synthetic classification/regression test reports actual status and output; test constraints documented.
-- Source and test modifications committed to `feature/kmong-v1`; original `main` unchanged.
-- `docs/qa/BASELINE.md` records real results with environment and reproducible commands.
-- If blocked, mark BLOCKED, not DONE. Proceed with separately scoped P1 work if safe and feasible, but do not quietly count P0 as finished.
+## Acceptance
+- No numeric target is silently mislabeled as classification when ambiguous.
+- Constant, missing and insufficiently populated target cases are explicitly rejected or clearly reported as infeasible.
+- DEFAULT and selected SKU candidate lists distinguish Dummy baseline from up to 3/5 non-Dummy challengers; regression/classification behavior tested.
+- Actual original FastAPI+AutoML P0 and BASIC MVP P1 tests remain green.
+- CI job output and branch SHA recorded. P2 only DONE if the above are observed, never based on static review alone.
 
-### Non-goals
-- No mass refactoring, React, external hosting, extra CatBoost dependency, customer data uploads, real credentials or private API access.
-- No unapproved merge to main.
+## P1 follow-up, tracked separately
+Headless tests verify HTTP GET, upload, ZIP artifacts and PNG. JS behavior in actual Windows browser, UI click/download, and client-level PDF are NOT VERIFIED. Do not mark BASIC sellable before P3+P6.
