@@ -46,6 +46,9 @@ def verify_shipping_zip(payload: bytes, tier: str) -> dict:
                 raise ValueError("Unexpected or bundled dependency member in shipping ZIP")
         if not _COMMON.issubset(members):
             raise ValueError("Missing common delivery member")
+        notice = archive.read("README.txt")
+        if b"NAV" not in notice or b"SIL Open Font License 1.1" not in notice:
+            raise ValueError("Missing embedded-font attribution in delivery README")
         if tier == "STANDARD" and not _STANDARD.issubset(members):
             raise ValueError("Missing STANDARD delivery member")
         if tier == "PREMIUM" and not _PREMIUM.issubset(members):
