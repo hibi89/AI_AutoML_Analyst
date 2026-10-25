@@ -27,7 +27,7 @@ def demo_data() -> bytes:
 def test_basic_web_page_responds() -> None:
     response = TestClient(app).get("/basic-mvp")
     assert response.status_code == 200
-    assert "CSV 데이터 진단" in response.text
+    assert "표형 데이터 진단" in response.text
 
 
 def test_csv_to_zip_contains_factual_diagnostics() -> None:
