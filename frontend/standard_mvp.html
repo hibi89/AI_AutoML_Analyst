@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>STANDARD 데이터 모델 분석 | AI AutoML Analyst</title>
+<style>
+:root{font-family:system-ui,"Malgun Gothic",sans-serif;color:#18354a;background:#f1f6fa}
+main{max-width:780px;margin:35px auto;background:white;border-radius:18px;padding:30px;box-shadow:0 8px 25px #c8dbe7}
+h1{font-size:25px}p{line-height:1.65}label{display:block;font-weight:600;margin-top:20px}
+input,select,button{box-sizing:border-box;display:block;width:100%;padding:11px;font:inherit;margin-top:8px}
+input,select{border:1px solid #acc6d7;border-radius:9px}button{background:#155d86;color:white;border:0;border-radius:9px;cursor:pointer;font-weight:700;margin-top:22px}
+button:disabled{opacity:.5}small{color:#5a7182}pre{white-space:pre-wrap;overflow-wrap:anywhere}
+</style>
+</head>
+<body><main>
+<h1>STANDARD — 머신러닝 비교 보고서</h1>
+<p>승인된 CSV를 로컬에서 분석합니다. <strong>학습 데이터 CV로 3종 모델을 선정</strong>하고 별도 Dummy 기준선 및 독립 holdout을 평가합니다. 최종 한국어 PDF, 점수표, 차트를 ZIP으로 제공합니다.</p>
+<p><small>개발 미리보기. 공개 서버 배포 금지. 동일 고객·반복 기록이면 그룹 분할, 미래 예측 목적이면 시간 분할을 선택하세요. 의미가 불명확한 숫자형 목표는 분류·회귀를 직접 선택해야 합니다.</small></p>
+<form id="analysis">
+<label for="csv">CSV (최대 30 MiB)</label><input id="csv" type="file" name="file" accept=".csv,text/csv" required>
+<label for="target">예측 목표 컬럼 (CSV와 동일한 이름)</label><input id="target" name="target_column" required placeholder="예: 구매여부">
+<label for="task">문제 유형</label><select id="task" name="task_type"><option value="auto">자동 (모호한 숫자는 오류)</option><option value="classification">분류</option><option value="regression">회귀</option></select>
+<label for="split">데이터 분할 기준</label><select id="split" name="split_policy"><option value="random">무작위 (독립 관측일 때만)</option><option value="group">그룹 — 동일 고객·장비가 겹치지 않게</option><option value="time">시간 — 과거 학습 / 이후 평가</option></select>
+<div id="groupField" hidden><label for="group">그룹 컬럼명</label><input id="group" name="group_column" placeholder="customer_id"></div>
+<div id="timeField" hidden><label for="time">시간 컬럼명</label><input id="time" name="time_column" placeholder="날짜"></div>
+<label for="cv">학습 교차검증 횟수</label><select id="cv" name="cv"><option value="3">3회 (권장)</option><option value="2">2회</option><option value="4">4회</option><option value="5">5회</option></select>
+<button id="submit" type="submit">STANDARD 보고서 ZIP 생성</button>
+</form><pre id="notice" role="status" aria-live="polite"></pre>
+<p><a href="/basic-mvp">BASIC 보고서로 이동</a></p>
+</main>
+<script>
+const form=document.getElementById("analysis");
+const split=document.getElementById("split");
+const status=document.getElementById("notice");
+const button=document.getElementById("submit");
+split.addEventListener("change",()=>{
+  document.getElementById("groupField").hidden=split.value!=="group";
+  document.getElementById("timeField").hidden=split.value!=="time";
+  document.getElementById("group").required=split.value==="group";
+  document.getElementById("time").required=split.value==="time";
+});
+form.addEventListener("submit",async event=>{
+  event.preventDefault();button.disabled=true;
+  status.textContent="로컬에서 학습·검증·PDF 생성 중입니다.";
+  try{
+    const data=new FormData(form);
+    if(split.value!=="group")data.delete("group_column");
+    if(split.value!=="time")data.delete("time_column");
+    const response=await fetch("/api/standard-report",{method:"POST",body:data});
+    if(!response.ok){let detail="HTTP "+response.status;try{detail=(await response.json()).detail||detail}catch{}throw new Error(detail)}
+    const blob=await response.blob();
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a");a.href=url;a.download="automl_standard_preview.zip";
+    document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),60000);
+    status.textContent="ZIP 다운로드를 요청했습니다. 브라우저 다운로드 목록에서 파일을 확인하세요.";
+  }catch(err){status.textContent="생성 실패: "+err.message}
+  finally{button.disabled=false}
+});
+</script></body></html>
