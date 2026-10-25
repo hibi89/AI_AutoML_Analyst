@@ -47,6 +47,14 @@ def test_rich_input_produces_real_korean_pdf_five_charts_and_manifest(tmp_path):
         assert summary["rows"] == 150
         assert summary["columns"] == 5
         assert summary["chart_count"] == 5
+        profiles = summary["numeric_profiles"]
+        assert 1 <= len(profiles) <= 4
+        assert all(item["observed"] >= 4 for item in profiles)
+        for item in profiles:
+            expected = pd.to_numeric(raw[item["column"]], errors="coerce").dropna()
+            assert item["median"] == round(float(expected.median()), 2)
+            assert item["q1"] == round(float(expected.quantile(.25)), 2)
+            assert item["q3"] == round(float(expected.quantile(.75)), 2)
         assert 5 <= len(summary["metrics"]) <= 10
         assert 3 <= len(summary["findings"]) <= 5
         assert len(summary["suggestions"]) <= 3
@@ -69,6 +77,9 @@ def test_rich_input_produces_real_korean_pdf_five_charts_and_manifest(tmp_path):
         assert "데이터 진단" in searchable
         assert "주요 발견" in searchable
         assert "ML 적용 가능성" in searchable
+        # Only the final lone-chart page receives real numeric quartile content.
+        assert "관측 수치의 사분위 요약" in (reader.pages[-2].extract_text() or "")
+        assert "사분위 요약" not in (reader.pages[0].extract_text() or "")
         assert "인과관계" in searchable
 
         path = tmp_path / "report.pdf"
