@@ -28,11 +28,17 @@ def read_xlsx_bounded(data: bytes) -> pd.DataFrame:
                 raise ValueError("XLSX uncompressed data exceeds 80 MiB.")
             if any(item.file_size > 50 * 1024 * 1024 for item in infos):
                 raise ValueError("XLSX contains an oversized part.")
-            names = {item.filename.replace("\\", "/") for item in infos}
-            if "[Content_Types].xml" not in names or "xl/workbook.xml" not in names:
+            names_list = [item.filename.replace("\\", "/") for item in infos]
+            names = set(names_list)
+            lower_names = {name.lower() for name in names}
+            if len(names) != len(names_list) or len(lower_names) != len(names):
+                raise ValueError("Duplicate or case-colliding XLSX archive entries.")
+            if "[content_types].xml" not in lower_names or "xl/workbook.xml" not in lower_names:
                 raise ValueError("Invalid XLSX workbook structure.")
-            if any("vbaProject" in name or name.endswith(".bin") for name in names):
+            if any("vbaproject" in name or name.endswith(".bin") for name in lower_names):
                 raise ValueError("Macro or binary workbook parts are not supported.")
+            if any(name.startswith("xl/externallinks/") for name in lower_names):
+                raise ValueError("External-link XLSX workbooks are not supported.")
     except BadZipFile as exc:
         raise ValueError("Invalid XLSX archive.") from exc
 
