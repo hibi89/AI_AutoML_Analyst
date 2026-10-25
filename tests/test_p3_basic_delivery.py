@@ -52,7 +52,7 @@ def test_rich_input_produces_real_korean_pdf_five_charts_and_manifest(tmp_path):
         assert len(summary["suggestions"]) <= 3
         assert summary["missing_cells"] == int(raw.isna().sum().sum())
         assert summary["duplicate_rows"] == int(raw.duplicated().sum())
-        assert b"\xec\84\9c\xec\9a\b8" not in z.read("README.txt")
+        assert "서울" not in z.read("README.txt").decode("utf-8")
         manifest = json.loads(z.read("manifest.json"))
         assert manifest["no_raw_dataset"] is True
         for item in manifest["files"]:
