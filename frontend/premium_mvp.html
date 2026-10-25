@@ -14,11 +14,11 @@ button:disabled{opacity:.5}small{color:#5a7182}pre{white-space:pre-wrap;overflow
 </head>
 <body><main>
 <h1>PREMIUM — 머신러닝 비교 보고서</h1>
-<p>승인된 CSV를 로컬에서 분석합니다. 결과 ZIP에는 신뢰할 수 있는 로컬 모델, 동일 스키마 재예측 도구, 설치 버전 명세가 포함됩니다. <strong>학습 데이터 CV로 5종 모델을 선정</strong>하고 별도 Dummy 기준선 및 독립 holdout을 평가합니다. 최종 한국어 PDF, 점수표, 차트를 ZIP으로 제공합니다.</p>
+<p>승인된 CSV 또는 XLSX를 로컬에서 분석합니다. 결과 ZIP에는 신뢰할 수 있는 로컬 모델, 동일 스키마 재예측 도구, 설치 버전 명세가 포함됩니다. <strong>학습 데이터 CV로 5종 모델을 선정</strong>하고 별도 Dummy 기준선 및 독립 holdout을 평가합니다. 최종 한국어 PDF, 점수표, 차트를 ZIP으로 제공합니다.</p>
 <p><small>개발 미리보기. 납품 ZIP 안의 모델은 생성자가 신뢰하는 파일만 사용하세요. 피싱/타인의 모델 파일을 로드하면 안 됩니다. 공개 서버 배포 금지. 동일 고객·반복 기록이면 그룹 분할, 미래 예측 목적이면 시간 분할을 선택하세요. 의미가 불명확한 숫자형 목표는 분류·회귀를 직접 선택해야 합니다.</small></p>
 <form id="analysis">
-<label for="csv">CSV (최대 30 MiB)</label><input id="csv" type="file" name="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required>
-<label for="target">예측 목표 컬럼 (CSV와 동일한 이름)</label><input id="target" name="target_column" required placeholder="예: 구매여부">
+<label for="csv">CSV 또는 XLSX (최대 30 MiB)</label><input id="csv" type="file" name="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required>
+<label for="target">예측 목표 컬럼 (입력 데이터와 동일한 이름)</label><input id="target" name="target_column" required placeholder="예: 구매여부">
 <label for="task">문제 유형</label><select id="task" name="task_type"><option value="auto">자동 (모호한 숫자는 오류)</option><option value="classification">분류</option><option value="regression">회귀</option></select>
 <label for="split">데이터 분할 기준</label><select id="split" name="split_policy"><option value="random">무작위 (독립 관측일 때만)</option><option value="group">그룹 — 동일 고객·장비가 겹치지 않게</option><option value="time">시간 — 과거 학습 / 이후 평가</option></select>
 <div id="groupField" hidden><label for="group">그룹 컬럼명</label><input id="group" name="group_column" placeholder="customer_id"></div>
