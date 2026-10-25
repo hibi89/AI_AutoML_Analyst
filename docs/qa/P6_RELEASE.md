@@ -55,3 +55,8 @@ Run / automate Windows non-GUI checks, inspect actual fresh client-like inputs, 
 
 ### Honest release gate
 P6B is advanced but NOT accepted. **BASIC/STANDARD/PREMIUM remain NOT SELLABLE** until actual GUI upload/download (preferably owner's Windows Chrome/Edge), first-install/local font test, full commercial PDF design review, full STANDARD/PREMIUM performance and resource bounds, dependency reproducibility and error cases pass. `main` unmodified; no external deployment or actual customer data used.
+
+## P6C linked evidence and updated GO/NO-GO (2026-10-26)
+Detailed record: **`docs/qa/P6C_RELEASE.md`**. Real Linux Chromium browser form/ZIP for all three tiers PASS; pinned Python3.11 dependencies Linux 78 PASS/1 Windows-only SKIP, Windows 39 PASS with actual `predict.cmd`, Chromium 3/3 real downloads, synthetic ML CPU + holdout + tuning benchmark at 120/400/2000 rows, pip consistency+declared license metadata inventory. Pinned verified direct dependencies `requirements-verified-py311.txt`; owner PowerShell script can launch localhost UI but actual owner's PC run unverified. All reports rendered and 11-page PREMIUM sample visually inspected; blank-space/design signoff not complete.
+
+**NO-GO BASIC/STANDARD/PREMIUM** pending owner's Windows first-run GUI/zip, report final signoff, worst-case category & 20k×50 ML capacity, transitive licenses/vulnerability review, customer privacy/abuse stress. Strict accepted milestones remain 5/7=71%; no public hosting or main merge.
