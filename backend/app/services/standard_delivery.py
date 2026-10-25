@@ -28,7 +28,7 @@ def _comparison_plot(analysis: dict) -> bytes:
         bars = ax.barh(names, vals)
         ax.invert_yaxis()
         ax.set_xlabel(f"Training-CV {analysis['primary_metric']} (higher is better)")
-        ax.set_title("Model comparison: Dummy + up to 3 challengers")
+        ax.set_title(f"Model comparison: Dummy + {analysis.get('challenger_budget', 3)} challengers")
         ax.axvline(0, linewidth=0.75, color="black")
         for i, rect in enumerate(bars):
             if rows[i]["role"] == "baseline":
