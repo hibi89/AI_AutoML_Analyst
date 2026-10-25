@@ -8,6 +8,7 @@ on:
       - "backend/**"
       - "frontend/**"
       - "tests/**"
+      - "scripts/create_basic_preview.py"
       - "requirements-ci.txt"
       - ".github/workflows/baseline-smoke.yml"
   workflow_dispatch:
@@ -38,3 +39,12 @@ jobs:
         run: python -c "from backend.app.main import app; print('FastAPI original import OK', app.version)"
       - name: Original AutoML and BASIC MVP HTTP smoke
         run: python -m pytest -q tests
+      - name: Create synthetic PDF and full-page raster previews
+        run: python scripts/create_basic_preview.py
+      - name: Upload synthetic visual review artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: basic-synthetic-pdf-review
+          path: ci-preview/
+          if-no-files-found: error
+          retention-days: 7
