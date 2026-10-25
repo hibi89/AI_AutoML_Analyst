@@ -24,6 +24,7 @@ from backend.app.services.basic_report import build_basic_zip
 from backend.app.services.standard_delivery import build_standard_zip
 from backend.app.services.premium_delivery import build_premium_zip
 from backend.app.services.premium_predict import predict_csv
+from scripts.p6e6_delivery_policy import verify_shipping_zip
 
 
 def synthetic_frame() -> pd.DataFrame:
@@ -54,6 +55,7 @@ def _fresh_run_dir(root: Path) -> Path:
 
 
 def _inspect(payload: bytes, tier: str, run_dir: Path, min_pages: int, max_pages: int) -> dict:
+    shipping = verify_shipping_zip(payload, tier)
     folder = run_dir / tier.lower()
     folder.mkdir()
     (folder / f"{tier.lower()}_synthetic.zip").write_bytes(payload)
@@ -85,6 +87,7 @@ def _inspect(payload: bytes, tier: str, run_dir: Path, min_pages: int, max_pages
             "zip_sha256": sha256(payload).hexdigest(),
             "pdf_sha256": sha256(pdf).hexdigest(),
             "zip_member_count": len(members), "manifest_hashes": "PASS",
+            "shipping_policy": shipping,
         }
         if tier == "PREMIUM":
             wanted = ("model_pipeline.skops", "model_schema.json", "predict.py",
