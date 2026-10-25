@@ -104,3 +104,22 @@ def test_too_few_groups_rejected():
     df["group_id"] = ["A"] * 60 + ["B"] * 60
     with pytest.raises(ValueError, match="5 distinct"):
         run_standard(df, "target", "classification", "group", group_column="group_id")
+
+
+
+def test_literal_target_copy_is_rejected_as_leakage():
+    df = frame()
+    df["target_copy"] = df["target"].copy()
+    with pytest.raises(ValueError, match="Direct target leakage"):
+        run_standard(df, "target", "classification")
+
+
+def test_invalid_group_and_temporal_metadata_rejected():
+    df = frame()
+    df.loc[0, "group_id"] = None
+    with pytest.raises(ValueError, match="missing group"):
+        run_standard(df, "target", "classification", "group", group_column="group_id")
+    df = frame()
+    df.loc[0, "date"] = "not-a-date"
+    with pytest.raises(ValueError, match="valid dates"):
+        run_standard(df, "target", "classification", "time", time_column="date")
