@@ -609,3 +609,51 @@ async def standard_report_download(
         content=payload, media_type="application/zip",
         headers={"Content-Disposition": 'attachment; filename="automl_standard_preview.zip"'},
     )
+
+
+# PREMIUM local-only developer preview. No external model ingestion route.
+@app.get("/premium-mvp")
+def premium_mvp_page(request: Request):
+    from fastapi.responses import FileResponse
+
+    _require_local_mvp_request(request)
+    html_path = Path(__file__).resolve().parents[2] / "frontend" / "premium_mvp.html"
+    return FileResponse(html_path, media_type="text/html; charset=utf-8")
+
+
+@app.post("/api/premium-report")
+async def premium_report_download(
+    request: Request,
+    file: UploadFile = File(...),
+    target_column: str = Form(...),
+    task_type: str = Form("auto"),
+    split_policy: str = Form("random"),
+    group_column: str = Form(""),
+    time_column: str = Form(""),
+    cv: int = Form(3),
+):
+    from fastapi.responses import Response
+    from backend.app.services.basic_report import MAX_UPLOAD_BYTES
+    from backend.app.services.premium_delivery import build_premium_zip
+
+    _require_local_mvp_request(request)
+    if not (file.filename or "").lower().endswith(".csv"):
+        raise HTTPException(status_code=400, detail="PREMIUM accepts CSV only.")
+    raw = await file.read(MAX_UPLOAD_BYTES + 1)
+    if len(raw) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="CSV must be at most 30 MiB.")
+    if not raw:
+        raise HTTPException(status_code=400, detail="Empty CSV.")
+    try:
+        df = _read_csv_from_bytes(raw)
+        payload = build_premium_zip(
+            df, target_column=target_column, task_type=_normalize_task_type(task_type),
+            split_policy=split_policy, group_column=group_column.strip() or None,
+            time_column=time_column.strip() or None, cv=cv,
+        )
+    except (ValueError, pd.errors.ParserError, UnicodeError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return Response(
+        content=payload, media_type="application/zip",
+        headers={"Content-Disposition": 'attachment; filename="automl_premium_preview.zip"'},
+    )
