@@ -108,6 +108,24 @@ def _insights(df: pd.DataFrame, quality: list[dict]) -> tuple[list[str], list[st
     return findings[:5], suggestions[:3]
 
 
+def _numeric_profiles(df: pd.DataFrame) -> list[dict]:
+    """Aggregate-only observed quartiles, never individual records or category values."""
+    rows = []
+    for name in _numeric(df)[:4]:
+        values = pd.to_numeric(df[name], errors="coerce")
+        values = values.replace([float("inf"), float("-inf")], float("nan")).dropna()
+        if len(values) < 4:
+            continue
+        rows.append({
+            "column": _display_name(name),
+            "observed": int(len(values)),
+            "q1": round(float(values.quantile(.25)), 2),
+            "median": round(float(values.median()), 2),
+            "q3": round(float(values.quantile(.75)), 2),
+        })
+    return rows
+
+
 def _make_charts(df: pd.DataFrame, quality: list[dict]) -> list[tuple[str, bytes, str]]:
     """Use the P6 branded chart designer across BASIC / STANDARD / PREMIUM."""
     from backend.app.services.chart_design import create_charts
@@ -273,6 +291,43 @@ def _pdf(summary: dict, charts: list[tuple[str, bytes, str]]) -> bytes:
             img.drawWidth, img.drawHeight = 455, 254
             story.extend([img, Spacer(1, 7), paragraph(note, "small"),
                           Spacer(1, 10)])
+        # On a last single-chart page, add independently observed numeric
+        # summaries; do not invent a filler plot or restate category values.
+        profiles = summary.get("numeric_profiles", [])
+        if page_start + 1 == len(charts) and profiles:
+            story.extend([Spacer(1, 7), heading("관측 수치의 사분위 요약")])
+            profile_rows = [[
+                paragraph("수치형 열", "small"), paragraph("유효행", "small"),
+                paragraph("Q1", "small"), paragraph("중앙값", "small"),
+                paragraph("Q3", "small"),
+            ]]
+            for p in profiles:
+                profile_rows.append([
+                    paragraph(str(p["column"])[:28], "small"),
+                    f'{p["observed"]:,}', f'{p["q1"]:,.2f}',
+                    f'{p["median"]:,.2f}', f'{p["q3"]:,.2f}',
+                ])
+            profiles_table = Table(
+                profile_rows, colWidths=[166, 60, 84, 84, 84],
+                repeatRows=1, hAlign="LEFT",
+            )
+            profiles_table.setStyle(TableStyle([
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#DCECF5")),
+                ("ROWBACKGROUNDS", (0, 1), (-1, -1),
+                 [colors.white, colors.HexColor("#F4F8FA")]),
+                ("BOX", (0, 0), (-1, -1), .4, colors.HexColor("#D6E4EB")),
+                ("LINEBELOW", (0, 0), (-1, -2), .3, colors.HexColor("#D6E4EB")),
+                ("FONTNAME", (0, 0), (-1, -1), font),
+                ("FONTSIZE", (0, 0), (-1, -1), 8),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("TOPPADDING", (0, 0), (-1, -1), 6),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+            ]))
+            story.append(profiles_table)
+            story.append(paragraph(
+                "유효한 수치만 사용한 관측 사분위수입니다. 원본 단위와 표본 정의를 확인하세요.",
+                "small",
+            ))
 
     story.extend([PageBreak(), heading("발견과 다음 행동")])
     for line in summary["findings"]:
@@ -309,6 +364,7 @@ def build_basic_delivery(df: pd.DataFrame) -> bytes:
         "findings": findings,
         "suggestions": suggestions,
         "metrics": metrics,
+        "numeric_profiles": _numeric_profiles(df),
         "quality": quality,
         "chart_count": len(charts),
         "chart_captions": {name: note for name, _, note in charts},
