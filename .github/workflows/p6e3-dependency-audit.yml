@@ -1,0 +1,69 @@
+name: AutoML P6E3 dependency and license audit
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/kmong-v1
+    paths:
+      - "requirements-verified-py311.txt"
+      - "scripts/p6e3_dependency_audit.py"
+      - ".github/workflows/p6e3-dependency-audit.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  dependency-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements-verified-py311.txt
+      - name: Install exact runtime and test dependencies
+        run: python -m pip install -r requirements-verified-py311.txt
+      - name: Capture tested full dependency graph and license metadata
+        run: |
+          mkdir -p ci-benchmarks
+          python -m pip freeze --all > ci-benchmarks/p6e3_pinned_environment.txt
+          python -m pip check
+          python -m scripts.p6e3_dependency_audit
+      - name: Install free vulnerability audit tool (after environment freeze)
+        run: python -m pip install pip-audit
+      - name: Check known CVEs for pinned direct + transitive distributions
+        shell: bash
+        run: |
+          set +e
+          python -m pip_audit \
+            --no-deps --disable-pip \
+            -r ci-benchmarks/p6e3_pinned_environment.txt \
+            --format json \
+            --output ci-benchmarks/p6e3_vulnerability_audit.json \
+            --timeout 20
+          code=$?
+          printf '%s\n' "$code" > ci-benchmarks/p6e3_audit_exit_code.txt
+          echo "P6E3 pip-audit exit code: $code"
+          exit 0
+      - name: Upload exact evidence, including found vulnerabilities or audit errors
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p6e3-dependency-security-evidence
+          path: |
+            ci-benchmarks/p6e3_pinned_environment.txt
+            ci-benchmarks/p6e3_full_dependency_inventory.json
+            ci-benchmarks/p6e3_vulnerability_audit.json
+            ci-benchmarks/p6e3_audit_exit_code.txt
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Enforce vulnerability audit outcome
+        run: |
+          code="$(cat ci-benchmarks/p6e3_audit_exit_code.txt)"
+          if [ "$code" != "0" ]; then
+            echo "::error::Dependency CVEs or audit failure. See uploaded evidence; sales gate remains CLOSED."
+            exit 1
+          fi
