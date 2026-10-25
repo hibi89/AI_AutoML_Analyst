@@ -43,3 +43,5 @@ Thumbs.db
 build/
 dist/
 *.egg-info/
+# Synthetic review packs (may contain serialized model metadata)
+qa-preview/
