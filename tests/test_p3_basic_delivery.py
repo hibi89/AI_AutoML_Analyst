@@ -77,6 +77,7 @@ def test_rich_input_produces_real_korean_pdf_five_charts_and_manifest(tmp_path):
         assert "데이터 진단" in searchable
         assert "주요 발견" in searchable
         assert "ML 적용 가능성" in searchable
+        assert "목표열 검토 전 확인할 수치형 현황" in (reader.pages[-1].extract_text() or "")
         # Only the final lone-chart page receives real numeric quartile content.
         assert "관측 수치의 사분위 요약" in (reader.pages[-2].extract_text() or "")
         assert "사분위 요약" not in (reader.pages[0].extract_text() or "")
