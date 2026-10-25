@@ -309,6 +309,9 @@ async def analyze_dataset(
 
         return response_payload
 
+    except HTTPException:
+        # Preserve 413 and other intentional API errors instead of converting to 500.
+        raise
     except ValueError as e:
         raise HTTPException(
             status_code=400,
