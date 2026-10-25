@@ -40,3 +40,14 @@ def test_sparse_data_avoids_unjustified_graphs():
     df = pd.DataFrame({"category": ["A", "B", "C"],
                        "other": ["same", "same", "same"]})
     assert create_charts(df, _quality_rows(df)) == []
+
+
+
+def test_overlong_or_control_character_headers_rejected_before_render():
+    import pytest
+    from backend.app.services.basic_report import validate_basic_frame
+
+    with pytest.raises(ValueError, match="at most 160"):
+        validate_basic_frame(pd.DataFrame({"가" * 161: [1, 2, 3]}))
+    with pytest.raises(ValueError, match="control characters"):
+        validate_basic_frame(pd.DataFrame({"name\\ninvalid": [1, 2, 3]}))
