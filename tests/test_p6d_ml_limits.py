@@ -86,3 +86,16 @@ def test_legacy_model_endpoint_obeys_separate_ml_limit(monkeypatch):
     assert r.status_code == 400, r.text
     assert "ML capacity limit" in r.text
     assert not invoked
+
+
+def test_identifier_feature_is_excluded_transparently():
+    n=150
+    frame=pd.DataFrame({
+        "id_column":[f"PRIVATE_ID_{i}" for i in range(n)],
+        "signal":np.arange(n)%19,
+        "target":np.arange(n)%2,
+    })
+    out=run_standard(frame,"target","classification",cv=3,max_challengers=3)
+    assert "id_column" in out["dropped_feature_columns"]
+    assert "id_column" not in out["feature_columns"]
+    assert any("id_column" in warning for warning in out["warnings"])
