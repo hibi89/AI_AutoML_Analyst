@@ -241,7 +241,7 @@ def run_standard(
         except Exception as exc:
             row = {"model": model_name, "role": "baseline" if model_name.startswith("dummy_") else "challenger",
                    "status": "failed", "cv_primary": None, "cv_std": None,
-                   "cv_metrics": {}, "error": f"{type(exc).__name__}: {str(exc)[:240]}"}
+                   "cv_metrics": {}, "error": f"{type(exc).__name__}: evaluation failed (details withheld)"}
         model_rows.append(row)
     challengers = [r for r in model_rows if r["role"] == "challenger" and r["status"] == "success"]
     baseline = next((r for r in model_rows if r["role"] == "baseline"), None)
