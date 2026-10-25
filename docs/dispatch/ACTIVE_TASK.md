@@ -2,7 +2,7 @@
 Updated: 2026-10-26 KST
 status: READY
 target_branch: feature/kmong-v1
-task_id: AUTO-KM-P6E3
+task_id: AUTO-KM-P6E4
 predecessor: P0 P2 P3 P4 P5 implementation DONE, P1 PARTIAL (Linux Chromium real browser proven; owner Windows unverified), P6A/B/C/D engineering work verified, P6 release still IN PROGRESS.
 next_after_success: P7 Kmong listing DRAFT only after tier-specific release criteria satisfied and owner approves.
 
@@ -48,3 +48,16 @@ PREMIUM last two pages now use real model/CV/untouched-holdout/Dummy numbers and
 - **Next READY AUTO-KM-P6E3:** free reproducible CVE/transitive-license scan and triage, malformed/wide/memory boundary QA, final PDF layout and owner Windows check. No public deploy, main merge, sales release, paid services, or customer data access.
 
 Execution sequence for next `ㄱ`: 1) check exact live branch and CI, 2) version-scope third-party audit (do not guarantee zero vulnerabilities if tool not run), 3) adversarial near-boundary workload tests and truthful failure behavior, 4) new synthetic visual review, 5) update docs. Physical owner Windows/Chrome/Edge remains owner-action REQUIRED; P7 and P6 sale-go still blocked.
+
+
+## P6E3 DONE / P6E4 READY (2026-10-26 KST)
+
+
+## P6E3 verified: patched dependencies & boundary QA (2026-10-26 KST)
+- Implemented full 52-package Linux inventory + free known-CVE audit, preserving audit evidence even when fail; first [40213847811](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40213847811) **FAILED** with 37 Pillow + 3 setuptools advisory entries; fixed pinned `Pillow==13.0.0`, audit-runner `setuptools==84.2.1`.
+- Re-audit [40214119475](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40214119475) **SUCCESS / 0 known CVE entries reported** (scope: installed Linux Python3.11 packages). Specific skops license is **MANUAL REVIEW**, since its metadata only states "OSI Approved"; scan is not legal certification.
+- Added 5 near-boundary CSV/XLSX/413/invalid-header regressions. Pillow13 [Linux 40214031425](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40214031425) **105 PASS/1 Windows-only SKIP/41 warnings**, BASIC 6 / STD 9 / PREM 11 PDF pages; [Windows 40214031452](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40214031452) **50 PASS/9 warnings**. [Chromium 40214031501](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40214031501) pending observed completion at this doc update (previous Pillow13 Chromium [40213990390](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40213990390) SUCCESS).
+- Inspected actual Pillow13 PREMIUM 11-page synthetic raster: legible Korean/plots, but pages 5/6/7/10/11 sparse; owner design acceptance **NOT GIVEN**. Physical owner's Windows release QA **NOT RUN**. No sale/production/merge permitted; all tiers NO-GO, strict progress **P0–P6 = 5/7 (71%)**. No Vercel/Production for localhost-only app; original `main@c80c8744` unchanged.
+- Detailed source `docs/qa/P6E3_RELEASE.md`; owner acceptance `docs/qa/P6E3_WINDOWS_RELEASE_CHECKLIST.md`. **Next READY AUTO-KM-P6E4**: verify latest Chromium, improve real-content PDF density, complete skops/third-party license and Windows manual readiness, tier-specific go/no-go. GitHub dev latest SHA should always be fetched live.
+
+P6E4 success criteria: inspect latest real Chromium and CVE audit status; improve meaningful PDF report density without invented claims; run render/page-count/security regression; resolve exact skops license and owner-local Windows release evidence as feasible. Never mark manual gate passed by GitHub CI alone. All 3 SKU sales NO-GO, main untouched.
