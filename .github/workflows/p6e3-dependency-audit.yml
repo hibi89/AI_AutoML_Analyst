@@ -8,6 +8,7 @@ on:
     paths:
       - "requirements-verified-py311.txt"
       - "scripts/p6e3_dependency_audit.py"
+      - "scripts/p6e5_license_notices.py"
       - ".github/workflows/p6e3-dependency-audit.yml"
 
 permissions:
@@ -34,6 +35,7 @@ jobs:
           python -m pip freeze --all > ci-benchmarks/p6e3_pinned_environment.txt
           python -m pip check
           python -m scripts.p6e3_dependency_audit
+          python -m scripts.p6e5_license_notices
       - name: Install free vulnerability audit tool (after environment freeze)
         run: python -m pip install pip-audit
       - name: Check known CVEs for pinned direct + transitive distributions
@@ -58,6 +60,7 @@ jobs:
           path: |
             ci-benchmarks/p6e3_pinned_environment.txt
             ci-benchmarks/p6e3_full_dependency_inventory.json
+            ci-benchmarks/p6e5_notice_evidence.json
             ci-benchmarks/p6e3_vulnerability_audit.json
             ci-benchmarks/p6e3_audit_exit_code.txt
           if-no-files-found: warn
