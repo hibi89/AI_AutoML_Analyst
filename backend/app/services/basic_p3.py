@@ -169,7 +169,8 @@ def _make_charts(df: pd.DataFrame, quality: list[dict]) -> list[tuple[str, bytes
 
     cat_cols = [
         col for col in df.select_dtypes(include=["object", "category", "string", "bool"]).columns
-        if 2 <= df[col].nunique(dropna=True) <= 15
+        if len(df) >= 8
+        and 2 <= df[col].nunique(dropna=True) <= 15
         and col != (_date_column(df) or (None,))[0]
     ]
     if cat_cols:
@@ -187,7 +188,7 @@ def _make_charts(df: pd.DataFrame, quality: list[dict]) -> list[tuple[str, bytes
         if len(vals) >= 8:
             capture("box", "Numeric spread / outliers",
                     f"'{_display_name(col)}' 열의 사분위범위 및 외곽 관측입니다. 이상치는 오류로 단정할 수 없습니다.",
-                    lambda ax: (ax.boxplot(vals.to_numpy(), vert=True),
+                    lambda ax: (ax.boxplot(vals.to_numpy()),
                                 ax.set_xticks([1], ["Numeric N1"]), ax.set_ylabel("Observed value")))
 
     # Valid dates contribute a trend chart when previous categories did not fill cap.
