@@ -211,7 +211,7 @@ def _append_ml_pdf(original: bytes, analysis: dict, chart_png: bytes) -> bytes:
         para(f"주요 지표: {p} — 값이 클수록 좋음", "small"),
         table,
         Spacer(1, 20),
-    ]
+    ])
     image = Image(BytesIO(chart_png))
     image.drawWidth, image.drawHeight = 464, 261
     story.extend([
