@@ -158,7 +158,26 @@ def create_charts(df: pd.DataFrame, quality: list[dict]) -> list[tuple[str, byte
                    f"상위 {len(counts)}개 범주  /  개별 범주명은 개인정보 보호를 위해 비표시",
                    f"'{shortened(col)}'의 상위 범주 순위별 건수입니다. 범주명은 원본 데이터 보호를 위해 표시하지 않습니다.",catplot)
 
-    if numeric:
+    if len(charts)<5 and numeric and date_columns:
+        for date_col in date_columns:
+            dates=pd.to_datetime(df[date_col],errors="coerce")
+            valid=dates.notna() & df[numeric[0]].notna()
+            if valid.sum()<12 or dates[valid].dt.normalize().nunique()<3:
+                continue
+            grouped=pd.Series(pd.to_numeric(df.loc[valid,numeric[0]],errors="coerce").to_numpy(),
+                              index=pd.DatetimeIndex(dates[valid])).resample("MS").mean().dropna()
+            if len(grouped)<3:
+                continue
+            def trend(fig,ax):
+                xs=range(len(grouped))
+                ax.plot(xs,grouped.to_numpy(),color=TEAL,lw=2.6,marker="o",markersize=5)
+                ax.set_xticks(list(xs),[v.strftime("%Y-%m") for v in grouped.index],rotation=18)
+                ax.set_ylabel("월별 평균 (원본 단위)",fontsize=9,color=NAVY)
+            render("trend","기간별 수치형 변화",
+                   f"{shortened(numeric[0],20)} 월별 관측 평균  /  {len(grouped)}개월",
+                   "관측 기간 평균 변화로 미래 변화나 인과관계를 보장하지 않습니다.",trend)
+            break
+    if len(charts)<5 and numeric:
         col=numeric[0]
         vals=pd.to_numeric(df[col],errors="coerce").dropna()
         if len(vals)>=8:
@@ -176,24 +195,4 @@ def create_charts(df: pd.DataFrame, quality: list[dict]) -> list[tuple[str, byte
                    f"{shortened(col,22)}  /  Q1 {vals.quantile(.25):,.1f} · 중앙값 {vals.median():,.1f} · Q3 {vals.quantile(.75):,.1f}",
                    "상자그림은 분산을 요약합니다. 이상 관측이 반드시 오류는 아닙니다.",boxplot)
 
-    if len(charts)<5 and numeric and date_columns:
-        for date_col in date_columns:
-            dates=pd.to_datetime(df[date_col],errors="coerce")
-            valid=dates.notna() & df[numeric[0]].notna()
-            if valid.sum()<12 or dates[valid].dt.normalize().nunique()<3:
-                continue
-            grouped=pd.Series(pd.to_numeric(df.loc[valid,numeric[0]],errors="coerce").to_numpy(),
-                              index=pd.DatetimeIndex(dates[valid])).resample("MS").mean().dropna()
-            if len(grouped)<3:
-                continue
-            def trend(fig,ax):
-                xs=range(len(grouped))
-                ax.plot(xs,grouped.to_numpy(),color=TEAL,lw=2.6,marker="o",markersize=5)
-                ax.fill_between(xs,grouped.to_numpy(),min(grouped)*.9,color=MINT,alpha=.4)
-                ax.set_xticks(list(xs),[v.strftime("%Y-%m") for v in grouped.index],rotation=18)
-                ax.set_ylabel("월별 평균 (원본 단위)",fontsize=9,color=NAVY)
-            render("trend","기간별 수치형 변화",
-                   f"{shortened(numeric[0],20)} 월별 관측 평균  /  {len(grouped)}개월",
-                   "관측 기간 평균 변화로 미래 변화나 인과관계를 보장하지 않습니다.",trend)
-            break
     return charts
