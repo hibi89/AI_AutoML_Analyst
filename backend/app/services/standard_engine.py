@@ -319,10 +319,42 @@ def run_standard(
             ("preprocess", clone(prep.preprocessor)),
             ("model", clone(est)),
         ]).fit(X_train, y_train)
-        return _holdout_scores(task, y_test, fitted.predict(X_test))
+        return _holdout_scores(task, y_test, fitted.predict(X_test)), fitted
 
-    best_holdout = fit_holdout(estimator)
-    dummy_holdout = fit_holdout(baseline_estimator)
+    best_holdout, best_pipeline = fit_holdout(estimator)
+    dummy_holdout, _ = fit_holdout(baseline_estimator)
+
+    # Training-derived model-specific ranking; never used to select model.
+    # These are NOT permutation importance nor causal attributions.
+    feature_importance: list[dict[str, Any]] = []
+    fitted_model = best_pipeline.named_steps["model"]
+    kind = None
+    raw_importance = None
+    if hasattr(fitted_model, "feature_importances_"):
+        raw_importance = np.asarray(fitted_model.feature_importances_, dtype=float)
+        kind = "tree_impurity"
+    elif hasattr(fitted_model, "coef_"):
+        coefs = np.asarray(fitted_model.coef_, dtype=float)
+        raw_importance = np.abs(coefs).mean(axis=0) if coefs.ndim > 1 else np.abs(coefs)
+        kind = "absolute_coefficient"
+    if raw_importance is not None:
+        try:
+            feature_names = list(
+                best_pipeline.named_steps["preprocess"].get_feature_names_out()
+            )
+            if len(feature_names) == len(raw_importance):
+                ranked = sorted(
+                    [(str(name), float(v)) for name, v in zip(feature_names, raw_importance)
+                     if math.isfinite(float(v))],
+                    key=lambda item: item[1], reverse=True
+                )
+                feature_importance = [
+                    {"feature": name, "importance": round(score, 6), "method": kind}
+                    for name, score in ranked[:8]
+                ]
+        except (ValueError, AttributeError, TypeError):
+            # Intentionally do not fabricate importance when feature mapping fails.
+            pass
     primary = scoring.primary_metric
     better_cv = winner["cv_primary"] > baseline["cv_primary"]
     better_holdout = best_holdout[primary] > dummy_holdout[primary]
@@ -345,6 +377,7 @@ def run_standard(
         "dummy_model": baseline["model"], "selected_cv_score": winner["cv_primary"],
         "dummy_cv_score": baseline["cv_primary"],
         "selected_holdout_metrics": best_holdout, "dummy_holdout_metrics": dummy_holdout,
+        "training_feature_importance": feature_importance,
         "cv_beats_dummy": better_cv, "holdout_beats_dummy": better_holdout,
         "warnings": warnings,
         "feature_columns": list(X_train.columns),
