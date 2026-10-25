@@ -2,7 +2,7 @@
 Updated: 2026-10-26 KST
 status: READY
 target_branch: feature/kmong-v1
-task_id: AUTO-KM-P6E6
+task_id: AUTO-KM-P6E7
 predecessor: P0 P2 P3 P4 P5 implementation DONE, P1 PARTIAL (Linux Chromium real browser proven; owner Windows unverified), P6A/B/C/D engineering work verified, P6 release still IN PROGRESS.
 next_after_success: P7 Kmong listing DRAFT only after tier-specific release criteria satisfied and owner approves.
 
@@ -100,3 +100,17 @@ P6E6 next acceptance work: actual version-scoped 10 package licensing/NOTICE obl
 - [Latest Windows native 40216847015](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40216847015) **SUCCESS** on same code SHA: **52 passed /9 warnings**, including local review generator pure tests and PowerShell syntax. This CI did not run the complete GUI/font-dependent owner script.
 - [License/NOTICE audit 40216690129](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40216690129) SUCCESS on license-code SHA '7c99dd0b095deccc0861288a9dbeacdd90a6b774': 52 packages with NOTICE/license file metadata, **10 obligation-review flags**, and 0 known vulnerabilities reported at scan time. Named licenses do not equal redistribution authorization.
 - Manual physical Windows 3-tier browser/ZIP/PDF, exact packaged cmd replay by owner and aesthetic/legal approval remain NOT RUN/NOT APPROVED. No public/Vercel deployment, all SKUs NO-GO, strict 5/7 (71%). Documentation-only later SHAs inherit this tested code history but are not separate application test runs.
+
+
+## P6E6 DONE IN CODE / P6E7 READY (2026-10-26 KST)
+
+
+## P6E6 restricted licensed delivery / fail-closed ZIP audit (2026-10-26 KST)
+- Implemented `scripts/p6e6_delivery_policy.py`: tier-specific ZIP allowlist, forbids bundled Python wheels, fonts, native executables, vendor source trees and unsafe member paths; checks required manifest members, SHA-256/size and PREMIUM-only model artifact. `scripts/p6e5_windows_demo.py` now executes this on actual generated ZIPs and reports the shipping boundary.
+- Added `tests/test_p6e6_delivery_policy.py` negative fixtures for vendor wheels/TTF, traversal, unexpected plots, model in BASIC, tampering, missing member, missing font license attribution. Customer README in BASIC/STANDARD/PREMIUM now cites NAVER NanumGothic copyright, **SIL OFL 1.1** and official license URL; ZIP includes no standalone font, PDFs may have embedded subsets.
+- Reviewed exact 10 third-party license flags with pinned Linux evidence. `docs/qa/P6E6_LICENSE_DISTRIBUTION.md` makes actual choice explicit: customer receives PDF/ZIP and our predict.py/cmd/model, installs Python deps separately via pip; no redistributed wheel, packaged venv or frozen EXE. These ten flags are not confirmed violations; hypothetical bundling obligations remain OPEN; no legal clearance asserted.
+- Baseline P6E5 verified Linux [40216846990](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40216846990) **111 pass/1 skip**, Windows [40216847015](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40216847015) **52 pass**, dependency audit 52 packages/zero known CVEs at scan time. P6E6 final-run evidence to be added after observed Actions results on latest code SHA.
+- Original main preserved, no live production/Vercel, no data exposed or fees. All three SKUs **NO-GO**, P1 physical Windows PARTIAL and P6 release still IN PROGRESS, strict progress **5/7 = 71%**.
+- Next READY **AUTO-KM-P6E7**: verify final P6E6 Linux/Windows/Chromium evidence, gather physical owner Windows/design approval using prepared runbook, confirm reviewed artifact scope and tier-specific release authority before sales.
+
+P6E7: 1) confirm exact latest CI for P6E6 shipping policy (including changed customer font notices), 2) collect and inspect actual generated README/ZIP and three-tier accept criteria, 3) validate actual physical Windows-owner user workflow only from real evidence, 4) record per-tier NO-GO or genuinely approved release; no merge/deploy/listing without user authorization.
