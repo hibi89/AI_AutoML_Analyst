@@ -78,6 +78,13 @@ def run_standard(
         excluded.add(time_column)
 
     data = df.loc[df[target_column].notna()].copy().reset_index(drop=True)
+    # A literal duplicate of the target is direct leakage, not predictive skill.
+    for col in data.columns:
+        if col not in excluded and data[col].equals(data[target_column]):
+            raise ValueError(
+                f"Direct target leakage: feature '{col}' is identical to the target. "
+                "Remove it and retry."
+            )
     warnings = [
         "목표를 직접 생성하거나 관측 이후에만 알 수 있는 설명변수가 있으면 누수가 발생합니다. 사용자 검토가 필요합니다.",
         "CV 점수는 학습 데이터 내부 성능, holdout 점수는 분리된 미사용 데이터 성능입니다. 미래 성과를 보장하지 않습니다.",
