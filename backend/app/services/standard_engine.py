@@ -55,7 +55,10 @@ def run_standard(
     time_column: str | None = None,
     cv: int = 3,
     random_state: int = 42,
+    max_challengers: int = 3,
 ) -> dict[str, Any]:
+    if max_challengers not in (3, 5) or isinstance(max_challengers, bool):
+        raise ValueError("Only STANDARD=3 or PREMIUM=5 challengers are supported.")
     validate_basic_frame(df)
     detected = detect_task(df, target_column, task_type)
     task = detected["task_type"]
@@ -197,7 +200,7 @@ def run_standard(
         n_rows=len(X_train),
         n_features=X_train.shape[1],
         has_categorical_features=bool(prep.categorical_features),
-        random_state=random_state, max_models=3,
+        random_state=random_state, max_models=max_challengers,
     )
     scoring = get_scoring_config(task, y_train)
     model_rows = []
@@ -249,7 +252,8 @@ def run_standard(
     if not better_cv or not better_holdout:
         warnings.append("비교 모델이 Dummy 기준선을 넘지 못했습니다. 유효한 예측 신호가 있다고 주장할 수 없습니다.")
     return {
-        "tier": "STANDARD", "task_type": task, "target_column": target_column,
+        "tier": "PREMIUM" if max_challengers == 5 else "STANDARD",
+        "challenger_budget": max_challengers, "task_type": task, "target_column": target_column,
         "split_policy": split_policy, "group_column": group_column, "time_column": time_column,
         "selection_basis": "CV only (training partition)", "holdout_used_in_selection": False,
         "train_rows": len(train), "holdout_rows": len(holdout), "cv_splits": len(cv_splits),
