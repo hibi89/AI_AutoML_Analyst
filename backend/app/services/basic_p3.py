@@ -314,14 +314,24 @@ def _pdf(summary: dict, charts: list[tuple[str, bytes, str]]) -> bytes:
     story.append(paragraph("수치형의 극단값·결측·중복은 데이터 오류가 아닐 수도 있습니다. "
                            "원본 수집/측정 단위를 반드시 확인하세요.", "small"))
 
-    for index, (filename, png, note) in enumerate(charts, start=1):
-        story.extend([PageBreak(), paragraph(f"시각화 {index:02d}", "small"),
-                      heading(filename.rsplit("/",1)[-1].replace(".png","").replace("_"," ").title())])
-        img = Image(BytesIO(png))
-        # Chart has 8x4.5 aspect; fit well within A4 without stretching.
-        img.drawWidth, img.drawHeight = 490, 275
-        story.extend([Spacer(1, 22), img, Spacer(1, 25), paragraph(note),
-                      paragraph("차트는 요약된 분포입니다. 통계적 관계만으로 원인을 확정할 수 없습니다.", "small")])
+    chart_labels = {
+        "distribution": "수치형 분포", "missing": "결측 현황",
+        "correlation": "수치형 변수 관계", "categories": "범주별 빈도",
+        "box": "값의 변동 범위", "trend": "월별 관측 추이",
+    }
+    # Two charts per page reduce excessive whitespace without cramming figures.
+    for page_start in range(0, len(charts), 2):
+        story.extend([PageBreak(), heading("데이터 시각화")])
+        for chart_index in range(page_start, min(page_start + 2, len(charts))):
+            filename, png, note = charts[chart_index]
+            slug = filename.rsplit("/", 1)[-1].replace(".png", "").split("_", 1)[-1]
+            label = chart_labels.get(slug, "데이터 요약")
+            story.append(paragraph(f"{chart_index + 1:02d}  {label}", "small"))
+            img = Image(BytesIO(png))
+            # The source chart is 8 x 4.5 inches; preserve its aspect ratio.
+            img.drawWidth, img.drawHeight = 460, 258.75
+            story.extend([img, Spacer(1, 7), paragraph(note, "small"),
+                          Spacer(1, 10)])
 
     story.extend([PageBreak(), heading("발견과 다음 행동")])
     for line in summary["findings"]:
