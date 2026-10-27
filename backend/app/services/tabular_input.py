@@ -52,15 +52,20 @@ def read_xlsx_bounded(data: bytes) -> pd.DataFrame:
         if not workbook.worksheets:
             raise ValueError("XLSX has no worksheets.")
         sheet = workbook.worksheets[0]
-        if sheet.max_column > MAX_COLUMNS or sheet.max_row > MAX_ROWS + 1:
+        # The optional <dimension> declaration is untrusted: it may be absent
+        # (common in exported XLSX files) or claim fewer cells than exist.
+        # Reject declared oversize workbooks quickly, then stream actual rows
+        # instead of silently truncating to the claimed dimensions.
+        if ((sheet.max_column is not None and sheet.max_column > MAX_COLUMNS)
+                or (sheet.max_row is not None and sheet.max_row > MAX_ROWS + 1)):
             raise ValueError(f"XLSX limit exceeded: {MAX_ROWS} data rows and {MAX_COLUMNS} columns.")
-        # Read actual dimensions, not the maximum budget width: openpyxl
-        # pads rows to max_col and would mistake the padding for blank headers.
-        records = sheet.iter_rows(values_only=True, max_row=sheet.max_row,
-                                 max_col=sheet.max_column)
+        sheet.reset_dimensions()
+        records = sheet.iter_rows(values_only=True)
         first = next(records, None)
         if first is None or not first:
             raise ValueError("XLSX has no header row.")
+        if len(first) > MAX_COLUMNS:
+            raise ValueError(f"XLSX limit exceeded: {MAX_ROWS} data rows and {MAX_COLUMNS} columns.")
         headers = [value for value in first if value is not None]
         if len(headers) != len(first):
             raise ValueError("XLSX header must not contain blank cells.")
@@ -70,11 +75,14 @@ def read_xlsx_bounded(data: bytes) -> pd.DataFrame:
             raise ValueError("Duplicate column names are not supported.")
         rows = []
         for row in records:
-            if len(rows) >= MAX_ROWS:
-                raise ValueError(f"XLSX limit exceeded: {MAX_ROWS} data rows.")
+            if len(rows) >= MAX_ROWS or len(row) > MAX_COLUMNS:
+                raise ValueError(f"XLSX limit exceeded: {MAX_ROWS} data rows and {MAX_COLUMNS} columns.")
             if len(row) > len(headers) and any(value is not None for value in row[len(headers):]):
                 raise ValueError("XLSX has cells outside the header width.")
-            rows.append(tuple(row[:len(headers)]))
+            # Undimensioned sheets may yield ragged tuples; preserve null cells
+            # explicitly rather than depending on openpyxl max_col padding.
+            rows.append(tuple(row[:len(headers)]) +
+                        (None,) * max(0, len(headers) - len(row)))
         df = pd.DataFrame(rows, columns=list(headers))
         df = df.dropna(how="all")
         validate_basic_frame(df)
