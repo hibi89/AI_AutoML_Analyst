@@ -2,11 +2,27 @@
 from __future__ import annotations
 
 from io import BytesIO
+from pathlib import Path
 
 import pandas as pd
 from fastapi.testclient import TestClient
 
 from backend.app.main import app
+
+
+def test_docker_compose_is_local_only_and_uses_verified_dependencies():
+    repo_root = Path(__file__).resolve().parents[1]
+    compose = (repo_root / "docker-compose.yml").read_text(encoding="utf-8")
+    dockerfile = (repo_root / "Dockerfile").read_text(encoding="utf-8")
+
+    assert '"127.0.0.1:8000:8000"' in compose
+    assert "C:/Users/" not in compose
+    assert "C:\\Users\\" not in compose
+    assert "target: /data" not in compose
+    assert "./local-fonts:/run/automl-fonts:ro" in compose
+    assert "AUTOML_KOREAN_FONT_PATH: /run/automl-fonts/NanumGothic.ttf" in compose
+    assert "COPY requirements-verified-py311.txt" in dockerfile
+    assert "python -m pip install --no-cache-dir -r requirements-verified-py311.txt" in dockerfile
 
 
 def test_legacy_filesystem_routes_are_closed():

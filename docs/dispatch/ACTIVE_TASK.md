@@ -305,3 +305,9 @@ No additional independently actionable code, feature, security, reliability, or 
 - **PREMIUM ₩300,000:** its PDF/ZIP visual quality; actual fonts and applicable source/dependency license notices; explicit commercial GO.
 
 The shared source-license review must address the 11 P6E30 dependency triage items and `skops` license metadata. Do not interpret this CI scan as a license or sales approval. No main merge, public deployment/listing, or sale without explicit owner approval.
+
+
+## AUTO-KM-P6E31 IN PROGRESS — close Docker host exposure and stale setup
+Independent review found the documented Compose mapping exposed host port 8000 on all interfaces, mounted a personal absolute OneDrive path for disabled legacy scanning, and built an incomplete image from floating dependencies. Compose now binds loopback only, removes the personal mount, keeps licensed font input read-only/outside the image, and Dockerfile uses the verified pinned manifest. README documents current tier routes. Local `docker compose config` resolves host IP `127.0.0.1`; focused regression **1 passed / 5 deselected**. An isolated GitHub Docker build/health/tier-page workflow is added. Local Docker daemon is unavailable. Commit/push and inspect Docker plus related regression CI before closing.
+
+After P6E31, the only expected owner gate is P6E22: each SKU's PDF/ZIP visual review, actual font/source-license review, and explicit commercial GO. The shared source review includes P6E30's 11 license/notice triage flags and `skops` metadata. Keep all tiers NO-GO unless explicitly approved.

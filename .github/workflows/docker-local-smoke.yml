@@ -1,0 +1,69 @@
+name: AutoML Docker local-only compatibility
+
+on:
+  push:
+    branches:
+      - feature/kmong-v1
+    paths:
+      - "Dockerfile"
+      - "docker-compose.yml"
+      - "README.md"
+      - "backend/**"
+      - "frontend/**"
+      - "requirements-verified-py311.txt"
+      - "tests/test_p6_security.py"
+      - ".github/workflows/docker-local-smoke.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  docker-local-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      COMPOSE_PROJECT_NAME: automl-docker-smoke-${{ github.run_id }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify host publish address and portable mounts
+        run: |
+          docker compose config --format json > "$RUNNER_TEMP/automl-compose.json"
+          python - "$RUNNER_TEMP/automl-compose.json" <<'PY'
+          import json
+          import sys
+          config = json.load(open(sys.argv[1], encoding="utf-8"))
+          service = config["services"]["automl-api"]
+          ports = service["ports"]
+          assert len(ports) == 1, ports
+          assert ports[0]["host_ip"] == "127.0.0.1", ports
+          assert ports[0]["target"] == 8000 and ports[0]["published"] == "8000", ports
+          assert all(mount.get("target") != "/data" for mount in service.get("volumes", []))
+          assert all("C:/Users/" not in mount.get("source", "") for mount in service.get("volumes", []))
+          fonts = [mount for mount in service.get("volumes", []) if mount.get("target") == "/run/automl-fonts"]
+          assert len(fonts) == 1 and fonts[0].get("read_only") is True, fonts
+          assert service["environment"]["AUTOML_KOREAN_FONT_PATH"] == "/run/automl-fonts/NanumGothic.ttf"
+          print("Docker host exposure is loopback-only; no developer path or writable font mount is used.")
+          PY
+      - name: Build and start the local-only application
+        run: docker compose up --build --detach
+      - name: Verify health and all tier pages through the published loopback port
+        shell: bash
+        run: |
+          set -euo pipefail
+          ready=0
+          for attempt in $(seq 1 60); do
+            if curl --silent --show-error --fail http://127.0.0.1:8000/health; then
+              ready=1
+              break
+            fi
+            sleep 1
+          done
+          test "$ready" -eq 1
+          for route in basic-mvp standard-mvp premium-mvp; do
+            curl --silent --show-error --fail "http://127.0.0.1:8000/$route" -o "$RUNNER_TEMP/$route.html"
+            grep -qi '<html' "$RUNNER_TEMP/$route.html"
+          done
+      - name: Stop the disposable Compose project
+        if: always()
+        run: docker compose down --remove-orphans

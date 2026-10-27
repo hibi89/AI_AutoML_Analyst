@@ -9,6 +9,7 @@ __pycache__/
 data/*
 models/*
 experiments/*
+local-fonts/
 frontend/.DS_Store
 
 *.log

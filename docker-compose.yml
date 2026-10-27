@@ -1,9 +1,11 @@
 services:
   automl-api:
     build: .
-    container_name: ai-automl-analyst
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
+    environment:
+      AUTOML_KOREAN_FONT_PATH: /run/automl-fonts/NanumGothic.ttf
+      AUTOML_JAPANESE_FONT_PATH: /run/automl-fonts/Japanese.ttf
     volumes:
       - ./experiments:/app/experiments
-      - "C:/Users/haein/OneDrive/Desktop/project 1st:/data"
+      - ./local-fonts:/run/automl-fonts:ro

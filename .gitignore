@@ -24,6 +24,7 @@ models/*
 # Experiments
 experiments/*
 !experiments/.gitkeep
+local-fonts/
 
 # IDE
 .vscode/

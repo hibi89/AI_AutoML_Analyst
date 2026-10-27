@@ -2,11 +2,11 @@
 
 
 
-AI AutoML Analyst는 로컬 폴더 안의 CSV 파일을 탐색하고, 사용자가 선택한 CSV와 target 컬럼을 기준으로 여러 머신러닝 모델을 자동 실험하여 결과를 비교해주는 FastAPI 기반 AutoML 분석 보조 도구입니다.
+AI AutoML Analyst는 사용자가 승인한 CSV/XLSX 파일 하나를 로컬에서 진단하고 보고서로 제공하는 FastAPI 기반 분석 도구입니다. 현재 BASIC, STANDARD, PREMIUM 로컬 MVP를 개발 중이며 세 상품 모두 판매 승인은 보류 상태입니다.
 
 
 
-이 프로젝트는 특정 데이터셋 하나만 분석하는 노트북이 아니라, 다양한 CSV 데이터셋을 빠르게 훑어보고 머신러닝 실험 가능성을 확인하기 위한 도구입니다.
+분석은 고객 파일을 외부 서비스로 전송하지 않습니다. 폴더 탐색 및 임의 경로를 읽는 레거시 API는 비활성화되어 있으며, 각 상품 페이지에서 파일을 직접 선택해 업로드합니다.
 
 
 
@@ -18,31 +18,15 @@ AI AutoML Analyst는 로컬 폴더 안의 CSV 파일을 탐색하고, 사용자�
 
 
 
-\- 로컬 폴더 내 CSV 파일 자동 탐색
+\- BASIC: 데이터 품질·기초 통계·적합성 진단과 PDF/ZIP 보고서 (모델 학습 없음)
 
-\- CSV 컬럼 구조 기준 schema group 생성
+\- STANDARD: 사용자 확인 대상에 대한 분류/회귀, Dummy 기준선, 교차검증 및 독립 홀드아웃
 
-\- schema group별 대표 CSV 파일 표시
+\- PREMIUM: 최대 5개 비-Dummy 후보 비교, 신뢰된 로컬 모델 산출물과 동일 스키마 CSV 재예측
 
-\- CSV별 컬럼 목록 및 예측 대상 후보 확인
+\- CSV/XLSX 업로드, 한국어 PDF, 분석표·차트와 무결성 확인된 상품별 ZIP
 
-\- 선택한 CSV 파일 1개 기준 AutoML 분석 실행
-
-\- Classification / Regression 실험 지원
-
-\- 데이터 크기에 따른 모델 후보 자동 선택
-
-\- 여러 ML 모델 Cross Validation 평가
-
-\- 모델 성능 랭킹 생성
-
-\- 결과 해석 및 Markdown 리포트 생성
-
-\- 분석 결과 JSON / Markdown 저장
-
-\- 저장된 분석 이력 조회
-
-\- 간단한 웹 프론트엔드 제공
+\- 기본 실행은 localhost 전용이며 외부 공개 서버로 사용할 수 없음
 
 
 
@@ -145,24 +129,20 @@ AI\_AutoML\_Analyst/
 - 현재 분석은 선택한 CSV 파일 1개 기준으로 실행됩니다.
 - 같은 schema group의 여러 CSV를 자동 병합하지는 않습니다.
 - JSON, ZIP, SHP 등 비정형/공간 데이터는 분석 대상이 아닙니다.
-- 대용량 CSV는 `sample_rows`를 사용한 샘플 분석을 권장합니다.
+- 허용 크기·행·열 한도를 넘는 파일은 샘플링으로 숨기지 않고 거부합니다.
 - target 후보는 자동 확정이 아니라 사용자가 선택하기 위한 참고 정보입니다.
-- 분석 중단 버튼은 브라우저 요청 취소 수준이며, 서버 작업 완전 취소는 추후 개선 예정입니다.
-- 집계형 데이터에서는 target과 같은 계열의 파생 컬럼이 feature에 포함될 경우 성능이 과도하게 높게 나올 수 있습니다.
+- 고객 데이터의 권한·비식별화와 실제 업무에 맞는 target/split 선택은 고객 및 분석 담당자가 확인해야 합니다.
+- 성능 보장이나 인과관계 주장을 하지 않습니다. 부적합한 데이터에서는 정직한 no-skill/no-prediction 결과를 제공합니다.
 
 ---
 
-## 향후 개선 방향
+## 판매 승인 전 직접 확인 항목
 
-- target 후보 정렬 고도화
-- 자동 분류/회귀 판단 개선
-- 데이터 누수 가능성 탐지 강화
-- schema group 단위 CSV 병합 분석
-- 백그라운드 job 및 실제 작업 취소 기능
-- React 기반 프론트엔드 개선
-- PostgreSQL 기반 분석 이력 저장
-- 테스트 코드 추가
-- 배포 환경 구성
+- BASIC, STANDARD, PREMIUM 각각의 PDF/ZIP 시각 품질
+- 각 결과에 실제 사용된 폰트와 프로그램·의존성 소스 라이선스
+- 상품별 명시적 상업적 판매 GO
+
+멀티파일 조인, 백그라운드 취소, React, PostgreSQL, 공개 SaaS는 이 로컬 MVP 범위가 아닙니다.
 
 ---
 
@@ -173,21 +153,17 @@ AI\_AutoML\_Analyst/
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\activate
-pip install pandas scikit-learn fastapi uvicorn python-multipart
-uvicorn backend.app.main:app --reload
+python -m pip install -r requirements-verified-py311.txt
+python -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000
 ```
 
 브라우저:
 
 ```text
-http://127.0.0.1:8000
+http://127.0.0.1:8000/basic-mvp
+http://127.0.0.1:8000/standard-mvp
+http://127.0.0.1:8000/premium-mvp
 http://127.0.0.1:8000/docs
-```
-
-프론트:
-
-```text
-frontend/index.html
 ```
 
 ---
@@ -201,16 +177,10 @@ docker compose up --build
 브라우저:
 
 ```text
-http://127.0.0.1:8000
+http://127.0.0.1:8000/basic-mvp
 ```
 
-Docker에서 로컬 데이터 폴더를 스캔할 경우 `docker-compose.yml`에 volume을 연결한 뒤 프론트에서 `/data`를 입력합니다.
-
-```yaml
-volumes:
-  - ./experiments:/app/experiments
-  - "C:/Users/haein/OneDrive/Desktop/project 1st:/data"
-```
+Compose는 호스트의 `127.0.0.1:8000`에만 포트를 게시합니다. 임의 데이터 경로 마운트와 레거시 폴더 스캔은 지원하지 않습니다. Docker PDF 생성을 위해 권리를 확인한 `NanumGothic.ttf`를 프로젝트의 Git 무시 폴더 `local-fonts/`에 두세요. 일본어 글리프가 필요하면 권리와 TTF 임베딩 허용을 확인한 `Japanese.ttf`도 둘 수 있습니다. 이 폴더는 컨테이너에 읽기 전용으로 마운트되며 이미지나 Git/ZIP에 포함되지 않습니다. `0.0.0.0` 또는 와일드카드 호스트 포트로 외부 공개하지 마세요. 컨테이너 내부 Uvicorn은 Docker 네트워크 연결을 위해 `0.0.0.0`에서 수신합니다.
 
 ---
 
