@@ -429,7 +429,7 @@ def build_basic_delivery(df: pd.DataFrame) -> bytes:
         "README.txt": ("AI AutoML Analyst BASIC\n이 파일은 기술통계 및 시각화 결과입니다.\n"
                        "인과분석/ML 학습/정확도 보장이 아닙니다.\n"
                        "누락/중복은 오류로 단정할 수 없습니다.\n"
-                       + font_usage_notice("".join(str(col) for col in df.columns))).encode("utf-8"),
+                       + font_usage_notice("".join(str(col) for col in df.columns), pdf_bytes=pdf)).encode("utf-8"),
     }
     parts.update({name: content for name, content, _ in charts})
     import hashlib
