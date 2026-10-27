@@ -3,6 +3,7 @@ param(
     [switch]$OpenBrowser,
     [switch]$ProbeOnly,
     [switch]$PortProbeOnly,
+    [switch]$IdentityProbeOnly,
     [ValidateRange(1024, 65535)][int]$Port = 8000
 )
 $ErrorActionPreference = "Stop"
@@ -30,6 +31,30 @@ if ($PortProbeOnly) {
         throw "Local port $Port is already occupied. Existing services are never stopped by this check."
     }
     Write-Output "LOCAL_PORT_AVAILABLE=$Port"
+    return
+}
+
+# An unrelated process can reply to /health even if it acquires the port
+# after the initial free-port check. The root JSON must match this application's
+# existing public root contract before opening browsers.
+function Test-AutoMLServerIdentity {
+    param([int]$ListenPort)
+    try {
+        $response = Invoke-WebRequest "http://127.0.0.1:$ListenPort/" -UseBasicParsing -TimeoutSec 2
+        if ($response.StatusCode -ne 200) { return $false }
+        $identity = $response.Content | ConvertFrom-Json -ErrorAction Stop
+        return ($identity.message -ceq "AI AutoML Analyst API" -and
+                $identity.health -ceq "/health" -and
+                $identity.analyze_upload -ceq "/api/analyze")
+    } catch {
+        return $false
+    }
+}
+if ($IdentityProbeOnly) {
+    if (-not (Test-AutoMLServerIdentity -ListenPort $Port)) {
+        throw "Local port $Port is not serving the expected AI AutoML Analyst API."
+    }
+    Write-Output "AUTOML_SERVER_IDENTITY=PASS"
     return
 }
 
@@ -109,7 +134,12 @@ if ($OpenBrowser) {
         if ($server.HasExited) { throw "Local server exited during startup." }
         try {
             $response = Invoke-WebRequest "http://127.0.0.1:$Port/health" -UseBasicParsing -TimeoutSec 1
-            if ($response.StatusCode -eq 200) { $ready = $true; break }
+            if ($response.StatusCode -eq 200 -and
+                (Test-AutoMLServerIdentity -ListenPort $Port) -and
+                (-not $server.HasExited)) {
+                $ready = $true
+                break
+            }
         } catch { Start-Sleep -Milliseconds 300 }
     }
     if (-not $ready) {
