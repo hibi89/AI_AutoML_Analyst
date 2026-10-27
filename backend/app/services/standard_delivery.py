@@ -296,7 +296,7 @@ def build_standard_zip(
         df, target_column, task_type, split_policy,
         group_column, time_column, cv,
     )
-    source_zip = build_basic_zip(df)
+    source_zip = build_basic_zip(df, report_tier="STANDARD")
     with ZipFile(BytesIO(source_zip)) as z:
         parts = {name: z.read(name) for name in z.namelist()
                  if name not in {"manifest.json", "report.pdf", "README.txt"}}
