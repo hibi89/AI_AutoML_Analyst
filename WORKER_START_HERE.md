@@ -1,5 +1,12 @@
 # AI AutoML Analyst — 새 채팅 / 새 작업자 진입점
 
+## P6E46 — PREMIUM boolean missing-value inference (2026-10-28 KST)
+- Code `e5858b949f12a0007ace9000f1aa241d00e0ca0b`: trusted PREMIUM `predict.py` strict boolean schema now accepts `True/False` mixed with empty CSV cells (pandas object) and wholly blank boolean feature; converts to float 1.0/0.0/NaN for trained numeric imputer. Rejects non-boolean literals incl. yes/no/0/1. Synthetic focused regression `da765d4fbd0dd14d27ec08f7a60e582e9227e70b`; [QA](docs/qa/P6E46_BOOLEAN_MISSING_PREDICTION.md).
+- Verified same fixed app SHA: [Windows native 40546704996](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40546704996), [Windows Chromium 40546705041](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40546705041), [Linux Chromium 40546704889](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40546704889), [Docker 40546704907](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40546704907) **SUCCESS**.
+- **Latest full Linux/new focused regression:** [40546766710](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40546766710) at `da765d4f` was **IN PROGRESS when this note was written**. Next `ㄱ`: verify final source-linked result; if failure, inspect job logs and repair before claiming P6E46 complete. Do not infer pass from earlier 259-pass P6E45 source run.
+- Read live `HANDOFF.md` then `STATUS.md`, `AGENTS.md`, `REQUIREMENTS.md` and working code. No speculative busywork; new reproducible backend/security defect only after full CI. Frontend last. P0-P6 5/7 (71%) strict acceptance; P1 partial, P6 physical owner visual/license and commercial SKU GO pending; all tiers sale NO-GO, `main` unchanged, no public/Vercel deployment/customer data.
+
+
 ## P6E45 CURRENT — source-column overwrite prevention (2026-10-28 KST)
 - At application SHA `e204fe9a`, fixed a real STANDARD/PREMIUM data-integrity issue: converting `sale_date` to `sale_date__year/month/day/...` previously silently replaced an existing raw `sale_date__year` column (reproduced original `[901,902]` becoming `[2026,2026]`). `_expand_datetime_features` now fails *before mutation* on any conflicting generated name. No silent rename or original feature loss.
 - Regression SHA `646c0d23`: tests for five suffixes, original frame immutable, normal dates, shared training detection and actual STANDARD/PREMIUM FastAPI 400. [QA record](docs/qa/P6E45_DATETIME_FIELD_COLLISION.md).
