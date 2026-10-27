@@ -289,3 +289,6 @@ Prior customer font notice listed selected installed fonts without proving PDF s
 
 ## NEXT REMAINING P6E22 — final owner physical/legal/commercial approval
 Independent P6E24–P6E29 gap/compatibility/security tests are completed; do not create low-value additional synthetic gates solely to appear busy. The required unresolved validation is **owner** one-session downloaded real BASIC/STANDARD/PREMIUM ZIP, visual PDF readability/aesthetic check, actual local font/source rights and explicit commercial selling approval. Prior owner Windows first setup P6E18 91 PASS and three pages; do not repeat full bootstrap. Unapproved sales, main merge, public deployment and listings are prohibited until owner release decision.
+
+### Current evidence pointer — 2026-10-27
+The older `docs/architecture/TARGET_DESIGN.md` static gap list is now explicitly marked as a 2026-10-25 historical snapshot and reconciled against current source. See its current-state table and [`FINAL_ACCEPTANCE_CROSSWALK.md`](../qa/FINAL_ACCEPTANCE_CROSSWALK.md). Browser QA's Playwright version is pinned at `1.64.1`; local Windows and hosted Windows browser flows passed 6/6, while hosted Linux install remained in progress at 11:30 UTC on source/config commit `7318db70d460318be2dcbbd5905d75ad01a4ac30`. No change to the remaining owner-only P6E22 task or 5/7 accepted milestone count.

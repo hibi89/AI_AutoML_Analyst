@@ -1,6 +1,24 @@
 # Commercial MVP technical architecture & gap audit
-Last reviewed: 2026-10-25 KST
+Last reviewed: 2026-10-27 KST
 `main` is legacy original; `feature/kmong-v1` is development ref.
+
+## Current implementation reconciliation — 2026-10-27
+
+The static design review below records the source state seen on 2026-10-25. It is retained as a historical baseline and **must not be used as the current open-gap list**. Current acceptance limits and owner gates are tracked in [`FINAL_ACCEPTANCE_CROSSWALK.md`](../qa/FINAL_ACCEPTANCE_CROSSWALK.md), [`STATUS.md`](../../STATUS.md), and [`ACTIVE_TASK.md`](../dispatch/ACTIVE_TASK.md).
+
+| 2026-10-25 observation | Current implementation evidence | Current status / limit |
+|---|---|---|
+| Task detector was not called; ambiguous numeric targets risked classification by default. | `automl_runner.py` and `standard_engine.py` call `task_detector.detect_task`; BASIC emits rules-only target-feasibility and ambiguity cues. | Resolved for the implemented flows. Ambiguous targets require explicit semantics; BASIC does not fit a model. |
+| Histogram gradient boosting could be truncated before the challenger cap. | `model_selector.py` prioritizes eligible HistGradientBoosting candidates before applying the challenger limit; Dummy remains outside the 3/5 challenger budget. | Resolved in selector policy; candidate counts do not promise model quality. |
+| Random CV could mix groups/times; an independent holdout was not established. | STANDARD/PREMIUM `standard_engine.py` supports random, group, and chronological holdout/CV; chronological folds split distinct timestamps. Model selection and tuning use training CV, then evaluate once on untouched holdout. | Automated synthetic cases pass. The owner must still confirm the split matches a real use case; no future-performance claim is approved. |
+| Feature inclusion/type decisions could be learned before CV folds. | `FoldLocalPreprocessor` learns preprocessing and feature inclusion within each CV training fold; shipped final pipelines keep the supported prediction schema. | Automated synthetic regressions pass; this does not validate a customer-specific data-generating process. |
+| End-to-end reports, packages, and repeat prediction were unverified. | BASIC/STANDARD/PREMIUM build tiered PDF/ZIP manifests; PREMIUM includes a trusted local artifact and same-schema CSV prediction runner. Windows and hosted Chromium synthetic flows are recorded in the crosswalk. | Synthetic implementation gate passes. Owner visual, client-machine, font-rights, and commercial approval remain open (P6E22). |
+| Public exposure risk from filesystem browsing, upload limits, and bind settings. | Legacy arbitrary-path browse/scan routes are disabled; local Host/client/Origin checks and bounded CSV/XLSX parsing protect the local workflow. | Partial release/security evidence only. Docker's `0.0.0.0` bind and remaining deployment configuration are not approved for public hosting; no penetration or full source-security audit is claimed. |
+| Repository ownership and dependency/font licensing were unsettled. | Dependency, font attribution, embedding metadata, and distribution choices are documented in `docs/qa/`. | No root project license or qualified legal/commercial clearance is recorded. Owner review remains required. |
+
+Implementation and test references are summarized in [`docs/qa/FINAL_ACCEPTANCE_CROSSWALK.md`](../qa/FINAL_ACCEPTANCE_CROSSWALK.md) and `docs/qa/P6E24_*` through `P6E29_*`. Those checks use synthetic data and do not replace owner acceptance.
+
+## Historical static baseline — 2026-10-25 (superseded for current status)
 
 ## Existing source layout (verified via connected GitHub file reads)
 - `backend/app/main.py`: FastAPI endpoints for upload analysis, browsing/scanning CSV folders, on-server path analysis, saved results and report download.
