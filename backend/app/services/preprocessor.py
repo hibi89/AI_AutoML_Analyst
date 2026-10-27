@@ -5,6 +5,7 @@ from typing import Any
 
 import pandas as pd
 
+from sklearn.base import BaseEstimator, TransformerMixin, clone
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
@@ -263,3 +264,62 @@ def build_preprocessing_pipeline(
         datetime_features=datetime_features,
         dropped_features=dropped_features,
     )
+
+class FoldLocalPreprocessor(TransformerMixin, BaseEstimator):
+    """Fit column-inclusion rules *inside* each model's CV training fold.
+
+    The production refit still uses the established trusted/skops-compatible
+    ColumnTransformer schema. This CV-only wrapper reuses exactly the same
+    train-only feature rules, avoiding validation-derived high-cardinality,
+    constant-column and datetime decisions.
+    """
+
+    def __init__(
+        self,
+        high_cardinality_threshold: int = 50,
+        high_cardinality_ratio: float = 0.5,
+    ):
+        self.high_cardinality_threshold = high_cardinality_threshold
+        self.high_cardinality_ratio = high_cardinality_ratio
+
+    def fit(self, X: pd.DataFrame, y=None):
+        if not isinstance(X, pd.DataFrame):
+            raise ValueError("Fold-local preprocessing requires labelled DataFrame columns.")
+        # Reuse existing tested feature rules without revealing validation rows
+        # or adding a target-dependent transformation.
+        sentinel = "__automl_fold_target__"
+        while sentinel in X.columns:
+            sentinel += "_"
+        fold_frame = X.copy()
+        fold_frame[sentinel] = 0
+        prep = build_preprocessing_pipeline(
+            fold_frame, target_column=sentinel,
+            high_cardinality_threshold=self.high_cardinality_threshold,
+            high_cardinality_ratio=self.high_cardinality_ratio,
+        )
+        self.input_columns_ = list(X.columns)
+        self.prepared_columns_ = list(prep.X.columns)
+        self.datetime_features_ = list(prep.datetime_features)
+        self.numeric_features_ = list(prep.numeric_features)
+        self.categorical_features_ = list(prep.categorical_features)
+        self.dropped_features_ = list(prep.dropped_features)
+        self.preprocessor_ = clone(prep.preprocessor).fit(prep.X)
+        return self
+
+    def transform(self, X: pd.DataFrame):
+        if not hasattr(self, "preprocessor_"):
+            raise ValueError("FoldLocalPreprocessor must be fitted before transform.")
+        if not isinstance(X, pd.DataFrame):
+            raise ValueError("Fold-local preprocessing requires a DataFrame.")
+        # Exact fitted source columns only: never discover/drop features using
+        # CV validation values, and never use unknown validation-only columns.
+        missing = [name for name in self.input_columns_ if name not in X.columns]
+        if missing:
+            raise ValueError("Missing original input feature columns in validation data.")
+        transformed = X[self.input_columns_].copy()
+        if self.datetime_features_:
+            transformed = _expand_datetime_features(transformed, self.datetime_features_)
+        for name in transformed.select_dtypes(include=["bool"]).columns:
+            transformed[name] = transformed[name].astype(float)
+        transformed = transformed.reindex(columns=self.prepared_columns_)
+        return self.preprocessor_.transform(transformed)
