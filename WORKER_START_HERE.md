@@ -1,5 +1,12 @@
 # AI AutoML Analyst — 새 채팅 / 새 작업자 진입점
 
+## P6E42 LATEST — real ZIP-to-JSON regression verified; GitHub CI timeout repaired (2026-10-28 KST)
+- Latest integration changes: STANDARD/PREMIUM actual endpoint ZIP holdout metric CSV must match same ZIP's public JSON, preserve untouched holdout and report optional importance only if valid. Commit sources `713f91b9`, `5ea2dad7`. Linux full [40536835912](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40536835912) **231 PASS / 3 SKIP**, PDF/ZIP preview and benchmarks all SUCCESS.
+- An earlier `6851e6e6` Linux run had **231 PASS/3 SKIP but job CANCELLED** at a 12-minute limit after ~11-minute apt font setup. To avoid misreporting green tests as failed product, GitHub workflow job ceiling was raised to 25 minutes in `af05f550` while preserving all steps. New run [40537144787](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40537144787) **IN PROGRESS** at this record; check live before declaring new workflow revision success.
+- Current HEAD also includes `HANDOFF.md`, `STATUS.md`, `docs/dispatch/ACTIVE_TASK.md` P6E42 updates. Recheck live branch SHA on entry; commit docs will be newer than test source `5ea2dad7`.
+- **NEXT:** Verify `af05f550` run and then pursue only substantiated backend/QA gaps, UI design LAST. Physical owner Windows/visual/font/software-rights approval P6E22 NOT completed, formal 5/7 (71%), all three tiers sale NO-GO; original `main` untouched. Not a hosted SaaS, Vercel N/A.
+
+
 ## BACKEND-FIRST OVERRIDE — P6E40/P6E41 (2026-10-28 KST)
 - **Explicit owner order:** finish features and correctness first, design/frontend last. Prior P6E40 "frontend next" is superseded. After code function gaps, do security/stability QA, THEN UI polish last; do not stop on MVP completion.
 - P6E40 new core deliverables at source SHA dff9eda387be6ec03f306878ec532eaf0f2165e8: STANDARD/PREMIUM \`holdout_scores.csv\` (selected vs Dummy on untouched holdout with metric direction/selection caveat) and optional \`feature_importance.csv\` when valid; ZIP allowlist + unit/API tests updated. At this checkpoint, new five CI runs initiated; consult Actions for final status. Previous 221-pass P6E39 checks do not certify these changes.
