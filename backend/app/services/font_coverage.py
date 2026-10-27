@@ -106,9 +106,12 @@ def safe_pdf_markup(text: object, primary_font: str, fallback_font: str | None) 
         elif fallback_font and _has_glyph(fallback_font, ch):
             parts.append('<font name="' + fallback_font + '">' + token + "</font>")
         else:
-            raise ValueError(
-                "Report glyph coverage changed; install an appropriate CJK font."
-            )
+            # Decorative/report-authored Unicode symbols may be absent from a
+            # licensed Korean font. Do not turn an otherwise valid report into
+            # HTTP 400 or silently render tofu. Caller-provided feature names
+            # are strictly validated by resolve_report_fonts(required_text)
+            # before reaching this presentation fallback.
+            parts.append("[U+%04X]" % ord(ch))
     return "".join(parts)
 
 
