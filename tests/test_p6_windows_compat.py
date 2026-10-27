@@ -118,6 +118,46 @@ def test_premium_preserves_valid_utf8_bom_and_cp949_paths(trusted_bundle):
     assert list(parsed.columns) == ["a", "b"] and len(parsed) == 3
 
 
+def test_prediction_explicit_cp932_preserves_japanese_schema(tmp_path):
+    """Repeat-prediction ingestion must use the selected Windows JP codec."""
+    from backend.app.services.premium_predict import _load_input
+
+    sample = tmp_path / "japanese.csv"
+    sample.write_bytes("商品,売上\\nお菓子,120\\n化粧品,230\\n".replace("\\n", "\n").encode("cp932"))
+    schema = {
+        "raw_feature_columns": ["商品", "売上"],
+        "numeric_raw_columns": ["売上"],
+        "boolean_raw_columns": [],
+    }
+    actual = _load_input(sample, schema, csv_encoding="cp932")
+    assert list(actual.columns) == ["商品", "売上"]
+    assert list(actual["商品"]) == ["お菓子", "化粧品"]
+    with pytest.raises(ValueError, match="Unsupported prediction CSV encoding"):
+        _load_input(sample, schema, csv_encoding="utf-7")
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="requires Windows cmd.exe")
+def test_windows_delivered_cmd_third_cp932_argument(trusted_bundle):
+    """New optional CP932 batch argument must not break the two-argument API."""
+    import subprocess
+    import shutil
+    from backend.app.services.premium_delivery import windows_predict_command
+    from backend.app.services import premium_predict
+
+    folder, source = trusted_bundle
+    batch = folder / "predict.cmd"
+    batch.write_bytes(windows_predict_command())
+    shutil.copyfile(Path(premium_predict.__file__), folder / "predict.py")
+    output = folder / "cp932_replay.csv"
+    proc = subprocess.run(
+        ["cmd.exe", "/d", "/c", str(batch), str(source), str(output), "cp932"],
+        cwd=folder, capture_output=True, text=True, errors="replace", timeout=50,
+    )
+    assert proc.returncode == 0, (proc.stdout, proc.stderr)
+    assert len(pd.read_csv(output)) == 3
+    assert list(pd.read_csv(output).columns) == ["prediction"]
+
+
 def test_modified_model_rejected(trusted_bundle):
     folder, source = trusted_bundle
     model_path = folder / "model_pipeline.skops"
