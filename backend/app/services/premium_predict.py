@@ -129,7 +129,20 @@ def _load_input(path: Path, schema: dict, csv_encoding: str = "auto") -> pd.Data
                 "Replace +/-Infinity with a finite value or blank cell."
             )
     for name in schema["boolean_raw_columns"]:
-        if not pd.api.types.is_bool_dtype(raw[name]):
+        values = raw[name]
+        if pd.api.types.is_bool_dtype(values):
+            continue
+        # pandas returns object for a True/False CSV column as soon as any
+        # row has a blank cell, even though the trained numeric imputer can
+        # handle that missing value after boolean -> float conversion.
+        # A wholly blank column is likewise a supported missing input.
+        if values.isna().all():
+            continue
+        nonmissing = values.dropna()
+        if not (
+            pd.api.types.is_object_dtype(values)
+            and nonmissing.map(lambda item: isinstance(item, (bool, np.bool_))).all()
+        ):
             raise ValueError(f"Boolean column has invalid dtype: {name}")
     return raw
 
