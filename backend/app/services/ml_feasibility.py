@@ -92,7 +92,7 @@ def inspect_ml_feasibility(df: pd.DataFrame) -> dict:
     top = candidates[:3]
     constraints = []
     if n < 40:
-        constraints.append("행이 40개 미만입니다. 검증용 별도 표본과 클래스별 표본 수 확보가 필요할 수 있습니다.")
+        constraints.append("행이 40개 미만입니다. 추가 검증용 별도 표본과 클래스별 표본 수 확보가 필요할 수 있습니다.")
     if not top:
         constraints.append("자동으로 검토 가능한 목표열이 없습니다. 고객이 업무 목표와 정답 열을 별도로 지정해야 합니다.")
     if any(item["missing_pct"] > 40 for item in top):
