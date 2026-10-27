@@ -67,6 +67,14 @@ def test_premium_full_zip_and_five_challengers(bundle):
         assert "BASIC  /  EXPLORATORY" not in cover
         assert "모델 학습 및 검증 결과는 뒤의 ML 평가 섹션" in cover
         assert 10 <= len(pages) <= 15
+        # Shared STANDARD ML pages must be relabeled for the PREMIUM delivery.
+        ml_pages = " ".join(page.extract_text() or "" for page in pages[-5:-2])
+        assert "PREMIUM — 모델 학습 및 검증" in ml_pages
+        assert "AI AutoML Analyst  |  PREMIUM 모델 검증" in ml_pages
+        assert "STANDARD 모델 검증" not in ml_pages
+        assert "STANDARD — 모델 학습 및 검증" not in ml_pages
+        assert "선택 모델 - Dummy 차이:" in ml_pages
+        assert "[U+2212]" not in ml_pages
         # P6E handover stays on two substantive pages without overflow/blank spill.
         handover = pages[-2].extract_text() or ""
         schema_guide = pages[-1].extract_text() or ""

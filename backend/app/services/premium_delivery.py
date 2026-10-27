@@ -289,7 +289,7 @@ def build_premium_zip(
         basic_pdf = archive.read("report.pdf")
     ml_chart = _comparison_plot(analysis)
     parts["charts/06_ml_comparison.png"] = ml_chart
-    standard_pdf = _append_ml_pdf(basic_pdf, analysis, ml_chart)
+    standard_pdf = _append_ml_pdf(basic_pdf, analysis, ml_chart, report_tier="PREMIUM")
     from pypdf import PdfReader, PdfWriter
     writer = PdfWriter()
     writer.append(PdfReader(BytesIO(standard_pdf)))

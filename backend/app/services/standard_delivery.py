@@ -85,7 +85,9 @@ def _comparison_plot(analysis: dict) -> bytes:
         plt.close(fig)
 
 
-def _append_ml_pdf(original: bytes, analysis: dict, chart_png: bytes) -> bytes:
+def _append_ml_pdf(original: bytes, analysis: dict, chart_png: bytes, *, report_tier: str = "STANDARD") -> bytes:
+    if report_tier not in {"STANDARD", "PREMIUM"}:
+        raise ValueError("ML report tier must be STANDARD or PREMIUM.")
     from reportlab.lib import colors
     from reportlab.lib.enums import TA_LEFT
     from reportlab.lib.pagesizes import A4
@@ -115,7 +117,7 @@ def _append_ml_pdf(original: bytes, analysis: dict, chart_png: bytes) -> bytes:
         c.saveState()
         c.setFillColor(colors.HexColor("#647d8c"))
         c.setFont(font, 8)
-        c.drawString(45, 31, "AI AutoML Analyst  |  STANDARD 모델 검증")
+        c.drawString(45, 31, f"AI AutoML Analyst  |  {report_tier} 모델 검증")
         c.drawRightString(A4[0] - 45, 31, f"ML {doc.page}")
         c.restoreState()
 
@@ -161,7 +163,7 @@ def _append_ml_pdf(original: bytes, analysis: dict, chart_png: bytes) -> bytes:
         ("BOTTOMPADDING", (0, 0), (-1, -1), 9),
     ]))
     story = [
-        para("STANDARD — 모델 학습 및 검증", "title"),
+        para(f"{report_tier} — 모델 학습 및 검증", "title"),
         para("검증 설계", "head"),
         para(f"목표 변수: {analysis['target_column']} / 문제 유형: {analysis['task_type']}"),
         para(f"분할 방식: {analysis['split_policy']} / 학습: {analysis['train_rows']}행 / "
@@ -226,7 +228,7 @@ def _append_ml_pdf(original: bytes, analysis: dict, chart_png: bytes) -> bytes:
         para("독립 검증 및 해석", "title"),
         para(f"CV로 선택한 모델: {analysis['selected_model']}"),
         para(f"독립 검증 {p}: 선택 모델 {metrics[p]:.4f} / Dummy {dummy[p]:.4f}"),
-        para(f"선택 모델 − Dummy 차이: {metrics[p] - dummy[p]:+.4f} ({p}, 동일 분리 데이터)"),
+        para(f"선택 모델 - Dummy 차이: {metrics[p] - dummy[p]:+.4f} ({p}, 동일 분리 데이터)"),
         para("차이가 양수여도 통계적 유의성이나 미래 일반화가 자동으로 입증되지는 않습니다.", "small"),
         para(f"CV 기준 Dummy 초과: {'예' if analysis['cv_beats_dummy'] else '아니오'} / "
              f"독립 검증 Dummy 초과: {'예' if analysis['holdout_beats_dummy'] else '아니오'}"),
@@ -272,7 +274,7 @@ def _append_ml_pdf(original: bytes, analysis: dict, chart_png: bytes) -> bytes:
     extra = BytesIO()
     doc = SimpleDocTemplate(extra, pagesize=A4, leftMargin=46, rightMargin=46,
                             topMargin=50, bottomMargin=55,
-                            title="STANDARD ML evaluation",
+                            title=f"{report_tier} ML evaluation",
                             author="AI AutoML Analyst")
     doc.build(story, onFirstPage=footer, onLaterPages=footer)
     writer = PdfWriter()

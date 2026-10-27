@@ -65,6 +65,10 @@ def test_standard_real_http_pdf_zip():
         assert "모델 비교 결과" in text
         assert "실제 학습 구간 CV 진단" in text
         assert "Dummy 기준선 CV" in text
+        assert "STANDARD — 모델 학습 및 검증" in text
+        assert "AI AutoML Analyst  |  STANDARD 모델 검증" in text
+        assert "선택 모델 - Dummy 차이:" in text
+        assert "[U+2212]" not in text
 
 
 def test_standard_regression_direct():
