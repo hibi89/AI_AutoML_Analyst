@@ -140,6 +140,8 @@ $font = $fontCandidates | Where-Object { $_ -and (Test-Path -LiteralPath $_ -Pat
 if (-not $font) {
     $qaAssets = Join-Path $venvRoot "qa-assets"
     $qaFont = Join-Path $qaAssets "NanumGothic-Regular.ttf"
+    # Official Google Fonts OFL regular face; digest captured in verified Windows CI.
+    $expectedFontSha256 = "76F45EF4A6BCFF344C837C95A7DCC26E017E38B5846D5AE0CDCB5B86BE2E2D31"
     if (-not (Test-Path -LiteralPath $qaFont -PathType Leaf)) {
         New-Item -ItemType Directory -Path $qaAssets -Force | Out-Null
         $temporary = Join-Path $qaAssets "NanumGothic-Regular.download"
@@ -153,11 +155,19 @@ if (-not $font) {
                 $fontBytes[2] -ne 0 -or $fontBytes[3] -ne 0) {
                 throw "Downloaded Nanum Gothic font is not a valid-size TrueType file."
             }
+            $downloadSha256 = (Get-FileHash -LiteralPath $temporary -Algorithm SHA256).Hash
+            if ($downloadSha256 -ne $expectedFontSha256) {
+                throw "Official Korean QA font checksum does not match the reviewed Google Fonts original."
+            }
             Move-Item -LiteralPath $temporary -Destination $qaFont -ErrorAction Stop
         } catch {
             Remove-Item -LiteralPath $temporary -Force -ErrorAction SilentlyContinue
             throw "Cannot fetch the OFL Nanum Gothic QA font from Google Fonts. Check internet access, or install official Nanum Gothic and rerun. Details: $($_.Exception.Message)"
         }
+    }
+    $cachedSha256 = (Get-FileHash -LiteralPath $qaFont -Algorithm SHA256).Hash
+    if ($cachedSha256 -ne $expectedFontSha256) {
+        throw "Cached QA Korean font checksum mismatch. File preserved for review: $qaFont"
     }
     $font = $qaFont
 }
