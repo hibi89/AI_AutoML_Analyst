@@ -141,7 +141,7 @@ def test_windows_delivered_batch_unicode_paths_and_failure_gates(trusted_bundle,
 
     def run(input_path: Path, output_path: Path):
         return subprocess.run(
-            ["cmd.exe", "/d", "/c", str(batch), str(input_path), str(output_path)],
+            ["cmd.exe", "/d", "/c", "predict.cmd", str(input_path), str(output_path)],
             cwd=folder, capture_output=True, text=True, errors="replace", timeout=50,
         )
 
