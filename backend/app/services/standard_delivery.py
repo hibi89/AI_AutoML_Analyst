@@ -94,7 +94,9 @@ def _append_ml_pdf(original: bytes, analysis: dict, chart_png: bytes) -> bytes:
     )
     from pypdf import PdfReader, PdfWriter
 
-    font = _korean_font()
+    from backend.app.services.font_coverage import resolve_report_fonts, safe_pdf_markup
+    required = "".join(str(value) for value in analysis.get("feature_columns", []))
+    font, fallback_font = resolve_report_fonts(required)
     styles = {
         "title": ParagraphStyle("s_title", fontName=font, fontSize=19, leading=26,
                                 textColor=colors.HexColor("#153d5c"), spaceAfter=18),
@@ -106,7 +108,7 @@ def _append_ml_pdf(original: bytes, analysis: dict, chart_png: bytes) -> bytes:
                                 spaceAfter=7, textColor=colors.HexColor("#526778")),
     }
     def para(text, style="body"):
-        return Paragraph(escape(str(text)), styles[style])
+        return Paragraph(safe_pdf_markup(text, font, fallback_font), styles[style])
     def footer(c, doc):
         c.saveState()
         c.setFillColor(colors.HexColor("#647d8c"))
