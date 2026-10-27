@@ -137,7 +137,7 @@ def create_review_pack(root: Path = Path("qa-preview"), summary: Path | None = N
 
         cmd_output = trusted / "cmd_predictions.csv"
         completed = subprocess.run(
-            ["cmd.exe", "/d", "/c", str(trusted / "predict.cmd"),
+            ["cmd.exe", "/d", "/c", "predict.cmd",
              str(predictions_input), str(cmd_output)],
             cwd=trusted, capture_output=True, text=True, timeout=90,
         )
