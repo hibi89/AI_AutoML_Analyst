@@ -1,0 +1,23 @@
+# P6E8 — Windows customer CLI edge-case verification
+
+Checked: 2026-10-27 KST. Repository `hibi89/AI_AutoML_Analyst`, development branch `feature/kmong-v1`.
+
+## Decision and options
+- **Selected A: narrow native-Windows negative test + local preflight alignment.** Reuse the shipped `windows_predict_command()` and existing trusted synthetic skops fixture. Exercise real `cmd.exe` with Korean/space-containing folder and CSV paths; reject wrong-order schema and model checksum changes without output. No new dependencies, hosting, customer data, payment, developer workstation access or manual step.
+- **Not selected B: new GUI installer/desktop automation stack** requiring additional setup, downloads, GUI fonts and support maintenance. It cannot replace actual owner machine compatibility or subjective PDF design acceptance. Defer until real user demand or reproducible failure.
+
+## Code changes
+1. `tests/test_p6_windows_compat.py`: native Windows-only regression `test_windows_delivered_batch_unicode_paths_and_failure_gates`. It prepares a trusted synthetic model in a Korean+space folder, calls the exact shipped batch generator via `cmd.exe`, verifies three prediction rows, and checks wrong CSV column order and tampered model both fail with **no output file**. Skips on non-Windows by design. Code SHA [1749b633](https://github.com/hibi89/AI_AutoML_Analyst/commit/1749b63304f6b2b7eb430867b19f21bc32f85b21).
+2. `scripts/windows_release_qa.ps1`: add existing `tests/test_p6e6_delivery_policy.py` to physical-owner local QA, consistent with Windows CI. Commit SHA [7a9cda3](https://github.com/hibi89/AI_AutoML_Analyst/commit/7a9cda39b0fa62d9bdd0f78eac2a405194540c11).
+3. Evidence follows from actual new GitHub Actions conclusions and job logs only; this document alone cannot mark tests passed.
+
+## CI runs awaiting observation at creation
+- [Windows native 40457618776](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40457618776) on first test SHA.
+- [Windows native 40457657817](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40457657817) on second code SHA, which includes the first changes.
+- [Linux baseline smoke 40457618631](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40457618631) on test SHA.
+- All three were **IN PROGRESS** when last inspected. Previous P6E7 Windows 66 PASS / 9 warnings and three-tier Linux Chromium PASS are historical, not new results.
+
+## Release state and blockers
+- Original `main@c80c874476f8d5deb4bf611761d89c6d72ca0a2d` unchanged. No deployment (local-first / Vercel not applicable). No raw font, vendor wheel, secrets, trained customer model or customer CSV pushed.
+- **P0–P6 accepted 5/7 (71%)**, P1 owner-Windows UX partial and P6 release pending. BASIC / STANDARD / PREMIUM all **NO-GO** until actual owner Windows first-install, three-tier web uploads/download/extraction, Korean font/PDF/design approval, correct delivered PREMIUM `predict.cmd` with real output and licence terms review. Passing runner-level native CMD tests does not prove this.
+- **Next READY AUTO-KM-P6E9**: inspect above new CI; repair any observed regression; automate further safe reproducible Windows environment checks without new product/infrastructure, or collect final physical Windows evidence when feasible. Keep user action to a single end-stage local QA where possible.
