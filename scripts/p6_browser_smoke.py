@@ -16,7 +16,7 @@ from zipfile import ZipFile
 from scripts.p6e6_delivery_policy import verify_shipping_zip
 
 import pandas as pd
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 
 
 URL = "http://127.0.0.1:8765"
@@ -138,9 +138,25 @@ def main():
                             if tier != "BASIC":
                                 tab.locator('input[name="target_column"]').fill(target)
                                 tab.locator('select[name="task_type"]').select_option("classification")
-                            with tab.expect_download(timeout=120_000) as info:
-                                tab.locator('button[type="submit"]').click()
-                            down = info.value
+                            # If a platform-specific server error suppresses the
+                            # download, surface only the HTTP status and failure
+                            # state; never echo customer dataset rows or paths.
+                            api_statuses = []
+                            def record(response):
+                                if "/api/" in response.url:
+                                    api_statuses.append(response.status)
+                            tab.on("response", record)
+                            try:
+                                with tab.expect_download(timeout=120_000) as info:
+                                    tab.locator('button[type="submit"]').click()
+                                down = info.value
+                            except PlaywrightTimeoutError as exc:
+                                state = tab.locator('[role="status"]').inner_text()
+                                raise RuntimeError(
+                                    f"Chromium {tier}/{encoding} download absent; "
+                                    f"HTTP statuses={api_statuses}; "
+                                    f"UI reports failure={'실패' in state}"
+                                ) from exc
                             destination = path / f"{tier.lower()}_{encoding}_result.zip"
                             down.save_as(destination)
                             check_zip(destination, tier, encoding=encoding)
