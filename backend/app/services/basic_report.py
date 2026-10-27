@@ -102,7 +102,7 @@ def _render_chart(df: pd.DataFrame, quality: list[dict]) -> bytes | None:
         plt.close(fig)
 
 
-def build_basic_zip(df: pd.DataFrame) -> bytes:
+def build_basic_zip(df: pd.DataFrame, *, report_tier: str = "BASIC") -> bytes:
     """Compatibility entry point; now exports the P3 PDF/chart/manifest delivery."""
     from backend.app.services.basic_p3 import build_basic_delivery
-    return build_basic_delivery(df)
+    return build_basic_delivery(df, report_tier=report_tier)
