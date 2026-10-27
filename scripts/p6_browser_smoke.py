@@ -66,6 +66,16 @@ def make_demo(path: Path):
     demo.to_csv(path,index=False,encoding="utf-8-sig")
 
 
+def make_japanese_demo(korean_csv: Path, output: Path) -> None:
+    """Only synthetic values; CP932 import must preserve original JP headers."""
+    original = pd.read_csv(korean_csv, encoding="utf-8-sig")
+    renamed = original.rename(columns={
+        "날짜": "日付", "지역": "地域", "방문수": "訪問数",
+        "매출": "売上", "비용": "費用", "구매": "購入",
+    })
+    renamed.to_csv(output, index=False, encoding="cp932")
+
+
 def check_zip(path: Path, tier: str):
     assert path.stat().st_size > 10_000
     shipping = verify_shipping_zip(path.read_bytes(), tier)
@@ -87,34 +97,50 @@ def check_zip(path: Path, tier: str):
 
 def main():
     with tempfile.TemporaryDirectory() as td:
-        path=Path(td)
-        csv=path/"browser_synthetic.csv"
-        make_demo(csv)
+        path = Path(td)
+        korean_csv = path / "browser_synthetic.csv"
+        japanese_csv = path / "browser_japanese_cp932.csv"
+        make_demo(korean_csv)
+        make_japanese_demo(korean_csv, japanese_csv)
         with app_server(), sync_playwright() as play:
-            browser=play.chromium.launch(headless=True)
-            context=browser.new_context(accept_downloads=True)
+            browser = play.chromium.launch(headless=True)
+            context = browser.new_context(accept_downloads=True)
             try:
-                for tier,page in (
-                    ("BASIC","basic-mvp"),
-                    ("STANDARD","standard-mvp"),
-                    ("PREMIUM","premium-mvp"),
+                # Both the existing default Korean import and a user-selected
+                # legacy Japanese CP932 import must really pass the web form,
+                # download a commercial-shaped ZIP and obey the shipping gate.
+                for encoding, csv_path, target in (
+                    ("auto", korean_csv, "구매"),
+                    ("cp932", japanese_csv, "購入"),
                 ):
-                    tab=context.new_page()
-                    tab.set_default_timeout(120_000)
-                    tab.goto(f"{URL}/{page}",wait_until="domcontentloaded")
-                    assert tab.title() or tab.locator("h1").count()
-                    tab.locator('input[type="file"]').set_input_files(str(csv))
-                    if tier!="BASIC":
-                        tab.locator('input[name="target_column"]').fill("구매")
-                        tab.locator('select[name="task_type"]').select_option("classification")
-                    with tab.expect_download(timeout=120_000) as info:
-                        tab.locator('button[type="submit"]').click()
-                    down=info.value
-                    destination=path/f"{tier.lower()}_result.zip"
-                    down.save_as(destination)
-                    check_zip(destination,tier)
-                    assert "ZIP" in tab.locator('[role="status"]').inner_text()
-                    tab.close()
+                    for tier, page in (
+                        ("BASIC", "basic-mvp"),
+                        ("STANDARD", "standard-mvp"),
+                        ("PREMIUM", "premium-mvp"),
+                    ):
+                        tab = context.new_page()
+                        tab.set_default_timeout(120_000)
+                        try:
+                            tab.goto(f"{URL}/{page}", wait_until="domcontentloaded")
+                            assert tab.title() or tab.locator("h1").count()
+                            selector = tab.locator('select[name="csv_encoding"]')
+                            assert selector.count() == 1
+                            selector.select_option(encoding)
+                            assert selector.input_value() == encoding
+                            tab.locator('input[type="file"]').set_input_files(str(csv_path))
+                            if tier != "BASIC":
+                                tab.locator('input[name="target_column"]').fill(target)
+                                tab.locator('select[name="task_type"]').select_option("classification")
+                            with tab.expect_download(timeout=120_000) as info:
+                                tab.locator('button[type="submit"]').click()
+                            down = info.value
+                            destination = path / f"{tier.lower()}_{encoding}_result.zip"
+                            down.save_as(destination)
+                            check_zip(destination, tier)
+                            assert "ZIP" in tab.locator('[role="status"]').inner_text()
+                            print(f"Chromium {tier} CSV encoding {encoding}: actual browser ZIP PASS", flush=True)
+                        finally:
+                            tab.close()
             finally:
                 context.close()
                 browser.close()
