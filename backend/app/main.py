@@ -78,6 +78,14 @@ def _read_csv_from_bytes(content: bytes, encoding: str = "auto") -> pd.DataFrame
                     # column. Reject surplus fields but preserve short rows:
                     # pandas pads missing trailing cells with NaN.
                     for row_number, row in enumerate(reader, start=1):
+                        # pandas skips entirely empty CSV records by default,
+                        # silently changing the submitted row count/order.
+                        # Explicit blank cells (e.g. ",") remain valid missing
+                        # measurements and are handled by existing imputation.
+                        if not row:
+                            raise ValueError(
+                                "CSV contains a blank data row; remove it and retry."
+                            )
                         if len(row) > len(header):
                             raise ValueError(
                                 "CSV data row has more fields than header."

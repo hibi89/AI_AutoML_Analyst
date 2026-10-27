@@ -85,6 +85,13 @@ def _load_input(path: Path, schema: dict, csv_encoding: str = "auto") -> pd.Data
                     # index; this would feed shifted values to the model.
                     # Preserve short rows as missing trailing cells for imputation.
                     for row_number, row in enumerate(reader, start=1):
+                        # A wholly blank logical record is silently skipped
+                        # by pandas, changing prediction-to-source row mapping.
+                        # Rows with delimiters but empty cells are still allowed.
+                        if not row:
+                            raise ValueError(
+                                "Prediction CSV contains a blank data row."
+                            )
                         if len(row) > len(header):
                             raise ValueError(
                                 "Prediction CSV data row has more fields than header."
