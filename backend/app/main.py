@@ -48,8 +48,27 @@ def _read_csv_from_bytes(content: bytes) -> pd.DataFrame:
 
     if b"\x00" in content:
         raise ValueError("CSV contains NUL bytes; use a supported text CSV encoding.")
+    import csv
+    from io import TextIOWrapper
+
     encodings = ["utf-8-sig", "utf-8", "cp949", "euc-kr", "latin1"]
     for encoding in encodings:
+        try:
+            # Inspect the original logical CSV header before pandas renames
+            # duplicate names (e.g. "sales,sales" -> "sales,sales.1").
+            with TextIOWrapper(BytesIO(content), encoding=encoding, newline="") as stream:
+                header = next(csv.reader(stream, strict=True), None)
+        except UnicodeError:
+            continue
+        except csv.Error as exc:
+            raise ValueError("Invalid CSV header structure.") from exc
+
+        if header is not None:
+            if len(set(header)) != len(header):
+                raise ValueError("Duplicate column names are not supported.")
+            if not all(name.strip() for name in header):
+                raise ValueError("CSV column names must be nonempty.")
+
         try:
             # MAX_ROWS+1 proves over-limit input without silently sampling it.
             return pd.read_csv(BytesIO(content), encoding=encoding, nrows=MAX_ROWS + 1)
