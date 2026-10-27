@@ -106,7 +106,23 @@ def _load_input(path: Path, schema: dict, csv_encoding: str = "auto") -> pd.Data
         try:
             # nrows includes one overflow row: distinguish exactly MAX_ROWS
             # from too many rows without materializing the entire input.
-            raw = pd.read_csv(path, encoding=encoding, nrows=MAX_ROWS + 1)
+            # The training schema identifies numeric and boolean features.
+            # Every other raw feature was textual (including date text), so
+            # force string parsing: otherwise a new CSV containing only '001'
+            # is inferred as integer 1 even when the fitted OneHotEncoder
+            # learned the *string* category '001'. This silently changes model
+            # input meaning without changing its required header.
+            numeric_or_boolean = (
+                set(schema["numeric_raw_columns"])
+                | set(schema["boolean_raw_columns"])
+            )
+            text_types = {
+                name: str for name in expected if name not in numeric_or_boolean
+            }
+            raw = pd.read_csv(
+                path, encoding=encoding, nrows=MAX_ROWS + 1,
+                dtype=text_types,
+            )
             break
         except UnicodeError:
             continue
