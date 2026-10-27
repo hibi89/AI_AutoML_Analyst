@@ -50,8 +50,8 @@ jobs:
         shell: pwsh
         run: |
           $selected = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/windows_release_qa.ps1 -ProbeOnly
-          if ($LASTEXITCODE -ne 0 -or $selected -notmatch '^PYTHON311_LAUNCHER=') {
-            throw "Python 3.11 preflight failed"
+          if ($LASTEXITCODE -ne 0 -or -not ($selected -match '^PYTHON311_LAUNCHER=').Count -or -not ($selected -match '^PYTHON311_EXECUTABLE=').Count) {
+            throw "Python 3.11 executable preflight failed"
           }
           # Simulate a registered but unusable 'py' while keeping valid Python on PATH.
           $shimDir = Join-Path $env:RUNNER_TEMP "automl-python-probe"
@@ -61,11 +61,41 @@ jobs:
           try {
             $env:PATH = "$shimDir;$previousPath"
             $fallback = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/windows_release_qa.ps1 -ProbeOnly
-            if ($LASTEXITCODE -ne 0 -or $fallback -ne "PYTHON311_LAUNCHER=python") {
-              throw "Valid Python 3.11 fallback was not selected"
+            if ($LASTEXITCODE -ne 0 -or -not ($fallback -contains "PYTHON311_LAUNCHER=python") -or
+                -not ($fallback -match '^PYTHON311_EXECUTABLE=').Count) {
+              throw "Valid direct Python 3.11 executable was not selected"
             }
           } finally {
             $env:PATH = $previousPath
+          }
+      - name: Verify actual PowerShell 5.1 first-venv creation in path with spaces
+        shell: pwsh
+        run: |
+          # Reproduce the owner's real E:\AI AutoML Analyst-style directory,
+          # not merely -ProbeOnly; no font, pip, tests, browser or global writes.
+          $root = Join-Path $env:RUNNER_TEMP "AI AutoML Analyst"
+          $scriptDir = Join-Path $root "scripts"
+          New-Item -ItemType Directory -Path $scriptDir -Force | Out-Null
+          $copy = Join-Path $scriptDir "windows_release_qa.ps1"
+          Copy-Item scripts/windows_release_qa.ps1 $copy
+          try {
+            $result = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $copy -VenvOnly
+            if ($LASTEXITCODE -ne 0 -or -not ($result -match '^VENV_PYTHON311_OK=').Count) {
+              throw "Isolated first-venv creation failed: $($result -join ', ')"
+            }
+            $venvPython = Join-Path $root ".venv-automl-qa\Scripts\python.exe"
+            if (-not (Test-Path -LiteralPath $venvPython)) {
+              throw "venv script falsely reported success without python.exe"
+            }
+            & $venvPython -c "import sys; sys.exit(0 if sys.version_info[:2] == (3, 11) else 3)"
+            if ($LASTEXITCODE -ne 0) { throw "Created Windows venv is not Python 3.11" }
+            # Idempotency: second run should reuse the same isolated venv.
+            $again = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $copy -VenvOnly
+            if ($LASTEXITCODE -ne 0 -or -not ($again -match '^VENV_PYTHON311_OK=').Count) {
+              throw "Rerun of existing Windows venv failed"
+            }
+          } finally {
+            Remove-Item -LiteralPath $root -Recurse -Force -ErrorAction SilentlyContinue
           }
       - name: Verify local port collision refuses an unrelated service
         shell: pwsh
