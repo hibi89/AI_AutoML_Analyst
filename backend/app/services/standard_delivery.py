@@ -328,7 +328,7 @@ def build_standard_zip(
         "Dummy 기준선은 3종 비교 모델에 포함되지 않습니다.\n"
         "독립 검증 결과로 모델을 다시 고르지 않았습니다.\n"
         "고객의 원본 CSV 또는 개별 관측 레코드는 포함하지 않습니다.\n"
-        + font_usage_notice("".join(str(col) for col in df.columns))
+        + font_usage_notice("".join(str(col) for col in df.columns), pdf_bytes=parts["report.pdf"])
     ).encode("utf-8")
     manifest = {
         "format": "standard-v1", "tier": "STANDARD",
