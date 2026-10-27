@@ -1,7 +1,8 @@
 """P5 local PREMIUM model fit -> serialized bundle -> repeated prediction tests."""
 from __future__ import annotations
 
-from io import BytesIO
+from io import BytesIO, StringIO
+import csv
 import json
 from pathlib import Path
 from zipfile import ZipFile
@@ -60,6 +61,24 @@ def test_premium_full_zip_and_five_challengers(bundle):
         assert len([m for m in info["models"] if m["role"] == "baseline"]) == 1
         assert len([m for m in info["models"] if m["role"] == "challenger"]) == 5
         assert info["holdout_used_in_selection"] is False
+        # PREMIUM's CV-selected evaluation is train-only; the delivered
+        # holdout table must agree with the same ZIP's pre-refit summary.
+        holdout_rows = list(csv.DictReader(StringIO(
+            z.read("holdout_scores.csv").decode("utf-8-sig"))))
+        assert len(holdout_rows) == len(info["selected_holdout_metrics"])
+        assert {row["metric"] for row in holdout_rows} == set(info["selected_holdout_metrics"])
+        for row in holdout_rows:
+            metric = row["metric"]
+            assert row["selected_model"] == info["selected_model"]
+            assert row["dummy_model"] == info["dummy_model"]
+            assert float(row["selected_holdout"]) == pytest.approx(info["selected_holdout_metrics"][metric])
+            assert float(row["dummy_holdout"]) == pytest.approx(info["dummy_holdout_metrics"][metric])
+            assert float(row["selected_minus_dummy"]) == pytest.approx(
+                info["selected_holdout_metrics"][metric] - info["dummy_holdout_metrics"][metric])
+            assert row["primary_holdout_beats_dummy"] == ("yes" if info["holdout_beats_dummy"] else "no")
+            assert row["selection_basis"] == "selected_by_training_cv_only"
+        assert ("feature_importance.csv" in filenames) == bool(
+            info["training_feature_importance"])
         pages = PdfReader(BytesIO(z.read("report.pdf"))).pages
         cover = pages[0].extract_text() or ""
         assert "PREMIUM" in cover
