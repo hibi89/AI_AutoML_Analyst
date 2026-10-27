@@ -70,7 +70,19 @@ def _read_csv_from_bytes(content: bytes, encoding: str = "auto") -> pd.DataFrame
             # Inspect the original logical CSV header before pandas renames
             # duplicate names (e.g. "sales,sales" -> "sales,sales.1").
             with TextIOWrapper(BytesIO(content), encoding=encoding, newline="") as stream:
-                header = next(csv.reader(stream, strict=True), None)
+                reader = csv.reader(stream, strict=True)
+                header = next(reader, None)
+                if header is not None:
+                    # Pandas can silently treat a surplus first data field as
+                    # the index, shifting every customer value into the wrong
+                    # column. Reject ragged logical records before inference.
+                    for row_number, row in enumerate(reader, start=1):
+                        if len(row) != len(header):
+                            raise ValueError(
+                                "CSV data row field count does not match header."
+                            )
+                        if row_number > MAX_ROWS:
+                            break
         except UnicodeError:
             continue
         except csv.Error as exc:
