@@ -153,3 +153,15 @@ P6E9 code SHA `d5fa54b489a30c808bfe7bd4df27f1f5742167c3` verified in [Windows Ac
 2. Inspect remaining owner first-install, local server/ZIP and trusted model handover **only for concrete untested defects**; implement small, testable gaps if found. Avoid speculative refactor/extra GUI automation that cannot replace human design signoff.
 3. When genuinely no independent work remains, document OWNER MACHINE GATE in `docs/qa/P6E5_WINDOWS_OWNER_RUNBOOK.md`; user should have just one physical run with Python3.11/Nanum font/Edge-Chrome three SKU PDFs/ZIPs and PREMIUM repeat prediction and design/legal consent.
 4. Remain **NO-GO** all tiers and **5/7=71%** until physical/approval evidence; no main merge, customer data upload, public hosting, cost or commercial activation without permission. Update status/handoff/task at meaningful boundary.
+
+
+## P6E11 VERIFIED / P6E12 OWNER RELEASE GATE READY (2026-10-27 KST)
+- Code/source+CI SHA `5a7e56679a14a658586f18010449bee242f77fa2`, [Windows 40461091189](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40461091189): actual local AutoML API identity PASS, unrelated HTTP server REFUSED, Python launcher fallback and occupied/free port tests PASS, native **67 PASS /9 warnings**, workflow SUCCESS. See `docs/qa/P6E11_RELEASE.md`.
+- Updated one-session `docs/qa/P6E5_WINDOWS_OWNER_RUNBOOK.md` for future physical owner review. This is not a statement of owner acceptance. P0–P6 **5/7=71%** milestones; BASIC/STANDARD/PREMIUM **NO-GO**, original main and customer data preserved.
+
+### Next actionable task: AUTO-KM-P6E12 — OWNER MACHINE RELEASE GATE
+1. First check live SHA, `AGENTS.md`, `REQUIREMENTS.md`, `STATUS.md`, `HANDOFF.md`, `docs/qa/P6E11_RELEASE.md`, source & latest CI; distinguish CI from actual owner Windows.
+2. No untested independent source-level blocker was identified after P6E11. Do **not** loop forever on speculative PowerShell micro-tweaks. Wait for or assist with **one physical Windows QA session** only when owner is actually ready; use the updated `docs/qa/P6E5_WINDOWS_OWNER_RUNBOOK.md`.
+3. Owner session gates: installed Python3.11 and licensed Korean font, actual Chrome/Edge 3 SKU CSV/XLSX uploads and ZIP extraction, PDF layout/page/chart/typography design approval, correct PRIVATE PREMIUM model/predict.cmd and fail-closed cases, license and actual commercial product quality signoff. Record PASS/FAIL/NOT RUN using redacted evidence, never upload model or client rows publicly.
+4. If user directs continued development before owner acceptance, select a concrete previously unaddressed requirement from frozen `REQUIREMENTS.md` with a runnable regression and document why; otherwise clearly report owner action is now the gating dependency. Never claim automated tests equal owner evidence.
+5. Sales remain **NO-GO**, strict 5/7 (71%), P1 PARTIAL/P6 IN PROGRESS. Keep `main` unchanged, no production/Vercel or public listing. Refresh docs after actual state change.
