@@ -40,7 +40,8 @@ def create_charts(df: pd.DataFrame, quality: list[dict]) -> list[tuple[str, byte
     from matplotlib import pyplot as plt
     from matplotlib.ticker import FuncFormatter, MaxNLocator
 
-    font = font_family()
+    from backend.app.services.font_coverage import chart_font_families
+    font = chart_font_families("".join(str(col) for col in df.columns))
     numeric = [
         str(col) for col in df.select_dtypes(include="number").columns
         if df[col].nunique(dropna=True) > 1
