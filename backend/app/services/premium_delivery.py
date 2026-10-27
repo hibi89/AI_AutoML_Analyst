@@ -91,7 +91,9 @@ def _premium_page(analysis: dict, model_name: str, raw_schema: dict) -> bytes:
     from xml.sax.saxutils import escape
     from backend.app.services.basic_p3 import _korean_font
 
-    font = _korean_font()
+    from backend.app.services.font_coverage import resolve_report_fonts, safe_pdf_markup
+    required = "".join(str(col) for col in raw_schema["raw_feature_columns"])
+    font, fallback_font = resolve_report_fonts(required)
     ink = colors.HexColor("#233B4D")
     blue = colors.HexColor("#163F61")
     teal = colors.HexColor("#087F8C")
@@ -107,7 +109,7 @@ def _premium_page(analysis: dict, model_name: str, raw_schema: dict) -> bytes:
     }
 
     def p(value: object, style: str = "body"):
-        return Paragraph(escape(str(value)), styles[style])
+        return Paragraph(safe_pdf_markup(value, font, fallback_font), styles[style])
 
     def panel(rows: list[tuple[str, str]]) -> Table:
         # Paragraphs, rather than unwrapped strings, allow long column names to
