@@ -28,3 +28,9 @@ powershell -ExecutionPolicy Bypass -File .\scripts\windows_release_qa.ps1 -OpenB
 If batch still fails, the new sanitized `exit/category/python_matches_qa_venv/output_created` indicators will guide next correction without asking for raw dataset or private model contents. Fresh previews are created under a separate gitignored QA run directory and no older folder is deleted by this QA tool.
 
 P0-P6 milestone contract remains **5/7 = 71%** accepted: P1 physical first install/GUI PARTIAL; P6 commercial release NOT ACCEPTED; BASIC/STANDARD/PREMIUM sales **NO-GO**. Owner must still inspect actual local Chrome/Edge download/ZIP/PDF Korean design, trusted PREMIUM model, and explicit legal/quality sale decision. `main@c80c874476f8d5deb4bf611761d89c6d72ca0a2d` stays unchanged.
+
+
+## FINAL CI evidence and owner gate — 2026-10-27 KST
+- [Native Windows 40470153374](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40470153374), exact code+test SHA `16fb36e67b5cb1acabfad23ce5764317c25fcf98`: SUCCESS, **78 PASS /9 warnings**, real 3 tier synthetic PDF/ZIP BASIC6/STD9/PREM11 pages/manifest PASS, actual shipped `predict.cmd` replay PASS under spaced output path, `sale_gate=NO_GO`.
+- [Linux 40470153375](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40470153375), same code+test SHA: SUCCESS, **136 PASS /2 Windows-only SKIP/41 warnings**, all three tier PDF ZIP/matrix checks PASS.
+- Hosted runs **DO NOT** prove the exact owner's failed batch issue was fixed; next physical owner rerun and explicit actual browser/PDF/commercial gates remain NOT RUN. No customer rows, font binary or ZIP uploaded.
