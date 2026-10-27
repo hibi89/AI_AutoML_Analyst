@@ -1,5 +1,12 @@
 # ACTIVE TASK — AUTO-KM-P6E22 owner final release decision
 
+## P6E36 — verify fixed actual PDF before owner approval (2026-10-27 KST)
+- Old PDF `dce23b68`: PREMIUM no-skill warning omitted. First fix `feb61a59`: CI passed but PREMIUM got a sparse fourth ML page. **Superseded**.
+- Current source `a8c102c0`: existing paragraph conditionally replaced; no extra vertical story block. Regression preview script `d6dade53` checks exactly 3 ML appendix pages and the explicit negative-holdout warning.
+- **NEXT:** fetch latest source-script CI [40518329515](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40518329515) and source-commit five CI workflows; inspect new artifact 6/9/11 pages with no `ML 4`; verify actual warning and ZIP. Mark pass only after observing outputs.
+- Owner final P6E22 Windows visual/license/commercial signoff remains blocked on owner choice, 5/7=71%, all tiers SALE NO-GO. No main merge/public deploy/listing.
+
+
 ## P6E35 — verified PREMIUM ML PDF labeling and missing-glyph correction (2026-10-27 KST)
 - Real synthetic customer-artefact QA of [run 40509856749](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40509856749) found PREMIUM report pages 7–9 mislabeled as **STANDARD** (ML title/footer). STANDARD/PREMIUM page 9 each displayed a literal **`[U+2212]`** unsupported glyph in the selected-minus-Dummy score comparison.
 - Fixed shared `_append_ml_pdf` to accept a validated `report_tier` (STANDARD default, PREMIUM explicitly passed) and use the tier consistently in page titles, footer and document metadata. Replaced the unsupported minus symbol with ASCII hyphen. Added ZIP/PDF extraction assertions to both SKU tests.

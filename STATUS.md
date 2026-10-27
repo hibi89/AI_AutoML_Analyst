@@ -1,5 +1,13 @@
 # AI AutoML Analyst commercialization — STATUS
 
+## P6E36 — live PDF warning and regression (2026-10-27 KST)
+- Verified defect: source `dce23b68` shipped PREMIUM synthetic holdout 0.2841 < Dummy 0.3333 but key seventh no-skill warning omitted by six-warning PDF cap.
+- Initial standalone-warning code `feb61a59` had **5/5 CI success**, but real artifact 12738494377 exposed PREMIUM 12 pages including a near-empty `ML 4` page. Not accepted as final.
+- Revised conditional warning **without an extra paragraph** committed at `a8c102c0bf13c718bf48c97e44632bc4c59cbf61`; synthetic three-ML-page + no-skill-preview regression gate committed at `d6dade5317ba3630cf495b0bdf0419a88d72ced0`.
+- Updated-source 5-workflow CI plus script CI [40518329515](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40518329515) still need final verification. The new output is **NOT VERIFIED**; do not infer a PASS. Exact evidence: `docs/qa/P6E36_NO_SKILL_WARNING_AND_SPILL.md`.
+- Release remains 5/7=71%; P1 PARTIAL / P6 NOT ACCEPTED; all SKUs NO-GO. Main original unchanged, no public production.
+
+
 ## P6E35 — verified PREMIUM ML PDF labeling and missing-glyph correction (2026-10-27 KST)
 - Real synthetic customer-artefact QA of [run 40509856749](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40509856749) found PREMIUM report pages 7–9 mislabeled as **STANDARD** (ML title/footer). STANDARD/PREMIUM page 9 each displayed a literal **`[U+2212]`** unsupported glyph in the selected-minus-Dummy score comparison.
 - Fixed shared `_append_ml_pdf` to accept a validated `report_tier` (STANDARD default, PREMIUM explicitly passed) and use the tier consistently in page titles, footer and document metadata. Replaced the unsupported minus symbol with ASCII hyphen. Added ZIP/PDF extraction assertions to both SKU tests.

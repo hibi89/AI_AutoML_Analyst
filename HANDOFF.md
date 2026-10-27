@@ -1,5 +1,13 @@
 # HANDOFF — AI AutoML Analyst / current owner release gate
 
+## P6E36 — independent no-skill warning/PDF spill QA (2026-10-27 KST)
+- Found actual sales-risk communication defect in PREMIUM: holdout selected 0.2841 vs Dummy 0.3333, but the key no-skill warning was seventh in a list truncated to six in PDF. Source artifact: 12736797946 at `dce23b68`.
+- First fix `feb61a59` passed 5/5 CI yet created a nearly empty fourth ML page in PREMIUM (12 total). Independently verified artifact 12738494377; **do not repeat extra paragraph**.
+- Revised source `a8c102c0`: conditionally replaces an existing caution paragraph so no-skill warning is visible without adding layout height. QA script `d6dade53` adds mandatory three-ML-page and no-skill-warning real CI preview assertions.
+- Current gate: inspect `a8c102c0` five CI runs and `d6dade53` synthetic preview [40518329515](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40518329515). New fixed PDF/ZIP **NOT YET INDEPENDENTLY VERIFIED** at this handoff cut. See [docs/qa/P6E36_NO_SKILL_WARNING_AND_SPILL.md](docs/qa/P6E36_NO_SKILL_WARNING_AND_SPILL.md).
+- Source/test status separate from sale: official 5/7=71%; P1 PARTIAL, P6 NOT ACCEPTED. BASIC/STANDARD/PREMIUM NO-GO. Main unchanged. Next ㄱ: check CI and actual revised PDF, then owner P6E22 only.
+
+
 ## P6E35 — verified PREMIUM ML PDF labeling and missing-glyph correction (2026-10-27 KST)
 - Real synthetic customer-artefact QA of [run 40509856749](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40509856749) found PREMIUM report pages 7–9 mislabeled as **STANDARD** (ML title/footer). STANDARD/PREMIUM page 9 each displayed a literal **`[U+2212]`** unsupported glyph in the selected-minus-Dummy score comparison.
 - Fixed shared `_append_ml_pdf` to accept a validated `report_tier` (STANDARD default, PREMIUM explicitly passed) and use the tier consistently in page titles, footer and document metadata. Replaced the unsupported minus symbol with ASCII hyphen. Added ZIP/PDF extraction assertions to both SKU tests.
