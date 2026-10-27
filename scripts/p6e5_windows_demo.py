@@ -104,6 +104,31 @@ def _inspect(payload: bytes, tier: str, run_dir: Path, min_pages: int, max_pages
         return result
 
 
+def _windows_cmd_failure_category(output: str) -> str:
+    """Categorize a synthetic batch failure without echoing local paths/data."""
+    detail = output.casefold()
+    if ("'python' is not recognized" in detail or "python was not found" in detail
+            or "python: command not found" in detail):
+        return "PYTHON_NOT_ON_CMD_PATH"
+    if "no module named" in detail or "modulenotfounderror" in detail:
+        return "MISSING_PYTHON_MODULE"
+    if "dependency versions differ" in detail or "python minor version differs" in detail:
+        return "DEPENDENCY_VERSION_MISMATCH"
+    if "input header mismatch" in detail or "duplicate input column names" in detail:
+        return "CSV_SCHEMA_MISMATCH"
+    if "model checksum mismatch" in detail or "unapproved types" in detail:
+        return "MODEL_INTEGRITY_REJECTED"
+    if "filenotfounderror" in detail or "the system cannot find the path specified" in detail:
+        return "MISSING_LOCAL_FILE_OR_PATH"
+    if "permissionerror" in detail or "access is denied" in detail:
+        return "FILE_PERMISSION_ERROR"
+    if "fileexistserror" in detail or "output path exists" in detail:
+        return "OUTPUT_ALREADY_EXISTS"
+    if "syntaxerror" in detail or "traceback" in detail:
+        return "PYTHON_EXECUTION_ERROR"
+    return "UNCLASSIFIED_CMD_FAILURE"
+
+
 def create_review_pack(root: Path = Path("qa-preview"), summary: Path | None = None) -> dict:
     directory = _fresh_run_dir(root)
     basic = synthetic_frame()
@@ -136,14 +161,34 @@ def create_review_pack(root: Path = Path("qa-preview"), summary: Path | None = N
         import subprocess
 
         cmd_output = trusted / "cmd_predictions.csv"
+        # Match the shipped customer instructions exactly. Both CSVs and
+        # predict.cmd are in trusted_demo; cmd.exe launches from that folder.
+        # Absolute paths as cmd /c arguments have additional quoting behavior
+        # on physical Windows installations with spaces in the project path.
         completed = subprocess.run(
             ["cmd.exe", "/d", "/c", "predict.cmd",
-             str(predictions_input), str(cmd_output)],
-            cwd=trusted, capture_output=True, text=True, timeout=90,
+             predictions_input.name, cmd_output.name],
+            cwd=trusted, capture_output=True, text=True, errors="replace",
+            timeout=90,
         )
         if completed.returncode != 0:
-            # Deliberately avoid reflecting any row or path from stderr.
-            raise RuntimeError("Windows predict.cmd synthetic replay failed.")
+            import shutil
+
+            # No raw stderr, local directory, filenames or sample rows are
+            # reflected in the error. Help distinguish interpreter resolution
+            # and model/schema failures without exposing owner's local paths.
+            selected = shutil.which("python")
+            same_python = (selected is not None and
+                           Path(selected).resolve() == Path(sys.executable).resolve())
+            category = _windows_cmd_failure_category(
+                completed.stderr + "\n" + completed.stdout
+            )
+            raise RuntimeError(
+                "Windows predict.cmd synthetic replay failed "
+                f"(exit={completed.returncode}; category={category}; "
+                f"python_matches_qa_venv={same_python}; "
+                f"output_created={cmd_output.exists()})."
+            )
         observed = pd.read_csv(cmd_output)
         if len(observed) != n_pred or list(observed.columns) != ["prediction"]:
             raise RuntimeError("Windows predict.cmd produced incorrect synthetic output.")
