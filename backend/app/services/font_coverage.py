@@ -86,8 +86,8 @@ def font_usage_notice(required_text: str = "") -> str:
 
     primary, fallback = resolve_report_fonts(required_text)
     results = [
-        "PDF 글꼴 정보: 보고서에는 선택한 시스템 글꼴의 일부 글리프가 내장될 수 있습니다.\\n",
-        "독립 TTF/TTC 글꼴 파일은 이 ZIP에 포함되지 않습니다.\\n",
+        "PDF 글꼴 정보: 보고서에는 선택한 시스템 글꼴의 일부 글리프가 내장될 수 있습니다.\n",
+        "독립 TTF/TTC 글꼴 파일은 이 ZIP에 포함되지 않습니다.\n",
     ]
     for role, font_key in (("기본", primary), ("보조", fallback)):
         if not font_key:
@@ -116,10 +116,10 @@ def font_usage_notice(required_text: str = "") -> str:
                 "locally installed font; provenance/permission not verified. "
                 "Check its own license before commercial delivery."
             )
-        results.append(f"{role} 글꼴: {family} — {license_line}\\n")
+        results.append(f"{role} 글꼴: {family} — {license_line}\n")
     results.append(
         "글꼴 저작권과 원본 라이선스는 권리자에게 있으며, "
-        "이 안내는 상업적 권리 승인서를 의미하지 않습니다.\\n"
+        "이 안내는 상업적 권리 승인서를 의미하지 않습니다.\n"
     )
     return "".join(results)
 
