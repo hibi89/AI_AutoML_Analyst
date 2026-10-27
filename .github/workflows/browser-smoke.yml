@@ -28,7 +28,7 @@ jobs:
       - name: Install Korean font, Python and browser
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq fonts-nanum
+          sudo apt-get install -y -qq fonts-nanum fonts-arphic-uming
           python -m pip install -r requirements-verified-py311.txt -r requirements-browser.txt
           python -m playwright install --with-deps chromium
       - name: Upload and download all SKU ZIPs through Chromium
