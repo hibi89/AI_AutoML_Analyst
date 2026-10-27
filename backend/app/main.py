@@ -42,7 +42,7 @@ app.add_middleware(
 )
 
 
-def _read_csv_from_bytes(content: bytes) -> pd.DataFrame:
+def _read_csv_from_bytes(content: bytes, encoding: str = "auto") -> pd.DataFrame:
     """Bound parsing effort and do not reflect customer row contents in errors."""
     from backend.app.services.basic_report import MAX_ROWS
 
@@ -51,7 +51,13 @@ def _read_csv_from_bytes(content: bytes) -> pd.DataFrame:
     import csv
     from io import TextIOWrapper
 
-    encodings = ["utf-8-sig", "utf-8", "cp949", "euc-kr", "latin1"]
+    # Preserve legacy auto selection for existing Korean imports. CP932 and
+    # CP949 overlap: explicit selection is necessary for Japanese Windows CSV.
+    supported = {"auto", "utf-8-sig", "utf-8", "cp949", "euc-kr", "cp932", "latin1"}
+    if encoding not in supported:
+        raise ValueError("Unsupported CSV encoding selection.")
+    encodings = (["utf-8-sig", "utf-8", "cp949", "euc-kr", "latin1"]
+                 if encoding == "auto" else [encoding])
     for encoding in encodings:
         try:
             # Inspect the original logical CSV header before pandas renames
@@ -76,7 +82,7 @@ def _read_csv_from_bytes(content: bytes) -> pd.DataFrame:
             continue
         except (pd.errors.ParserError, pd.errors.EmptyDataError, ValueError) as exc:
             raise ValueError("Invalid CSV structure or encoding; check the source CSV.") from exc
-    raise ValueError("Unsupported CSV encoding; use UTF-8 or CP949.")
+    raise ValueError("Unsupported CSV encoding; choose UTF-8, CP949 or CP932 explicitly.")
 
 
 def _normalize_task_type(task_type: str | None) -> str | None:
@@ -562,7 +568,9 @@ def basic_mvp_page(request: Request):
 
 
 @app.post("/api/basic-report")
-async def basic_report_download(request: Request, file: UploadFile = File(...)):
+async def basic_report_download(
+    request: Request, file: UploadFile = File(...), csv_encoding: str = Form("auto"),
+):
     from fastapi.responses import Response
 
     from backend.app.services.basic_report import MAX_UPLOAD_BYTES, build_basic_zip
@@ -577,7 +585,7 @@ async def basic_report_download(request: Request, file: UploadFile = File(...)):
     if not data:
         raise HTTPException(status_code=400, detail="Empty CSV.")
     try:
-        df = read_uploaded_table(data, file.filename or "")
+        df = read_uploaded_table(data, file.filename or "", csv_encoding=csv_encoding)
         payload = build_basic_zip(df)
     except (ValueError, pd.errors.ParserError, UnicodeError) as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -609,6 +617,7 @@ async def standard_report_download(
     group_column: str = Form(""),
     time_column: str = Form(""),
     cv: int = Form(3),
+    csv_encoding: str = Form("auto"),
 ):
     from fastapi.responses import Response
     from backend.app.services.basic_report import MAX_UPLOAD_BYTES
@@ -624,7 +633,7 @@ async def standard_report_download(
     if not content:
         raise HTTPException(status_code=400, detail="Empty CSV.")
     try:
-        data = read_uploaded_table(content, file.filename or "")
+        data = read_uploaded_table(content, file.filename or "", csv_encoding=csv_encoding)
         payload = build_standard_zip(
             data, target_column=target_column,
             task_type=_normalize_task_type(task_type),
@@ -661,6 +670,7 @@ async def premium_report_download(
     group_column: str = Form(""),
     time_column: str = Form(""),
     cv: int = Form(3),
+    csv_encoding: str = Form("auto"),
 ):
     from fastapi.responses import Response
     from backend.app.services.basic_report import MAX_UPLOAD_BYTES
@@ -676,7 +686,7 @@ async def premium_report_download(
     if not raw:
         raise HTTPException(status_code=400, detail="Empty CSV.")
     try:
-        df = read_uploaded_table(raw, file.filename or "")
+        df = read_uploaded_table(raw, file.filename or "", csv_encoding=csv_encoding)
         payload = build_premium_zip(
             df, target_column=target_column, task_type=_normalize_task_type(task_type),
             split_policy=split_policy, group_column=group_column.strip() or None,
