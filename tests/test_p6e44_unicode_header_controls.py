@@ -16,16 +16,16 @@ from backend.app.main import app
 from backend.app.services.basic_report import validate_basic_frame
 
 
-@pytest.mark.parametrize("control", [
-    "\u202e",  # right-to-left override
-    "\u2066",  # left-to-right isolate
-    "\u200f",  # right-to-left mark
-    "\u061c",  # Arabic letter mark
-    "\u007f",  # DEL, outside the former <32 ASCII filter
-    "\u0085",  # C1 next-line control
+@pytest.mark.parametrize("codepoint", [
+    0x202E,  # right-to-left override
+    0x2066,  # left-to-right isolate
+    0x200F,  # right-to-left mark
+    0x061C,  # Arabic letter mark
+    0x007F,  # DEL, outside the former <32 ASCII filter
+    0x0085,  # C1 next-line control
 ])
-def test_deceptive_control_header_rejected(control):
-    df = pd.DataFrame({"매출" + control + "액": [100, 120], "label": [0, 1]})
+def test_deceptive_control_header_rejected(codepoint):
+    df = pd.DataFrame({"매출" + chr(codepoint) + "액": [100, 120], "label": [0, 1]})
     with pytest.raises(ValueError, match="control or bidirectional"):
         validate_basic_frame(df)
 
