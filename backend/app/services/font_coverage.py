@@ -80,11 +80,73 @@ def _installed_font_family(path: Path) -> str:
     return " ".join((name or "Unknown installed font").split())[:80]
 
 
-def font_usage_notice(required_text: str = "") -> str:
+def embedded_pdf_font_names(pdf_bytes: bytes) -> set[str]:
+    """Read font *streams actually embedded* across all merged PDF pages.
+
+    BaseFont alone is insufficient: ReportLab also registers nonembedded PDF
+    standard fonts such as Helvetica. A descriptor must contain a font stream.
+    This intentionally checks PDF structure, not human-readable render quality
+    or the copyright license of an embedded font.
+    """
+    from io import BytesIO
+    from pypdf import PdfReader
+
+    names: set[str] = set()
+    try:
+        reader = PdfReader(BytesIO(pdf_bytes), strict=True)
+        for page in reader.pages:
+            resources = page.get("/Resources")
+            if resources is None:
+                continue
+            resources = resources.get_object()
+            fonts = resources.get("/Font")
+            if fonts is None:
+                continue
+            for ref in fonts.get_object().values():
+                font = ref.get_object()
+                descendants = font.get("/DescendantFonts")
+                candidates = [font]
+                if descendants:
+                    candidates.extend(item.get_object() for item in descendants)
+                for candidate in candidates:
+                    desc = candidate.get("/FontDescriptor")
+                    if desc is None:
+                        continue
+                    desc = desc.get_object()
+                    if not any(desc.get(key) is not None for key in
+                               ("/FontFile", "/FontFile2", "/FontFile3")):
+                        continue
+                    name = str(desc.get("/FontName") or candidate.get("/BaseFont") or "")
+                    name = name.lstrip("/")
+                    # PDF font subsets carry a six-letter resource prefix.
+                    if len(name) > 7 and name[6] == "+" and name[:6].isupper():
+                        name = name[7:]
+                    if name:
+                        names.add(name)
+    except Exception as exc:
+        raise ValueError("Cannot verify embedded fonts in generated PDF.") from exc
+    return names
+
+
+def _font_embedded(postscript: object, actual: set[str]) -> bool:
+    if isinstance(postscript, bytes):
+        postscript = postscript.decode("latin-1")
+    postscript = str(postscript).lstrip("/")
+    # ReportLab occasionally suffixes a font collection index, e.g. UMingCN-0.
+    return any(value == postscript or
+               (value.startswith(postscript + "-") and
+                value[len(postscript) + 1:].isdigit())
+               for value in actual)
+
+
+def font_usage_notice(required_text: str = "", pdf_bytes: bytes | None = None) -> str:
     """README-only provenance; never embed host paths or claim legal approval."""
     from reportlab.pdfbase import pdfmetrics
 
     primary, fallback = resolve_report_fonts(required_text)
+    actual = embedded_pdf_font_names(pdf_bytes) if pdf_bytes is not None else None
+    if actual is not None and not actual:
+        raise ValueError("Generated PDF has no inspectable embedded font streams.")
     results = [
         "PDF 글꼴 정보: 보고서에는 선택한 시스템 글꼴의 일부 글리프가 내장될 수 있습니다.\n",
         "독립 TTF/TTC 글꼴 파일은 이 ZIP에 포함되지 않습니다.\n",
@@ -116,7 +178,16 @@ def font_usage_notice(required_text: str = "") -> str:
                 "locally installed font; provenance/permission not verified. "
                 "Check its own license before commercial delivery."
             )
-        results.append(f"{role} 글꼴: {family} — {license_line}\n")
+        if actual is not None:
+            postscript = pdfmetrics.getFont(font_key).face.name
+            embedded = _font_embedded(postscript, actual)
+            if role == "기본" and not embedded:
+                raise ValueError("Generated PDF is missing its required embedded Korean font.")
+            status = ("PDF 내장 서브셋 확인" if embedded
+                      else "PDF 내장 없음 (지원/차트용으로 선택 가능)")
+            results.append(f"{role} 글꼴: {family} [{status}] — {license_line}\n")
+        else:
+            results.append(f"{role} 글꼴: {family} — {license_line}\n")
     results.append(
         "글꼴 저작권과 원본 라이선스는 권리자에게 있으며, "
         "이 안내는 상업적 권리 승인서를 의미하지 않습니다.\n"
