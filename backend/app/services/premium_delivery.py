@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from backend.app.services.font_coverage import font_usage_notice
+from backend.app.services.privacy_review import inspect_header_privacy, privacy_header_notice
 
 import csv
 from hashlib import sha256
@@ -335,6 +336,7 @@ def build_premium_zip(
         "4) 모델은 오직 신뢰한 원본 ZIP에서 로드하세요. 모델 파일·스키마 SHA만으로 출처를 증명할 수 없습니다.\n"
         "5) 데이터는 외부로 보내지 않습니다. 기존 결과 파일은 덮어쓰지 않습니다.\n"
         "6) 홀드아웃 결과는 평가 당시 학습 모델에만 적용되며, 최종 전체 재학습 모델에 동일한 성능을 보장하지 않습니다.\n"
+        + privacy_header_notice(inspect_header_privacy(df.columns)) + "\n"
         + font_usage_notice("".join(str(col) for col in df.columns), pdf_bytes=parts["report.pdf"])
     ).encode("utf-8")
     manifest = {

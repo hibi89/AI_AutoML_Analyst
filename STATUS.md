@@ -1,5 +1,11 @@
 # AI AutoML Analyst commercialization — STATUS
 
+## P6E39 — header-only privacy warnings, source committed (2026-10-28 KST)
+- Frozen architecture expects sensitive-column warnings. The shared BASIC report now inspects only header names to flag likely contact/identity/location/financial fields and adds a **qualified privacy_review** to summary.json, a warning to the Korean PDF and an advisory to BASIC README. STANDARD and PREMIUM README include the same advisory. Neither this feature nor the product claims privacy clearance: automatic_privacy_clearance=false and human de-identification review remains mandatory even with zero hits.
+- New tests check aggregate hints only, no raw headers returned by the inspector, zero-hit caveat and end-to-end synthetic BASIC ZIP/README/PDF that does not leak synthetic row strings. **CI for this change NOT VERIFIED yet**; prior 219-pass check is P6E38. Validate new source SHA in GitHub Actions before declaring completion.
+- Continue final design gap-fill/frontend and QA independently; P6E22 commercial/owner-machine legal and visual gate remains separate. Official 5/7=71%, BASIC/STANDARD/PREMIUM SALE NO-GO; original main untouched.
+
+
 ## P6E38 VERIFIED — specification gap-fill resumed (2026-10-28 KST)
 - Owner's instruction clarified: **working MVP is not final completion**. Proceed through original spec gap closure, buyer-facing usability and safety/release QA; do not interpret the MVP checkpoint as a project freeze.
 - Engineering source SHA **4fae0de448dbb672148de39f02e35f039f789757**: added conservative 1.5*IQR per-numeric-column diagnostic signals to three SKU reports' shared BASIC engine, exposed in JSON + summary CSV + qualified PDF; ambiguous flat IQR/insufficient samples do not claim zero outliers. Fixed PDF quality joining on exact original headers 49+ characters, not truncated display names. New tests cover known outlier, flat-IQR edge and long headers plus full PDF/ZIP content.

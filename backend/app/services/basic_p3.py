@@ -24,6 +24,7 @@ from backend.app.services.basic_report import (
     _csv_safe, _quality_rows, validate_basic_frame,
 )
 from backend.app.services.ml_feasibility import inspect_ml_feasibility
+from backend.app.services.privacy_review import inspect_header_privacy, privacy_header_notice
 
 
 # ReportLab may embed a subset of the owner's installed NanumGothic font.
@@ -424,7 +425,7 @@ def _pdf(summary: dict, charts: list[tuple[str, bytes, str]], *, report_tier: st
     story.extend([Spacer(1, 10),
                   paragraph("방법: 데이터프레임의 관측 행 수, 결측률, 고유값, 중복행, 기술통계 및 "
                             "지원되는 차트를 생성했습니다. 범주 값과 개별 행은 ZIP에 넣지 않습니다.", "small"),
-                  paragraph("주의: 데이터 정합성, 대표성, 편향, 수집 맥락은 자동 진단만으로 확인할 수 없습니다.", "small")])
+                  paragraph("주의: 데이터 정합성, 대표성, 편향, 수집 맥락은 자동 진단만으로 확인할 수 없습니다. " + privacy_header_notice(summary["privacy_review"]), "small")])
     document = SimpleDocTemplate(out, pagesize=A4, leftMargin=44, rightMargin=44,
                                  topMargin=48, bottomMargin=60, title=f"AI AutoML Analyst {report_tier}",
                                  author="AI AutoML Analyst")
@@ -451,6 +452,7 @@ def build_basic_delivery(df: pd.DataFrame, *, report_tier: str = "BASIC") -> byt
         "metrics": metrics,
         "numeric_profiles": _numeric_profiles(df),
         "outlier_signals": _outlier_signals(df),
+        "privacy_review": inspect_header_privacy(df.columns),
         "ml_feasibility": inspect_ml_feasibility(df),
         "quality": quality,
         "chart_count": len(charts),
@@ -478,6 +480,7 @@ def build_basic_delivery(df: pd.DataFrame, *, report_tier: str = "BASIC") -> byt
         "README.txt": ("AI AutoML Analyst BASIC\n이 파일은 기술통계 및 시각화 결과입니다.\n"
                        "인과분석/ML 학습/정확도 보장이 아닙니다.\n"
                        "누락/중복은 오류로 단정할 수 없습니다.\n"
+                       + privacy_header_notice(summary["privacy_review"]) + "\n"
                        + font_usage_notice("".join(str(col) for col in df.columns), pdf_bytes=pdf)).encode("utf-8"),
     }
     parts.update({name: content for name, content, _ in charts})
