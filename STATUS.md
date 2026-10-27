@@ -1,4 +1,12 @@
 # AI AutoML Analyst commercialization — STATUS
+
+## P6E32 independent PDF visual review / tier wording correction — 2026-10-27 KST
+- Reviewed actual synthetic GitHub Actions artifact 12733681023 from Linux run 40501689831: BASIC 6-page, STANDARD 9-page, PREMIUM 11-page PDFs (26 pages total), plus three manifests/ZIPs. This was a visual review of an earlier executable revision, not of the newly patched one.
+- Found user-facing report-tier contradiction: STANDARD/PREMIUM cover and first six page footers were marked BASIC, including a statement implying ML fitting was absent from the whole report. Corrected by passing a tier label through the shared BASIC generation component while preserving BASIC default text. New source/test commits f63a706.. through 2fb562144d50652014fdc50a6933b80abac572c2.
+- Added page-one PDF text regressions across all 3 SKUs. New source CI at 2fb5621 was IN PROGRESS as of documentation capture; DO NOT claim it passed or the final PDF aesthetics were approved without new artifacts.
+- Separate existing commercial gate P6E22 remains owner-only visual/font/source-rights/sale approval; all SKUs NO-GO, strict 5/7=71%. No main merge/public hosting/customer data.
+- See docs/qa/P6E32_TIER_BRANDING_VISUAL_AUDIT.md for exact observed mismatch and review limits.
+
 Updated: 2026-10-27 KST
 Repository: `hibi89/AI_AutoML_Analyst`
 Development branch: `feature/kmong-v1`; preserved original `main@c80c874476f8d5deb4bf611761d89c6d72ca0a2d`
