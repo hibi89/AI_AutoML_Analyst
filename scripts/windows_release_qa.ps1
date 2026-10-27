@@ -44,7 +44,7 @@ $env:AUTOML_KOREAN_FONT_PATH = $font
 if ($LASTEXITCODE -ne 0) { throw "Dependency installation failed." }
 
 # No Poppler required for these tests. P3 full PDF raster tests run in Linux CI.
-& $exe @argsPrefix -m pytest -q tests/test_original_smoke.py tests/test_basic_mvp.py tests/test_p2_ml_validity.py tests/test_p4_standard_delivery.py tests/test_p5_premium.py tests/test_p6_security.py tests/test_p6_xlsx.py tests/test_p6_windows_compat.py tests/test_p6_chart_policy.py
+& $exe @argsPrefix -m pytest -q tests/test_original_smoke.py tests/test_basic_mvp.py tests/test_p2_ml_validity.py tests/test_p4_standard_delivery.py tests/test_p5_premium.py tests/test_p6_security.py tests/test_p6_xlsx.py tests/test_p6_windows_compat.py tests/test_p6_chart_policy.py tests/test_p6e6_delivery_policy.py
 if ($LASTEXITCODE -ne 0) { throw "Windows smoke tests failed; do not list product for sale." }
 
 # Portable synthetic previews for browser upload + actual local PREMIUM replay.
