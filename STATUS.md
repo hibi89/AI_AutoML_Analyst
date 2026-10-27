@@ -1,5 +1,13 @@
 # AI AutoML Analyst commercialization — STATUS
 
+## Final completion resumed — P6E38 outlier diagnostic gap (2026-10-27 KST)
+- **Owner clarified:** MVP is a checkpoint, NOT final completion. Do not suspend engineering after MVP. Continue original spec gap-fill, frontend usability and security/stability polishing without overclaiming release.
+- **Gap addressed in code:** frozen BASIC requirements demand numeric outlier indications, while former output only provided box plots and quartiles. The shared report now computes conservative 1.5*IQR suspect counts for every numeric column, adds them to JSON and summary CSV, and displays a qualified IQR count in the representative PDF quartile table. Insufficient observations or IQR=0 are explicitly undecided, NOT zero outliers. No source row values exported.
+- **Focused new synthetic regressions:** cover one known suspect, flat-IQR ambiguous case, full ZIP/CSV/JSON/PDF content and disclaimer. **Hosted CI on this code: PENDING at authoring; prior CI does not certify it.**
+- **Next:** examine generated PDF page count/layout and CI, fix any reproducible issue. Then continue gaps (readable browser experience, privacy guardrails and actual release/security tests) rather than blocking all engineering on commercial approval.
+- **Separate owner-only sale gate:** actual owner Windows/visual/font license/NOTICE and tier-specific GO not granted; formal P0–P6 5/7=71%, all tiers SALE NO-GO; never merge to main without authorization.
+
+
 ## MVP scope freeze — 2026-10-28 checkpoint (owner direction, 2026-10-27 KST)
 - **Priority order from owner:** demonstrably working minimum first; incomplete visuals, new frontend features, polish, broader optional enhancements later. Do not expand scope or invent filler QA activity.
 - **MVP engineering status: FUNCTIONAL under synthetic CI, already satisfied before 2026-10-28 checkpoint.** BASIC CSV/XLSX -> validated aggregate data report/PDF/ZIP; STANDARD -> explicit target, controlled ML comparison/CV/holdout and PDF/ZIP; PREMIUM -> trained trusted bundle, matched-schema offline CSV predictions and PDF/ZIP. Real Windows + Linux Chromium three-tier upload/download SUCCESS; Linux suite **216 PASS/3 SKIP**, Windows native **96 PASS**, Docker SUCCESS, all on executable code `c90dbaed53e11fac100a00a8f41b4c8bf52a22d1`. No frontend rewrite necessary to demonstrate the minimum.

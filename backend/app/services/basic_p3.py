@@ -120,17 +120,47 @@ def _insights(df: pd.DataFrame, quality: list[dict]) -> tuple[list[str], list[st
     return findings[:5], suggestions[:3]
 
 
+def _outlier_signals(df: pd.DataFrame) -> list[dict]:
+    """Aggregate-only 1.5*IQR flags for all numeric columns, not error labels.
+
+    A zero IQR or too few observations does NOT justify claiming zero
+    outliers. Mark those cases undecided and preserve the original values.
+    """
+    signals = []
+    for column in df.select_dtypes(include="number").columns:
+        values = pd.to_numeric(df[column], errors="coerce").dropna()
+        result = {
+            "column": str(column), "observed": int(len(values)),
+            "iqr_outliers": None, "iqr_status": "insufficient_data",
+        }
+        if len(values) >= 4 and values.nunique() >= 2:
+            q1, q3 = float(values.quantile(.25)), float(values.quantile(.75))
+            iqr = q3 - q1
+            if iqr > 0:
+                lower, upper = q1 - 1.5 * iqr, q3 + 1.5 * iqr
+                result["iqr_outliers"] = int(
+                    ((values < lower) | (values > upper)).sum()
+                )
+                result["iqr_status"] = "observed_signal"
+            else:
+                result["iqr_status"] = "flat_iqr"
+        signals.append(result)
+    return signals
+
+
 def _numeric_profiles(df: pd.DataFrame) -> list[dict]:
-    """Aggregate-only observed quartiles, never individual records or category values."""
+    """Representative quartiles with qualified IQR counts; no individual rows."""
     rows = []
+    signals = {item["column"]: item for item in _outlier_signals(df)}
     for name in _numeric(df)[:4]:
-        values = pd.to_numeric(df[name], errors="coerce")
-        values = values.replace([float("inf"), float("-inf")], float("nan")).dropna()
+        values = pd.to_numeric(df[name], errors="coerce").dropna()
         if len(values) < 4:
             continue
         rows.append({
-            "column": _display_name(name),
+            "column": name,
             "observed": int(len(values)),
+            "iqr_outliers": signals[name]["iqr_outliers"],
+            "iqr_status": signals[name]["iqr_status"],
             "q1": round(float(values.quantile(.25)), 2),
             "median": round(float(values.median()), 2),
             "q3": round(float(values.quantile(.75)), 2),
@@ -299,16 +329,17 @@ def _pdf(summary: dict, charts: list[tuple[str, bytes, str]], *, report_tier: st
             profile_rows = [[
                 paragraph("수치형 열", "small"), paragraph("유효행", "small"),
                 paragraph("Q1", "small"), paragraph("중앙값", "small"),
-                paragraph("Q3", "small"),
+                paragraph("Q3", "small"), paragraph("IQR 밖", "small"),
             ]]
             for p in profiles:
                 profile_rows.append([
                     paragraph(str(p["column"])[:28], "small"),
                     f'{p["observed"]:,}', f'{p["q1"]:,.2f}',
                     f'{p["median"]:,.2f}', f'{p["q3"]:,.2f}',
+                    str(p["iqr_outliers"]) if p["iqr_outliers"] is not None else "-",
                 ])
             profiles_table = Table(
-                profile_rows, colWidths=[166, 60, 84, 84, 84],
+                profile_rows, colWidths=[145, 55, 75, 75, 75, 53],
                 repeatRows=1, hAlign="LEFT",
             )
             profiles_table.setStyle(TableStyle([
@@ -325,7 +356,7 @@ def _pdf(summary: dict, charts: list[tuple[str, bytes, str]], *, report_tier: st
             ]))
             story.append(profiles_table)
             story.append(paragraph(
-                "유효한 수치만 사용한 관측 사분위수입니다. 원본 단위와 표본 정의를 확인하세요.",
+                "IQR 밖은 1.5*IQR 경계 밖 관측 건수일 뿐 오류 판정이 아닙니다. '-'는 관측 부족 또는 IQR 0으로 판정 유보입니다.",
                 "small",
             ))
 
@@ -419,6 +450,7 @@ def build_basic_delivery(df: pd.DataFrame, *, report_tier: str = "BASIC") -> byt
         "suggestions": suggestions,
         "metrics": metrics,
         "numeric_profiles": _numeric_profiles(df),
+        "outlier_signals": _outlier_signals(df),
         "ml_feasibility": inspect_ml_feasibility(df),
         "quality": quality,
         "chart_count": len(charts),
@@ -428,10 +460,17 @@ def build_basic_delivery(df: pd.DataFrame, *, report_tier: str = "BASIC") -> byt
     pdf = _pdf(summary, charts, report_tier=report_tier)
     buf = StringIO()
     writer = csv.writer(buf)
-    writer.writerow(["column", "dtype", "missing", "missing_pct", "unique"])
+    writer.writerow(["column", "dtype", "missing", "missing_pct", "unique",
+                     "iqr_outliers", "iqr_status"])
+    signal_map = {item["column"]: item for item in summary["outlier_signals"]}
     for q in quality:
-        writer.writerow([_csv_safe(q["column"]), q["dtype"],
-                         q["missing"], q["missing_pct"], q["unique"]])
+        flag = signal_map.get(q["column"])
+        writer.writerow([
+            _csv_safe(q["column"]), q["dtype"], q["missing"],
+            q["missing_pct"], q["unique"],
+            flag["iqr_outliers"] if flag and flag["iqr_outliers"] is not None else "",
+            flag["iqr_status"] if flag else "not_numeric",
+        ])
     parts = {
         "report.pdf": pdf,
         "summary.csv": ("\ufeff" + buf.getvalue()).encode("utf-8"),

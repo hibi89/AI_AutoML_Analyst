@@ -101,6 +101,43 @@ def test_rich_input_produces_real_korean_pdf_five_charts_and_manifest(tmp_path):
             assert colors is None or len(colors) > 80
 
 
+
+def test_outlier_signal_contract_and_no_false_zero_for_flat_iqr():
+    from backend.app.services.basic_p3 import _outlier_signals
+    data = pd.DataFrame({
+        "매출": list(range(1, 12)) + [100],
+        "고정값": [2] * 12,
+        "라벨": ["A", "B"] * 6,
+    })
+    flagged = {item["column"]: item for item in _outlier_signals(data)}
+    assert flagged["매출"]["iqr_status"] == "observed_signal"
+    assert flagged["매출"]["iqr_outliers"] == 1
+    assert flagged["고정값"]["iqr_outliers"] is None
+    assert flagged["고정값"]["iqr_status"] == "insufficient_data"
+    assert "라벨" not in flagged
+    plateau = _outlier_signals(pd.DataFrame({"가격": [2] * 20 + [100]}))[0]
+    assert plateau["iqr_status"] == "flat_iqr"
+    assert plateau["iqr_outliers"] is None
+
+
+def test_zip_json_csv_and_pdf_expose_qualified_outlier_diagnostics():
+    source = pd.DataFrame({
+        "수치": list(range(1, 12)) + [100],
+        "라벨": ["A", "B"] * 6,
+    })
+    with ZipFile(BytesIO(build_basic_zip(source))) as archive:
+        summary = json.loads(archive.read("summary.json"))
+        assert summary["outlier_signals"][0]["column"] == "수치"
+        assert summary["outlier_signals"][0]["iqr_outliers"] == 1
+        assert summary["numeric_profiles"][0]["iqr_outliers"] == 1
+        csv_data = archive.read("summary.csv").decode("utf-8-sig")
+        assert "iqr_outliers" in csv_data
+        assert "observed_signal" in csv_data
+        pages = PdfReader(BytesIO(archive.read("report.pdf"))).pages
+        searchable = "\n".join(page.extract_text() or "" for page in pages)
+        assert "IQR 밖" in searchable
+        assert "오류 판정" in searchable
+
 def test_sparse_dataset_avoids_filler_charts_and_nonexistent_claims():
     df = pd.DataFrame({"식별자": ["A", "B", "C"], "상태": ["완료", "완료", "완료"]})
     with ZipFile(BytesIO(build_basic_zip(df))) as z:
