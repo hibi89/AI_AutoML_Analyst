@@ -64,6 +64,11 @@ def _model_and_schema(folder: Path):
 def _load_input(path: Path, schema: dict, csv_encoding: str = "auto") -> pd.DataFrame:
     if not path.is_file() or path.stat().st_size > MAX_CSV_BYTES:
         raise ValueError("Input CSV missing or exceeds 30 MiB.")
+    # Match upload validation: embedded NUL is not valid text CSV input.
+    # Check before pandas can silently accept a truncated or altered field.
+    with path.open("rb") as source:
+        if b"\x00" in source.read(MAX_CSV_BYTES + 1):
+            raise ValueError("Prediction CSV contains NUL bytes.")
     supported = {"auto", "utf-8-sig", "utf-8", "cp949", "cp932"}
     if csv_encoding not in supported:
         raise ValueError("Unsupported prediction CSV encoding selection.")
