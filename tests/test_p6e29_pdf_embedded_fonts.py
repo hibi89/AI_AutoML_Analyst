@@ -20,7 +20,22 @@ from backend.app.services.font_coverage import (
 from backend.app.services.basic_report import build_basic_zip
 from backend.app.services.standard_delivery import build_standard_zip
 from backend.app.services.premium_delivery import build_premium_zip
-from tests.test_p6e28_font_licenses import japanese_frame, korean_frame
+import pandas as pd
+from reportlab.pdfbase import pdfmetrics
+
+
+def korean_frame() -> pd.DataFrame:
+    n = 80
+    return pd.DataFrame({
+        "매출": [float(120 + i % 13 * 7) for i in range(n)],
+        "방문": [i % 9 + 1 for i in range(n)],
+        "고객유형": ["A", "B"] * (n // 2),
+        "목표": [i % 2 for i in range(n)],
+    })
+
+
+def japanese_frame() -> pd.DataFrame:
+    return korean_frame().rename(columns={"매출": "売上", "방문": "訪問数", "고객유형": "地域", "목표": "購入"})
 
 
 def _tiny_report(text: str, font: str) -> bytes:
@@ -35,9 +50,9 @@ def test_selected_japanese_font_not_embedded_when_unused():
     assert fallback is not None
     pdf = _tiny_report("안녕하세요", primary)  # only Nanum; no Japanese markup
     names = embedded_pdf_font_names(pdf)
-    assert _font_embedded(__import__("reportlab").pdfbase.pdfmetrics.getFont(primary).face.name, names)
+    assert _font_embedded(pdfmetrics.getFont(primary).face.name, names)
     assert "Helvetica" not in names  # PDF standard /Helvetica does not embed a font stream
-    assert not _font_embedded(__import__("reportlab").pdfbase.pdfmetrics.getFont(fallback).face.name, names)
+    assert not _font_embedded(pdfmetrics.getFont(fallback).face.name, names)
     notice = font_usage_notice("売上", pdf_bytes=pdf)
     assert "보조 글꼴:" in notice
     assert "PDF 내장 없음" in notice
@@ -49,15 +64,12 @@ def test_real_japanese_glyph_run_is_pdf_embedded_and_audited():
     assert fallback is not None
     pdf = _tiny_report(safe_pdf_markup("매출 売上", primary, fallback), primary)
     names = embedded_pdf_font_names(pdf)
-    from reportlab.pdfbase import pdfmetrics
     assert _font_embedded(pdfmetrics.getFont(primary).face.name, names)
     assert _font_embedded(pdfmetrics.getFont(fallback).face.name, names)
     assert font_usage_notice("売上", pdf_bytes=pdf).count("PDF 내장 서브셋 확인") == 2
 
 
 def test_pdf_without_embedded_font_is_rejected():
-    from reportlab.pdfbase import pdfmetrics
-    from reportlab.pdfbase.pdfmetrics import stringWidth
     payload = _tiny_report("Hello", "Helvetica")  # standard Type1, no FontFile stream
     assert embedded_pdf_font_names(payload) == set()
     with pytest.raises(ValueError, match="no inspectable embedded"):
