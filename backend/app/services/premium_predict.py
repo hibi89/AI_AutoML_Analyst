@@ -61,11 +61,16 @@ def _model_and_schema(folder: Path):
     return sio.loads(model, trusted=sorted(allowed_types & set(unknown))), schema
 
 
-def _load_input(path: Path, schema: dict) -> pd.DataFrame:
+def _load_input(path: Path, schema: dict, csv_encoding: str = "auto") -> pd.DataFrame:
     if not path.is_file() or path.stat().st_size > MAX_CSV_BYTES:
         raise ValueError("Input CSV missing or exceeds 30 MiB.")
+    supported = {"auto", "utf-8-sig", "utf-8", "cp949", "cp932"}
+    if csv_encoding not in supported:
+        raise ValueError("Unsupported prediction CSV encoding selection.")
+    encodings = (("utf-8-sig", "utf-8", "cp949")
+                 if csv_encoding == "auto" else (csv_encoding,))
     raw = None
-    for encoding in ("utf-8-sig", "utf-8", "cp949"):
+    for encoding in encodings:
         try:
             # pandas silently renames duplicate source CSV headers: a,a -> a,a.1.
             # That can accidentally match a genuinely dotted training schema.
@@ -87,7 +92,7 @@ def _load_input(path: Path, schema: dict) -> pd.DataFrame:
         except UnicodeError:
             continue
     if raw is None:
-        raise ValueError("Use UTF-8 or CP949 CSV encoding.")
+        raise ValueError("Use UTF-8, CP949 or explicitly selected CP932 CSV encoding.")
     if not 1 <= len(raw) <= MAX_ROWS:
         raise ValueError("Input requires 1–20,000 rows.")
     expected = schema["raw_feature_columns"]
@@ -123,9 +128,9 @@ def _prepare(raw: pd.DataFrame, schema: dict) -> pd.DataFrame:
     return data.reindex(columns=schema["prepared_feature_columns"])
 
 
-def predict_csv(folder: Path, input_csv: Path, output_csv: Path) -> int:
+def predict_csv(folder: Path, input_csv: Path, output_csv: Path, csv_encoding: str = "auto") -> int:
     model, schema = _model_and_schema(folder)
-    raw = _load_input(input_csv, schema)
+    raw = _load_input(input_csv, schema, csv_encoding=csv_encoding)
     X = _prepare(raw, schema)
     prediction = model.predict(X)
     values = [str(v) if isinstance(v, str) else v for v in prediction]
@@ -165,9 +170,10 @@ def main() -> int:
     cli.add_argument("--input", required=True, type=Path)
     cli.add_argument("--output", required=True, type=Path)
     cli.add_argument("--model-dir", default=Path(__file__).resolve().parent, type=Path)
+    cli.add_argument("--csv-encoding", choices=("auto", "utf-8-sig", "utf-8", "cp949", "cp932"), default="auto")
     args = cli.parse_args()
     try:
-        count = predict_csv(args.model_dir, args.input, args.output)
+        count = predict_csv(args.model_dir, args.input, args.output, csv_encoding=args.csv_encoding)
     except (ValueError, OSError) as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 2
