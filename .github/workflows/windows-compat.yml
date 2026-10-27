@@ -197,6 +197,17 @@ jobs:
           } finally {
             Stop-Process -Id $foreign.Id -Force -ErrorAction SilentlyContinue
           }
+      - name: Provide pinned OFL Korean font for native PDF integration tests
+        shell: pwsh
+        run: |
+          # Needed for real BASIC PDF/ZIP CP932 tests on the GitHub runner.
+          # No system installation, font binary in repo or customer ZIP.
+          $font = Join-Path $env:RUNNER_TEMP "NanumGothic-Regular.ttf"
+          Invoke-WebRequest -Uri "https://raw.githubusercontent.com/google/fonts/main/ofl/nanumgothic/NanumGothic-Regular.ttf" -OutFile $font -UseBasicParsing -TimeoutSec 45
+          if ((Get-FileHash -LiteralPath $font -Algorithm SHA256).Hash -ne "76F45EF4A6BCFF344C837C95A7DCC26E017E38B5846D5AE0CDCB5B86BE2E2D31") {
+            throw "Official OFL Korean QA font mismatch"
+          }
+          "AUTOML_KOREAN_FONT_PATH=$font" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
       - name: Verify native Python and skops without GUI
         run: python -m pytest -q tests/test_p6_windows_compat.py tests/test_original_smoke.py tests/test_p2_ml_validity.py tests/test_p6_security.py tests/test_p6d_ml_limits.py tests/test_p6e5_local_demo.py tests/test_p6e6_delivery_policy.py tests/test_p6e13_csv_header.py tests/test_p6e19_csv_encoding.py
       - name: Reproduce owner Windows three-tier review and exact delivered CMD in spaced path
