@@ -1,5 +1,13 @@
 # HANDOFF — AI AutoML Analyst / current owner release gate
 
+## P6E34 — upload request-envelope protection, VERIFIED 2026-10-27 KST
+- Source commit **`6cd7c39ef9cf622d22ae76c3e66aebca79368838`** implemented `backend/app/upload_guard.py` ASGI receive-level byte budget for the four upload POST endpoints, plus `main.py` registration and five new `tests/test_p6e34_upload_envelope.py` synthetic tests. The request body is capped at **30 MiB file budget + 128 KiB multipart overhead** *before* all multipart data can be spooled; Content-Length fast rejection and streamed/no-length rejection are checked. Existing endpoint file-size limit remains separately enforced.
+- **Verified at source SHA**: Linux complete [40509856749](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40509856749) **213 PASS / 3 SKIP / 66 warnings**; Windows native [40509856743](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40509856743) **96 PASS / 9 warnings**; Chromium ZIP downloads [Windows 40509856757](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40509856757) **SUCCESS**, [Linux 40509857436](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40509857436) **SUCCESS**; Docker [40509856730](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40509856730) **SUCCESS**. Three synthetic tier PDF page counts 6/9/11; shipping ZIP manifests PASS.
+- Copied Codex worker's uncommitted *local* upload security edits are not accessible via GitHub; this change was implemented and tested independently on the remote branch. Those uncommitted edits remain separately unreviewed and must not be blindly applied over the tested solution.
+- Owner P6E22 physical PDF/font/source/license/commercial decisions remain the *only release signoff gates*. P1 PARTIAL, P6 NOT ACCEPTED, official **5/7=71%**, BASIC/STANDARD/PREMIUM **SALE NO-GO**. Original `main` unchanged.
+- Scope and residual caveats: [docs/qa/P6E34_MULTIPART_UPLOAD_BUDGET.md](docs/qa/P6E34_MULTIPART_UPLOAD_BUDGET.md).
+
+
 ## P6E33 — bounded PREMIUM repeat-prediction CSV parsing (2026-10-27 KST)
 - Root cause: shipped `premium_predict._load_input` formerly read all CSV rows into a DataFrame, THEN rejected counts above 20,000. An input within the 30 MiB byte cap could still consume excessive RAM/CPU before the post-read guard.
 - Fix: reject original header/schema mismatch before Pandas allocates a DataFrame; call `read_csv(nrows=MAX_ROWS + 1)`, where one overflow row proves too-many-rows without reading arbitrary remaining rows. Malformed parser structures now return a controlled `ValueError`. UTF-8/CP949 default and explicit CP932 are preserved.
