@@ -83,10 +83,11 @@ def _load_input(path: Path, schema: dict, csv_encoding: str = "auto") -> pd.Data
                 if header is not None:
                     # An extra CSV field can become a silent implicit pandas
                     # index; this would feed shifted values to the model.
+                    # Preserve short rows as missing trailing cells for imputation.
                     for row_number, row in enumerate(reader, start=1):
-                        if len(row) != len(header):
+                        if len(row) > len(header):
                             raise ValueError(
-                                "Prediction CSV data row field count does not match header."
+                                "Prediction CSV data row has more fields than header."
                             )
                         if row_number > MAX_ROWS:
                             break
