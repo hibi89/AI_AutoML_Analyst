@@ -1,0 +1,30 @@
+# P6E29 — Actual PDF embedded-font resource audit
+
+**Verified 2026-10-27 KST**, repo `hibi89/AI_AutoML_Analyst`, branch `feature/kmong-v1`. Synthetic-only tests, no customer data, model files or font binaries committed.
+
+## Confirmed defect and scope
+P6E28 chose fonts from input glyph coverage and added accurate-looking per-font license references to customer ZIP `README.txt`, but it could not tell whether each *selected* font was actually present in the final PDF font streams. Registered fonts and Matplotlib raster chart font families need not appear as separate embedded PDF font subsets. A conventional PDF also lists `/Helvetica` in `/Resources/Font` as an unembedded standard font, so merely counting `/BaseFont` entries gives incorrect positive results.
+
+## Code fix
+- `backend/app/services/font_coverage.py` adds `embedded_pdf_font_names(pdf_bytes)`, opening the actual generated PDF with pypdf and examining every merged page's `/Resources/Font`, `/FontDescriptor` (including descendant fonts) for one of `/FontFile`, `/FontFile2` or `/FontFile3`. The audit extracts actual descriptor PostScript `/FontName`, removing only the conventional six-capital subset prefix, and ignores unembedded `/Helvetica`. Malformed/unreadable PDFs and those with no verifiable embedded font fail closed. Checks document structure, not the font license or visual readability.
+- `_font_embedded` compares the PDF resource PostScript name to registered ReportLab `face.name`, supporting ReportLab's numeric collection suffix (e.g. `UMingCN-0` versus `UMingCN`).
+- `font_usage_notice(required_text, pdf_bytes=...)` keeps the pre-existing font-family/license notice and adds a **separate evidence-based status**: `PDF 내장 서브셋 확인` when a stream is actually found, or `PDF 내장 없음 (지원/차트용으로 선택 가능)` for a selected backup font without a PDF subset. The required Korean primary missing from the PDF is an error, not a misleading ZIP. No local path, TTF/TTC, raw CSV value or font binary enters the ZIP.
+- BASIC, STANDARD and PREMIUM now pass the **final actual merged PDF bytes** to the notice before the manifest is hashed. PDF report content, ML CV/prediction model schema and manifest/ZIP format remain otherwise unchanged.
+- Code source commits: `c6a81fb0f6e7854b63b5fbd6b8308ac4e0640734`, `a8c57ed31eb76468fe36019ece8283e6f5b48d38`, `4f5b902e5c3ebbfcd841d5ce27027911b424394c`, `71b6926f14243f13be1dcb62c1ca0c4e5be4f86a`.
+
+## Reproduced concrete distinction and tests
+- Synthetic one-paragraph real ReportLab PDF uses only Korean primary but customer data needs optional Japanese coverage. Old source would list both font families without evidence of embedding; new notice clearly reports the fallback as **not embedded**. The PDF's `/Helvetica` resource does not count as embedded.
+- Synthetic PDF with Korean and Japanese glyph runs uses two ReportLab font streams; actual `/FontName` identifiers match `NanumGothic` and `UMingCN-0`, both correctly verified.
+- A PDF with Helvetica only has **zero** true embedded font streams and is rejected, rather than silently claiming Nanum embedding.
+- Six real in-memory PDF and ZIP combinations: 3 SKUs × Korean/Japanese. Test each complete PDF font stream set versus customer README and verify optional Japanese subset presence only when actually included; no absolute font paths in ZIP.
+- Test code `tests/test_p6e29_pdf_embedded_fonts.py`, initial commit `c36282fc3b4a23f3318b2d8891c214d728f87e18`, self-contained correction `d544839380a889479ec8fe69ee2fdfbbdfbaa918`. 9 new passing tests; 200 total full Linux tests.
+
+## Actual CI run evidence
+- **Final test-inclusive Linux** [40486435539](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40486435539) at test SHA `d544839380a889479ec8fe69ee2fdfbbdfbaa918`: SUCCESS, **200 PASS / 3 SKIP / 66 warnings** in 66.76s; BASIC 6, STANDARD 9, PREMIUM 11 PDF pages/ZIP manifest PASS; dependency consistency PASS. Skips are Windows-specific subset tests.
+- **Windows native** [40486340777](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40486340777), production source SHA `71b6926f14243f13be1dcb62c1ca0c4e5be4f86a`: SUCCESS **94 PASS / 9 warnings**; 6/9/11 PDF/manifest PASS. Fixed Windows suite does not execute the new nine test cases, Linux full does.
+- **Linux Chromium real** [40486340785](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40486340785) and **Windows Chromium real** [40486340841](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40486340841): SUCCESS, **6/6 actual browser ZIP downloads** per OS (BASIC/STANDARD/PREMIUM × auto/CP932 encoding). Both run at production-source SHA `71b6926f`.
+
+## Boundaries and release gate
+- PDF font resources prove a font subset stream is present; they do **not** establish commercial font rights, correct glyph shape on every physical viewer, all CJK fonts being legally sublicensable, PDF accessibility, or a customer's document aesthetics. Existing tech `OS/2.fsType` flags are not a license certificate. Windows physical owner build still needs final visual/license review.
+- Frozen strict accepted P0–P6 **5/7 = 71%**; P1 PDF visual/client ZIP review PARTIAL, P6 commercial sale gate NOT ACCEPTED. All BASIC/STANDARD/PREMIUM SKUs sale **NO-GO**, no main merge, live deployment, paid operation or public listing. Original `main@c80c874476f8d5deb4bf611761d89c6d72ca0a2d` remains untouched.
+- Next step is **P6E22 owner-only one-session commercial release signoff** (actual local ZIP/PDF visual, font licensing and explicit selling approval). Engineering P6E24–P6E29 independently verified, no benefit to inventing more synthetic gates or forcing the owner to re-run first-time environment setup.
