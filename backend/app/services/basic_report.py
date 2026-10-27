@@ -24,6 +24,15 @@ def validate_basic_frame(df: pd.DataFrame) -> None:
         raise ValueError(f"Limit exceeded: max {MAX_ROWS} rows / {MAX_COLUMNS} columns.")
     if df.columns.duplicated().any():
         raise ValueError("Duplicate column names are not supported.")
+    # Infinities are not missing values: histogram bins, quantiles and ML
+    # estimators cannot safely treat them as valid finite measurements.
+    # Fail as a controlled 400 before generating any customer report/model.
+    numerical = df.select_dtypes(include="number")
+    if numerical.isin([float("inf"), float("-inf")]).to_numpy().any():
+        raise ValueError(
+            "Input contains infinite numeric values. Replace +/-Infinity with "
+            "a finite measurement or a blank/missing value, then retry."
+        )
     if not all(isinstance(x, str) and x.strip() for x in df.columns):
         raise ValueError("All columns must have non-empty text names.")
     # Extremely long/control-character headers can corrupt charts or PDF layout.

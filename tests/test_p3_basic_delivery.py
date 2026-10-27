@@ -120,6 +120,45 @@ def test_blank_csv_and_empty_columns_rejected():
         validate_basic_frame(pd.DataFrame([[1, 2]], columns=["x", "x"]))
 
 
+
+@pytest.mark.parametrize("infinite_value", [float("inf"), float("-inf")])
+def test_infinite_numeric_csv_is_rejected_consistently_before_all_sku_reports(infinite_value):
+    """A single +/-Infinity currently makes the numeric histogram fail.
+
+    The shared validation boundary must produce a controlled HTTP 400 rather
+    than an unhandled chart/ML error for any of the three customer SKUs.
+    """
+    from backend.app.services.basic_report import validate_basic_frame
+
+    raw = rich_frame().head(24).copy()
+    raw.loc[0, "방문수"] = infinite_value
+
+    with pytest.raises(ValueError, match="infinite numeric values"):
+        validate_basic_frame(raw)
+
+    csv_bytes = raw.to_csv(index=False).encode("utf-8-sig")
+    client = TestClient(app)
+    for endpoint, form in (
+        ("/api/basic-report", {}),
+        ("/api/standard-report", {"target_column": "매출", "task_type": "regression"}),
+        ("/api/premium-report", {"target_column": "매출", "task_type": "regression"}),
+    ):
+        response = client.post(
+            endpoint, data=form,
+            files={"file": ("synthetic.csv", BytesIO(csv_bytes), "text/csv")},
+        )
+        assert response.status_code == 400, (endpoint, response.status_code, response.text)
+        assert "infinite numeric values" in response.json()["detail"]
+
+
+def test_missing_numeric_cells_are_still_allowed_by_infinity_guard():
+    """Missing values are handled by diagnostics and must not be rejected."""
+    from backend.app.services.basic_report import validate_basic_frame
+
+    raw = rich_frame().head(24).copy()
+    raw.loc[0, "방문수"] = float("nan")
+    validate_basic_frame(raw)
+
 def test_csv_formula_escape_and_header_preservation():
     df = pd.DataFrame({"=HYPERLINK(1)": [1,2,3,4,5,6,7,8,9],
                        "매출": [1,2,3,4,5,6,7,8,9]})
