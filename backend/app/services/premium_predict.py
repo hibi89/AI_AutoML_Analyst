@@ -109,6 +109,13 @@ def _load_input(path: Path, schema: dict, csv_encoding: str = "auto") -> pd.Data
     for name in schema["numeric_raw_columns"]:
         if not pd.api.types.is_numeric_dtype(raw[name]):
             raise ValueError(f"Numeric column has invalid dtype: {name}")
+        # Match the training input safety boundary: NaN may be imputed, but
+        # +/-Infinity is not a finite measurement or a missing value.
+        if raw[name].isin([float("inf"), float("-inf")]).any():
+            raise ValueError(
+                f"Numeric input contains infinite values in column: {name}. "
+                "Replace +/-Infinity with a finite value or blank cell."
+            )
     for name in schema["boolean_raw_columns"]:
         if not pd.api.types.is_bool_dtype(raw[name]):
             raise ValueError(f"Boolean column has invalid dtype: {name}")
