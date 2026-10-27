@@ -1,0 +1,47 @@
+name: AutoML Windows Chromium three-tier real download
+on:
+  push:
+    branches:
+      - feature/kmong-v1
+    paths:
+      - "backend/**"
+      - "frontend/**"
+      - "scripts/p6_browser_smoke.py"
+      - "scripts/p6e6_delivery_policy.py"
+      - "requirements-verified-py311.txt"
+      - "requirements-browser.txt"
+      - ".github/workflows/windows-browser-smoke.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows-real-chromium:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements-verified-py311.txt
+      - name: Install existing pinned app and browser dependencies
+        run: python -m pip install -r requirements-verified-py311.txt -r requirements-browser.txt
+      - name: Install disposable Chromium
+        run: python -m playwright install chromium
+      - name: Download licensed Korean test font to runner temp only
+        shell: pwsh
+        run: |
+          $font = Join-Path $env:RUNNER_TEMP "NanumGothic-Regular.ttf"
+          $source = "https://raw.githubusercontent.com/google/fonts/main/ofl/nanumgothic/NanumGothic-Regular.ttf"
+          Invoke-WebRequest -Uri $source -OutFile $font
+          if (-not (Test-Path $font) -or (Get-Item $font).Length -lt 1000000) {
+            throw "Korean synthetic test font was not retrieved"
+          }
+          # Never commit, attach, or ship a standalone font. It is only an
+          # ephemeral OFL test prerequisite on this GitHub Actions runner.
+          "AUTOML_KOREAN_FONT_PATH=$font" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      - name: Real Windows Chromium three-tier upload/download and shipping ZIP integrity
+        run: python -m scripts.p6_browser_smoke
