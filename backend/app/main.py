@@ -75,11 +75,12 @@ def _read_csv_from_bytes(content: bytes, encoding: str = "auto") -> pd.DataFrame
                 if header is not None:
                     # Pandas can silently treat a surplus first data field as
                     # the index, shifting every customer value into the wrong
-                    # column. Reject ragged logical records before inference.
+                    # column. Reject surplus fields but preserve short rows:
+                    # pandas pads missing trailing cells with NaN.
                     for row_number, row in enumerate(reader, start=1):
-                        if len(row) != len(header):
+                        if len(row) > len(header):
                             raise ValueError(
-                                "CSV data row field count does not match header."
+                                "CSV data row has more fields than header."
                             )
                         if row_number > MAX_ROWS:
                             break
