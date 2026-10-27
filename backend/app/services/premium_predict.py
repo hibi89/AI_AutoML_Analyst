@@ -67,6 +67,21 @@ def _load_input(path: Path, schema: dict) -> pd.DataFrame:
     raw = None
     for encoding in ("utf-8-sig", "utf-8", "cp949"):
         try:
+            # pandas silently renames duplicate source CSV headers: a,a -> a,a.1.
+            # That can accidentally match a genuinely dotted training schema.
+            # Enforce the ORIGINAL header, not pandas' normalized column names.
+            with path.open("r", encoding=encoding, newline="") as source:
+                header = next(csv.reader(source, strict=True), None)
+        except UnicodeError:
+            continue
+        except csv.Error as exc:
+            raise ValueError("Invalid CSV header structure.") from exc
+        if header is not None:
+            if len(header) != len(set(header)):
+                raise ValueError("Duplicate input column names are not supported.")
+            if not all(name.strip() for name in header):
+                raise ValueError("Input CSV headers must be nonempty.")
+        try:
             raw = pd.read_csv(path, encoding=encoding)
             break
         except UnicodeError:
