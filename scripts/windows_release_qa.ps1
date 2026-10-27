@@ -1,21 +1,35 @@
 # Windows-native preflight for local AutoML delivery. Does not claim browser approval.
-param([switch]$OpenBrowser)
+param([switch]$OpenBrowser, [switch]$ProbeOnly)
 $ErrorActionPreference = "Stop"
 Set-Location (Split-Path $PSScriptRoot -Parent)
 $env:PYTHONUTF8 = "1"
 
+# A stale Windows 'py' launcher can exist even when only 'python' points to
+# an installed Python 3.11. Probe both commands before altering environments.
+$probe = "import sys; sys.exit(0 if sys.version_info[:2] == (3, 11) else 1)"
 $launcher = @()
 if (Get-Command py -ErrorAction SilentlyContinue) {
-    $launcher = @("py","-3.11")
-} elseif (Get-Command python -ErrorAction SilentlyContinue) {
-    $launcher = @("python")
-} else {
-    throw "Python 3.11 not found. Install Python 3.11 and retry."
+    try {
+        & py -3.11 -c $probe 2>$null
+        if ($LASTEXITCODE -eq 0) { $launcher = @("py", "-3.11") }
+    } catch { }  # py may exist but have no registered 3.11 runtime
+}
+if ($launcher.Count -eq 0 -and (Get-Command python -ErrorAction SilentlyContinue)) {
+    try {
+        & python -c $probe 2>$null
+        if ($LASTEXITCODE -eq 0) { $launcher = @("python") }
+    } catch { }
+}
+if ($launcher.Count -eq 0) {
+    throw "Python 3.11 not found via py -3.11 or python. Install Python 3.11 and retry."
 }
 $exe = $launcher[0]
 $argsPrefix = if ($launcher.Length -gt 1) { $launcher[1..($launcher.Length-1)] } else { @() }
-& $exe @argsPrefix -c "import sys; assert sys.version_info[:2] == (3, 11), 'Python 3.11 required'"
-if ($LASTEXITCODE -ne 0) { throw "Python 3.11 is required for this release gate." }
+if ($ProbeOnly) {
+    # CI-only dry probe: no venv, font checks, pip installs, or app start.
+    Write-Output ("PYTHON311_LAUNCHER=" + ($launcher -join " "))
+    return
+}
 
 # No global pip writes. A dedicated, gitignored environment leaves the owner's
 # other Python installations and their existing packages intact.
