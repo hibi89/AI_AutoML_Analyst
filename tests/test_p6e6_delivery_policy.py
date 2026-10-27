@@ -20,11 +20,13 @@ def _make(tier: str, added: dict[str, bytes] | None = None, *, tamper: bool = Fa
         "charts/01_distribution.png": b"\x89PNG",
     }
     if tier == "STANDARD":
-        files.update({"standard_summary.json": b"{}", "model_scores.csv": b"model\nx\n"})
+        files.update({"standard_summary.json": b"{}", "model_scores.csv": b"model\nx\n",
+                      "holdout_scores.csv": b"metric,selected,dummy\nf1_weighted,0.4,0.5\n"})
     if tier == "PREMIUM":
         files.update({
             "premium_summary.json": b"{}",
             "model_scores.csv": b"model\nx\n",
+            "holdout_scores.csv": b"metric,selected,dummy\nf1_weighted,0.4,0.5\n",
             "model_pipeline.skops": b"SYNTHETIC-NOT-LOADABLE",
             "model_schema.json": b"{}",
             "predict.py": b"pass",
@@ -104,3 +106,36 @@ def test_shipment_requires_exact_expected_members():
             z.writestr(name, blob)
     with pytest.raises(ValueError, match="Missing STANDARD"):
         verify_shipping_zip(payload.getvalue(), "STANDARD")
+
+
+def test_optional_importance_csv_is_allowed_in_paid_tiers_but_not_basic():
+    rows = b"feature,importance,method\namount,0.2,tree_impurity\n"
+    for tier in ("STANDARD", "PREMIUM"):
+        result = verify_shipping_zip(_make(tier, {"feature_importance.csv": rows}), tier)
+        assert result["tier"] == tier
+    with pytest.raises(ValueError, match="Unexpected or bundled"):
+        verify_shipping_zip(_make("BASIC", {"feature_importance.csv": rows}), "BASIC")
+
+
+@pytest.mark.parametrize("tier", ("STANDARD", "PREMIUM"))
+def test_holdout_scores_missing_fails_closed_even_when_manifest_matches(tier):
+    # Must not silently omit independent validation when delivering paid ML.
+    original = _make(tier)
+    with ZipFile(BytesIO(original)) as archive:
+        members = {
+            name: archive.read(name)
+            for name in archive.namelist()
+            if name not in {"holdout_scores.csv", "manifest.json"}
+        }
+    manifest = {
+        "format": tier.lower(),
+        "files": [{"path": name, "sha256": sha256(data).hexdigest(), "size": len(data)}
+                  for name, data in members.items()],
+    }
+    members["manifest.json"] = json.dumps(manifest).encode()
+    out = BytesIO()
+    with ZipFile(out, "w", ZIP_DEFLATED) as archive:
+        for name, data in members.items():
+            archive.writestr(name, data)
+    with pytest.raises(ValueError, match=f"Missing {tier}"):
+        verify_shipping_zip(out.getvalue(), tier)
