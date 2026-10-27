@@ -264,3 +264,12 @@ P6E20 Japanese CP932 imports worked but NanumGothic missed `売` / `数` in cust
 - Real synthetic PDF font embedding and glyph completeness PASS on hosted CI do not automatically grant commercial embedding/redistribution rights. Audit NanumGothic OFL, Linux `fonts-arphic-uming` ARPHIC Public License and any locally selected Windows fonts separately. No standalone font distribution, ungrounded license guarantee or surprise download.
 - Ensure generated PDF/ZIP README names and notices match actually selected licensed fonts; keep customer instructions for `AUTOML_JAPANESE_FONT_PATH` accurate. Run regression for Korean/Japanese tier ZIPs.
 - P6E22 owner physical downloaded PDF/ZIP aesthetic+font legal+commercial final signoff remains independent; no sales, no Vercel, no merging original main until approval.
+
+
+## AUTO-KM-P6E28 CLOSED — actual font notice and embeddability
+All 3 shipped README documents used to claim Nanum/OFL even when Japanese/Windows fonts were used. Dynamic per-run primary/fallback name+license notices now come from embedded font family metadata; source ZIP excludes standalone fonts/local paths. Font `OS/2.fsType` embedding restrictions (restricted/no-subset/bitmap-only) are blocked before PDF generation; metadata flags are not blanket legal permission. Code `b4d61ca`, `7fa9903`, `8ef4bac`, `c5c9deb`, `7fdc82f`, tests `8c65048`; [QA](../qa/P6E28_FONT_LICENSE_ATTRIBUTION.md). Final [Linux 40485064697](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40485064697) **191 PASS/3 SKIP**, [Windows native 40485011199](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40485011199) **94 PASS**; [Windows Chromium 40485011187](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40485011187) and [Linux Chromium 40485011165](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40485011165) **6/6 per OS**, all success. Main untouched; sale still NO-GO, strict accepted 5/7=71%.
+
+## NEXT READY AUTO-KM-P6E29 — actual PDF font resources versus customer notice
+- Examine pypdf `/Resources/Font`, `/BaseFont`, font descriptor/subsets in actual synthetic BASIC/STANDARD/PREMIUM PDFs, ensure README only claims fonts genuinely used/embedded. Do not expose local paths; avoid a new dependency or mutable final model.
+- Fix if mismatch is established and add narrowly scoped regression tests; rerun Linux full + Windows native/browser.
+- Owner P6E22 manual final customer ZIP/PDF visual and font licensing/approval still needed before selling; do not merge main or deploy/list until explicit signoff.
