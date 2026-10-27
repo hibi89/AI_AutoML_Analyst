@@ -83,14 +83,14 @@ def read_xlsx_bounded(data: bytes) -> pd.DataFrame:
         workbook.close()
 
 
-def read_uploaded_table(data: bytes, filename: str) -> pd.DataFrame:
+def read_uploaded_table(data: bytes, filename: str, csv_encoding: str = "auto") -> pd.DataFrame:
     name = filename.lower()
     if name.endswith(".xlsx"):
         return read_xlsx_bounded(data)
     if name.endswith(".csv"):
         # Import lazily because source module also imports our parser.
         from backend.app.main import _read_csv_from_bytes
-        frame = _read_csv_from_bytes(data)
+        frame = _read_csv_from_bytes(data, encoding=csv_encoding)
         validate_basic_frame(frame)
         return frame
     raise ValueError("Only CSV and XLSX files are supported.")
