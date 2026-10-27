@@ -49,12 +49,12 @@ def test_premium_prediction_rejects_shift_before_model_load(tmp_path, payload):
         "numeric_raw_columns": ["amount"],
         "boolean_raw_columns": [],
     }
-    with pytest.raises(ValueError, match="field count"):
+    with pytest.raises(ValueError, match="more fields than header"):
         _load_input(path, schema, "utf-8")
 
 
 def test_short_row_is_preserved_as_missing_trailing_cell(tmp_path):
-    payload = b"amount,area\\n1,A\\n2\\n"
+    payload = b"amount,area\n1,A\n2\n"
     frame = _read_csv_from_bytes(payload, "utf-8")
     assert frame["amount"].tolist() == [1, 2]
     assert frame["area"].isna().sum() == 1
