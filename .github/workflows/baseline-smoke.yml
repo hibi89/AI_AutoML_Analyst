@@ -37,7 +37,7 @@ jobs:
       - name: Install Korean PDF font and raster renderer
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq fonts-nanum poppler-utils
+          sudo apt-get install -y -qq fonts-nanum fonts-arphic-uming poppler-utils
       - name: Install smoke dependencies
         run: python -m pip install -r requirements-verified-py311.txt
       - name: Original source import
