@@ -1,6 +1,8 @@
 """STANDARD deliverable: P3 BASIC pages + independent, CV-selected ML evaluation."""
 from __future__ import annotations
 
+from backend.app.services.font_coverage import font_usage_notice
+
 from io import BytesIO, StringIO
 from zipfile import ZIP_DEFLATED, ZipFile
 import csv
@@ -326,7 +328,7 @@ def build_standard_zip(
         "Dummy 기준선은 3종 비교 모델에 포함되지 않습니다.\n"
         "독립 검증 결과로 모델을 다시 고르지 않았습니다.\n"
         "고객의 원본 CSV 또는 개별 관측 레코드는 포함하지 않습니다.\n"
-        + NANUM_FONT_CREDIT
+        + font_usage_notice("".join(str(col) for col in df.columns))
     ).encode("utf-8")
     manifest = {
         "format": "standard-v1", "tier": "STANDARD",
