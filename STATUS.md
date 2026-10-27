@@ -139,3 +139,7 @@ PREMIUM last two pages now use real model/CV/untouched-holdout/Dummy numbers and
 - Downloaded **actual latest Linux CI synthetic preview artifact 12608308778**, inspected each tier shipping ZIP directly. BASIC **10 members** / STANDARD **13** / PREMIUM **20**. All README files actually contain NAVER, SIL Open Font License 1.1 and official URL; all manifest SHA-256 entries verified; zero .whl/.ttf/.otf/.dll/.exe/.pyd/.so loose files. This is direct inspection of output bytes, not only metadata asserted by tests.
 - License document `docs/qa/P6E6_LICENSE_DISTRIBUTION.md` covers 10 pinned flagged packages, separating independently installed Python deps from bundled wheel/EXE scenarios. No claim of legal clearance for future bundling or embedded PDF font beyond official OFL source terms.
 - Final owner's physical Windows UI, PDF aesthetic acceptance and exact delivered `predict.cmd` replay **NOT RUN BY OWNER**. All tiers remain sale NO-GO; strict 5/7 (71%), main untouched. GitHub HEAD may be docs-only newer than tested code; always distinguish SHA.
+
+
+## Current P6E8 checkpoint (2026-10-27 KST)
+Native Windows cmd Unicode-path QA added on feature/kmong-v1, first runs failed 66 PASS/1 FAIL because cmd.exe could not resolve an absolute Korean batch path. A single documented relative-command retry at 546cf635 is pending CI. Linux preceding 40457618631 passed. See docs/qa/P6E8_RELEASE.md for evidence and retry state. P1 and P6 not accepted; 5/7 (71%) and all SKUs NO-GO. Physical Windows/browser/designer approval not obtained; main unchanged; Production N/A.
