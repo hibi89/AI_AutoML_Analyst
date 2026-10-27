@@ -1,5 +1,11 @@
 # P6E36 — conditional no-skill warning and independent PDF spill regression (2026-10-27 KST)
 
+## P6E36 final CI reconciliation — 2026-10-27 23:23 KST
+- The final Linux Chromium workflow [40517973806](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40517973806) reached **COMPLETED / SUCCESS**; job `chromium-real-download` and its actual file upload/download step **SUCCESS**. It spent unusually long in `Install Korean font, Python and browser`, but the step finished successfully; no application failure, cancellation or rerun was necessary.
+- Together with source Linux integration 213 PASS/3 SKIP, Windows native 96 PASS, Windows Chromium SUCCESS and Docker SUCCESS, the **five-workflow executable-source matrix is GREEN**. Additional deterministic full Linux preview [40518329515](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40518329515) passed 213/3 skipped on `d6dade53`; the actual three PDFs/ZIPs from artifact 12741525131 were already independently inspected.
+- Engineering PASS does not mean owner sale acceptance: 5/7=71%, P1 partial, P6 not accepted, BASIC/STANDARD/PREMIUM SALE NO-GO. Owner must inspect current 6/9/11-page reports (some page whitespace is visible), physical Windows ZIP/prediction and exact font/third-party licensing, then explicitly authorize any sale.
+
+
 Repository `hibi89/AI_AutoML_Analyst`; working branch `feature/kmong-v1`. All test data is synthetic. This is engineering evidence, **not sale acceptance**.
 
 ## Verified follow-up — release image/page regression closed (2026-10-27 KST)
