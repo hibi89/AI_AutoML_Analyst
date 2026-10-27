@@ -46,6 +46,84 @@ def _japanese_path() -> Path | None:
     ])
 
 
+def embedding_rights_flags(path: Path) -> int:
+    """Reject embedding restrictions advertised by installed font OS/2 metadata.
+
+    This is a technical fsType check, NOT a substitute for a license review.
+    ReportLab embeds subset font data, so restricted/bitmap-only/no-subset
+    fonts cannot be delivered in this workflow.
+    """
+    from fontTools.ttLib import TTFont as OpenTypeFont
+
+    try:
+        with OpenTypeFont(str(path), fontNumber=0, lazy=True) as face:
+            flags = int(face["OS/2"].fsType) if "OS/2" in face else 0
+    except Exception as exc:
+        raise ValueError("Cannot verify document embedding flags for installed font.") from exc
+    if flags & (0x0002 | 0x0100 | 0x0200):
+        raise ValueError(
+            "Installed font forbids this PDF subset embedding method; "
+            "choose a different licensed TrueType font."
+        )
+    return flags
+
+
+def _installed_font_family(path: Path) -> str:
+    """Inspect in-font family metadata rather than guessing from a local filename."""
+    from fontTools.ttLib import TTFont as OpenTypeFont
+
+    try:
+        with OpenTypeFont(str(path), fontNumber=0, lazy=True) as face:
+            name = face["name"].getDebugName(1) if "name" in face else None
+    except Exception:
+        name = None
+    return " ".join((name or "Unknown installed font").split())[:80]
+
+
+def font_usage_notice(required_text: str = "") -> str:
+    """README-only provenance; never embed host paths or claim legal approval."""
+    from reportlab.pdfbase import pdfmetrics
+
+    primary, fallback = resolve_report_fonts(required_text)
+    results = [
+        "PDF 글꼴 정보: 보고서에는 선택한 시스템 글꼴의 일부 글리프가 내장될 수 있습니다.\\n",
+        "독립 TTF/TTC 글꼴 파일은 이 ZIP에 포함되지 않습니다.\\n",
+    ]
+    for role, font_key in (("기본", primary), ("보조", fallback)):
+        if not font_key:
+            continue
+        path = Path(pdfmetrics.getFont(font_key).face.filename)
+        family = _installed_font_family(path)
+        compact = "".join(ch for ch in family.casefold() if ch.isalnum())
+        if "nanumgothic" in compact or "나눔고딕" in family:
+            license_line = (
+                "NAVER Nanum Gothic / SIL Open Font License 1.1; "
+                "https://github.com/google/fonts/tree/main/ofl/nanumgothic"
+            )
+        elif "arpluming" in compact or "uming" in compact:
+            license_line = (
+                "AR PL UMing / Arphic Public License; "
+                "https://packages.debian.org/stable/fonts-arphic-uming"
+            )
+        elif any(tag in compact for tag in ("malgun", "meiryo", "msgothic", "yugothic")):
+            license_line = (
+                "Windows-installed system font; document embedding depends on "
+                "font flags and Windows/source-license terms; "
+                "https://learn.microsoft.com/en-us/typography/fonts/font-faq"
+            )
+        else:
+            license_line = (
+                "locally installed font; provenance/permission not verified. "
+                "Check its own license before commercial delivery."
+            )
+        results.append(f"{role} 글꼴: {family} — {license_line}\\n")
+    results.append(
+        "글꼴 저작권과 원본 라이선스는 권리자에게 있으며, "
+        "이 안내는 상업적 권리 승인서를 의미하지 않습니다.\\n"
+    )
+    return "".join(results)
+
+
 def _register(path: Path, prefix: str) -> str:
     from reportlab.pdfbase import pdfmetrics
     from reportlab.pdfbase.ttfonts import TTFont
@@ -53,6 +131,7 @@ def _register(path: Path, prefix: str) -> str:
     # Different directories, e.g. temporary QA font, cannot reuse one name.
     name = prefix + sha256(str(path.resolve()).encode("utf-8")).hexdigest()[:12]
     if name not in pdfmetrics.getRegisteredFontNames():
+        embedding_rights_flags(path)
         try:
             pdfmetrics.registerFont(TTFont(name, str(path)))
         except Exception as exc:
