@@ -29,3 +29,20 @@ The new run contains **P6E5_REVIEW_EVIDENCE.json** with only synthetic counts, p
 BASIC: actual Windows font/PDF quality and upload/download/extraction. STANDARD: those checks plus selection validity, CV/holdout interpretation and warnings. PREMIUM: actual repeated prediction with same schema, safe rejection of tampering and output collision, and private model delivery. Check appropriate third-party notice/font usage rules.
 
 Commercial approval is separate for all three products. This guide alone does not approve sale. No user-machine action was executed while authoring it.
+
+
+## P6E11 confirmed runner evidence and single physical-owner acceptance round (2026-10-27 KST)
+
+Before running, download or check out a trusted `feature/kmong-v1` revision that **includes** P6E11 changes (tested source/CI SHA `5a7e56679a14a658586f18010449bee242f77fa2`, with possible later documentation-only commits). No instruction here grants permission to merge into `main`, publish product files, or sell.
+
+**One physical session only when the owner is ready:**
+1. Launch the existing PowerShell command above from the repository root after checking Python 3.11, licensed NanumGothic and downloaded dependencies. Script refuses occupied port 8000 before starting; optional `-Port 8001` is available if the owner has explicitly selected a free non-default port. Never kill existing services automatically.
+2. Startup now checks **both** `/health` and the known AutoML root API identity before browser tabs open. This does not prove that a local service is cryptographically authentic; the purpose is to prevent an unrelated ordinary server from being mistaken for the application. The PID is displayed for later cleanup.
+3. On the three pages, use the **generated synthetic** `basic_input.csv` (BASIC) and `ml_input.csv` (STANDARD/PREMIUM). Confirm actual file picker, upload, ZIP download, archive extraction and each full PDF. Check Korean glyphs, charts, overflow, clipping, page breaks and usefulness/visual design. Verify the downloaded ZIP belongs to its tier, not a previous file.
+4. In the **extracted, trusted and disposable PREMIUM folder**, run `predict.cmd` with a correctly ordered synthetic CSV and new output filename, verify header and row count; rerun against an existing output and a wrongly ordered schema to confirm failure without overwrite. Model tampering must be checked only on a separate throwaway copy, never the original.
+5. Record only Windows version, Python version, browser/version, repo SHA, hashes, gate statuses (**PASS / FAIL / NOT RUN**) and **redacted** error messages in a private log. Do not send CSV rows, category metadata, model artifacts, ZIP, passwords or personal information.
+6. Decide separately per tier: business suitability of the deliverable, font/NOTICE distribution terms, and explicit sale consent. Neither an all-green script nor runner CI authorizes a sale.
+
+**P6E11 evidence:** [GitHub Windows 40461091189](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40461091189) on source+CI SHA `5a7e56679a14a658586f18010449bee242f77fa2`: real local AutoML identity PASS, unrelated HTTP server identity REFUSED, PowerShell parse PASS, port collision check PASS, native regression **67 PASS /9 warnings**. Prior Linux and Chromium success remains on earlier unchanged application/backend code. This is **NOT** evidence of this PC's physical GUI, browser, PDF or aesthetic approval.
+
+**At this writing: OWNER PHYSICAL ACCEPTANCE NOT RUN; BASIC / STANDARD / PREMIUM NO-GO.** P0–P6 strict accepted milestones remain **5/7 (71%)**; P1 partially accepted, P6 release pending.
