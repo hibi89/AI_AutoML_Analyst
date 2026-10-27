@@ -45,7 +45,10 @@ def test_validation_unique_categories_cannot_make_training_feature_disappear():
     # Numeric feature plus categories A and B; unknown categories have all-zero
     # OHE encodings, never folded into a fit.
     assert new_category_only_in_validation.shape[1] == 3
-    assert np.allclose(new_category_only_in_validation[:, 1:].toarray(), 0)
+    dense = (new_category_only_in_validation.toarray()
+             if hasattr(new_category_only_in_validation, "toarray")
+             else np.asarray(new_category_only_in_validation))
+    assert np.allclose(dense[:, 1:], 0)
 
 
 def test_datetime_rule_only_uses_training_fold_parsing_success():
