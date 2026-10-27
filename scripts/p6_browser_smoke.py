@@ -28,7 +28,11 @@ def app_server():
     proc = subprocess.Popen(
         [sys.executable, "-m", "uvicorn", "backend.app.main:app",
          "--host", "127.0.0.1", "--port", "8765", "--log-level", "warning"],
-        env=env, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE,
+        # A subprocess.PIPE that is never drained can deadlock the server on
+        # Windows when Matplotlib emits many missing-CJK-glyph warnings.
+        # Keep ephemeral synthetic browser test logs out of the public CI
+        # output; never block HTTP behind an unconsumed stderr pipe.
+        env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
     )
     try:
         for attempt in range(90):
