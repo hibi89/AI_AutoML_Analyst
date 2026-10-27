@@ -7,6 +7,7 @@ on:
     paths:
       - "backend/**"
       - "scripts/windows_release_qa.ps1"
+      - "verify_local.ps1"
       - "scripts/p6e5_windows_demo.py"
       - "tests/test_p6e5_local_demo.py"
       - "scripts/p6e6_delivery_policy.py"
@@ -40,13 +41,210 @@ jobs:
           cache-dependency-path: requirements-verified-py311.txt
       - name: Install dependencies
         run: python -m pip install -r requirements-verified-py311.txt
-      - name: Parse physical Windows release QA helper
+      - name: Parse release QA helper and one-command local verifier
         shell: pwsh
         run: |
-          $tokens = $null
-          $errors = $null
-          [System.Management.Automation.Language.Parser]::ParseFile("scripts/windows_release_qa.ps1", [ref]$tokens, [ref]$errors) | Out-Null
-          if ($errors.Count -gt 0) { throw ($errors | Out-String) }
+          foreach ($scriptPath in @("scripts/windows_release_qa.ps1", "verify_local.ps1")) {
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($scriptPath, [ref]$tokens, [ref]$errors) | Out-Null
+            if ($errors.Count -gt 0) { throw "$scriptPath parsing failed: $($errors | Out-String)" }
+          }
+          # Windows PowerShell 5.1 owner command: verify dispatch and source SHA
+          # without installing packages, running tests or writing user data.
+          $ready = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File verify_local.ps1 -CheckOnly
+          if ($LASTEXITCODE -ne 0 -or -not (($ready -match '^AUTOML_LOCAL_VERIFIER=READY SHA=[0-9a-f]{40}
+      - name: Verify Windows Python 3.11 launcher fallback without modifying global Python
+        shell: pwsh
+        run: |
+          $selected = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/windows_release_qa.ps1 -ProbeOnly
+          if ($LASTEXITCODE -ne 0 -or -not ($selected -match '^PYTHON311_LAUNCHER=').Count -or -not ($selected -match '^PYTHON311_EXECUTABLE=').Count) {
+            throw "Python 3.11 executable preflight failed"
+          }
+          # Simulate a registered but unusable 'py' while keeping valid Python on PATH.
+          $shimDir = Join-Path $env:RUNNER_TEMP "automl-python-probe"
+          New-Item -ItemType Directory -Path $shimDir -Force | Out-Null
+          Set-Content -Path (Join-Path $shimDir "py.cmd") -Value "@echo off`r`nexit /b 1" -Encoding Ascii
+          $previousPath = $env:PATH
+          try {
+            $env:PATH = "$shimDir;$previousPath"
+            $fallback = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/windows_release_qa.ps1 -ProbeOnly
+            if ($LASTEXITCODE -ne 0 -or -not ($fallback -contains "PYTHON311_LAUNCHER=python") -or
+                -not ($fallback -match '^PYTHON311_EXECUTABLE=').Count) {
+              throw "Valid direct Python 3.11 executable was not selected"
+            }
+          } finally {
+            $env:PATH = $previousPath
+          }
+      - name: Verify actual PowerShell 5.1 first-venv creation in path with spaces
+        shell: pwsh
+        run: |
+          # Reproduce the owner's real E:\AI AutoML Analyst-style directory,
+          # not merely -ProbeOnly; no font, pip, tests, browser or global writes.
+          $root = Join-Path $env:RUNNER_TEMP "AI AutoML Analyst"
+          $scriptDir = Join-Path $root "scripts"
+          New-Item -ItemType Directory -Path $scriptDir -Force | Out-Null
+          $copy = Join-Path $scriptDir "windows_release_qa.ps1"
+          Copy-Item scripts/windows_release_qa.ps1 $copy
+          try {
+            $result = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $copy -VenvOnly
+            if ($LASTEXITCODE -ne 0 -or -not ($result -match '^VENV_PYTHON311_OK=').Count) {
+              throw "Isolated first-venv creation failed: $($result -join ', ')"
+            }
+            $venvPython = Join-Path $root ".venv-automl-qa\Scripts\python.exe"
+            if (-not (Test-Path -LiteralPath $venvPython)) {
+              throw "venv script falsely reported success without python.exe"
+            }
+            & $venvPython -c "import sys; sys.exit(0 if sys.version_info[:2] == (3, 11) else 3)"
+            if ($LASTEXITCODE -ne 0) { throw "Created Windows venv is not Python 3.11" }
+            # Idempotency: second run should reuse the same isolated venv.
+            $again = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $copy -VenvOnly
+            if ($LASTEXITCODE -ne 0 -or -not ($again -match '^VENV_PYTHON311_OK=').Count) {
+              throw "Rerun of existing Windows venv failed"
+            }
+            # Real downloader runs only in this temporary runner directory;
+            # no system-font installation and no committed font binary.
+            $fontOutput = @(& powershell.exe -NoProfile -ExecutionPolicy Bypass -File $copy -FontProbeOnly)
+            $ready = @($fontOutput | Where-Object { $_ -match '^KOREAN_QA_FONT_READY=' })
+            if ($LASTEXITCODE -ne 0 -or $ready.Count -ne 1) {
+              throw "Official OFL NanumGothic font QA bootstrap failed"
+            }
+            $fontPath = ([string]$ready[0]) -replace '^KOREAN_QA_FONT_READY=', ''
+            if (-not (Test-Path -LiteralPath $fontPath -PathType Leaf)) {
+              throw "QA font was not saved to local-only file"
+            }
+            $fontHash = (Get-FileHash -LiteralPath $fontPath -Algorithm SHA256).Hash
+            Write-Output "QA_FONT_SHA256=$fontHash"
+            $againFont = @(& powershell.exe -NoProfile -ExecutionPolicy Bypass -File $copy -FontProbeOnly)
+            if ($LASTEXITCODE -ne 0 -or -not ($againFont -contains ("KOREAN_QA_FONT_READY=" + $fontPath))) {
+              throw "QA font cache was not reused on second run"
+            }
+            if ((Get-FileHash -LiteralPath $fontPath -Algorithm SHA256).Hash -ne $fontHash) {
+              throw "Cached QA font unexpectedly changed"
+            }
+          } finally {
+            Remove-Item -LiteralPath $root -Recurse -Force -ErrorAction SilentlyContinue
+          }
+      - name: Verify local port collision refuses an unrelated service
+        shell: pwsh
+        run: |
+          # Bind a random local test port; no access to customer machines or network.
+          $listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, 0)
+          $listener.Start()
+          $port = [int]$listener.LocalEndpoint.Port
+          $stdout = Join-Path $env:RUNNER_TEMP "automl-port-check.stdout"
+          $stderr = Join-Path $env:RUNNER_TEMP "automl-port-check.stderr"
+          try {
+            $proc = Start-Process -FilePath "powershell.exe" -ArgumentList @(
+              "-NoProfile", "-ExecutionPolicy", "Bypass", "-File",
+              "scripts/windows_release_qa.ps1", "-PortProbeOnly", "-Port", "$port"
+            ) -PassThru -Wait -NoNewWindow -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+            if ($proc.ExitCode -eq 0) { throw "Occupied port was incorrectly accepted" }
+            if ((Get-Content $stderr -Raw) -notmatch "already occupied") {
+              throw "Busy-port rejection did not explain the conflict"
+            }
+          } finally {
+            $listener.Stop()
+          }
+          $available = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/windows_release_qa.ps1 -PortProbeOnly -Port $port
+          if ($LASTEXITCODE -ne 0 -or ($available -join "").Trim() -ne "LOCAL_PORT_AVAILABLE=$port") {
+            throw "Released local port was incorrectly rejected"
+          }
+      - name: Verify health identity against real AutoML and unrelated loopback server
+        shell: pwsh
+        run: |
+          # Use a disposable localhost port on this GitHub runner, not user machine.
+          $listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, 0)
+          $listener.Start()
+          $port = [int]$listener.LocalEndpoint.Port
+          $listener.Stop()
+          $actual = Start-Process -FilePath python -ArgumentList @(
+            "-m", "uvicorn", "backend.app.main:app", "--host", "127.0.0.1", "--port", "$port"
+          ) -PassThru -WindowStyle Hidden
+          try {
+            $ready = $false
+            for ($i = 0; $i -lt 50; $i++) {
+              if ($actual.HasExited) { throw "Actual AutoML process exited early" }
+              try {
+                $response = Invoke-WebRequest "http://127.0.0.1:$port/" -UseBasicParsing -TimeoutSec 1
+                if ($response.StatusCode -eq 200) { $ready = $true; break }
+              } catch { Start-Sleep -Milliseconds 150 }
+            }
+            if (-not $ready) { throw "AutoML server failed to start on test port" }
+            $ok = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/windows_release_qa.ps1 -IdentityProbeOnly -Port $port
+            if ($LASTEXITCODE -ne 0 -or ($ok -join "").Trim() -ne "AUTOML_SERVER_IDENTITY=PASS") {
+              throw "Actual AutoML identity was incorrectly rejected"
+            }
+          } finally {
+            Stop-Process -Id $actual.Id -Force -ErrorAction SilentlyContinue
+          }
+          $foreign = Start-Process -FilePath python -ArgumentList @(
+            "-m", "http.server", "$port", "--bind", "127.0.0.1"
+          ) -PassThru -WindowStyle Hidden
+          $stdout = Join-Path $env:RUNNER_TEMP "automl-foreign-health.stdout"
+          $stderr = Join-Path $env:RUNNER_TEMP "automl-foreign-health.stderr"
+          try {
+            $ready = $false
+            for ($i = 0; $i -lt 35; $i++) {
+              if ($foreign.HasExited) { throw "Foreign test service exited early" }
+              try {
+                $response = Invoke-WebRequest "http://127.0.0.1:$port/" -UseBasicParsing -TimeoutSec 1
+                if ($response.StatusCode -eq 200) { $ready = $true; break }
+              } catch { Start-Sleep -Milliseconds 150 }
+            }
+            if (-not $ready) { throw "Foreign test server failed to start" }
+            $result = Start-Process -FilePath powershell.exe -ArgumentList @(
+              "-NoProfile", "-ExecutionPolicy", "Bypass", "-File",
+              "scripts/windows_release_qa.ps1", "-IdentityProbeOnly", "-Port", "$port"
+            ) -Wait -PassThru -NoNewWindow -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+            if ($result.ExitCode -eq 0) { throw "Unrelated server identity was accepted" }
+            if ((Get-Content $stderr -Raw) -notmatch "not serving the expected") {
+              throw "Unrelated server rejected without expected error"
+            }
+          } finally {
+            Stop-Process -Id $foreign.Id -Force -ErrorAction SilentlyContinue
+          }
+      - name: Provide pinned OFL Korean font for native PDF integration tests
+        shell: pwsh
+        run: |
+          # Needed for real BASIC PDF/ZIP CP932 tests on the GitHub runner.
+          # No system installation, font binary in repo or customer ZIP.
+          $font = Join-Path $env:RUNNER_TEMP "NanumGothic-Regular.ttf"
+          Invoke-WebRequest -Uri "https://raw.githubusercontent.com/google/fonts/main/ofl/nanumgothic/NanumGothic-Regular.ttf" -OutFile $font -UseBasicParsing -TimeoutSec 45
+          if ((Get-FileHash -LiteralPath $font -Algorithm SHA256).Hash -ne "76F45EF4A6BCFF344C837C95A7DCC26E017E38B5846D5AE0CDCB5B86BE2E2D31") {
+            throw "Official OFL Korean QA font mismatch"
+          }
+          "AUTOML_KOREAN_FONT_PATH=$font" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      - name: Verify native Python and skops without GUI
+        run: python -m pytest -q tests/test_p6_windows_compat.py tests/test_original_smoke.py tests/test_p2_ml_validity.py tests/test_p6_security.py tests/test_p6d_ml_limits.py tests/test_p6e5_local_demo.py tests/test_p6e6_delivery_policy.py tests/test_p6e13_csv_header.py tests/test_p6e19_csv_encoding.py
+      - name: Reproduce owner Windows three-tier review and exact delivered CMD in spaced path
+        shell: pwsh
+        run: |
+          # Covers what the previous Windows pytest fixture missed: the exact
+          # three-tier QA script, generated PREMIUM delivery, and real batch
+          # replay in a project path containing spaces. Synthetic data only.
+          $folder = Join-Path $env:RUNNER_TEMP "automl-qa-font"
+          New-Item -ItemType Directory -Force -Path $folder | Out-Null
+          $font = Join-Path $folder "NanumGothic-Regular.ttf"
+          Invoke-WebRequest -Uri "https://raw.githubusercontent.com/google/fonts/main/ofl/nanumgothic/NanumGothic-Regular.ttf" -OutFile $font -UseBasicParsing -TimeoutSec 45
+          if ((Get-FileHash -LiteralPath $font -Algorithm SHA256).Hash -ne "76F45EF4A6BCFF344C837C95A7DCC26E017E38B5846D5AE0CDCB5B86BE2E2D31") {
+            throw "QA font integrity error"
+          }
+          $env:AUTOML_KOREAN_FONT_PATH = $font
+          $review = Join-Path $env:RUNNER_TEMP "AI AutoML Analyst owner qa"
+          python -m scripts.p6e5_windows_demo --output-root $review
+          if ($LASTEXITCODE -ne 0) { throw "Native Windows owner 3-tier demo failed" }
+          $evidence = @(Get-ChildItem -LiteralPath $review -Recurse -Filter "P6E5_REVIEW_EVIDENCE.json" -File)
+          if ($evidence.Count -ne 1) { throw "Missing owner synthetic QA evidence" }
+          $data = Get-Content -LiteralPath $evidence[0].FullName -Encoding UTF8 -Raw | ConvertFrom-Json
+          if ($data.sale_gate -ne "NO_GO" -or $data.results[-1].windows_cmd_replay -ne "PASS") {
+            throw "PREMIUM Windows exact batch replay not proven or sale gate changed"
+          }
+          Remove-Item -LiteralPath $review -Recurse -Force
+          Remove-Item -LiteralPath $folder -Recurse -Force
+).Count)) {
+            throw "Root one-command verifier preflight failed"
+          }
       - name: Verify Windows Python 3.11 launcher fallback without modifying global Python
         shell: pwsh
         run: |
