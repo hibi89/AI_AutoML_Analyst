@@ -62,3 +62,12 @@
 4. **MVP 및 최종 잔여:** 세 SKU의 합성 MVP는 구현·자동 검증되어 있음. 공식 단계 승인은 **P0–P6 중 5/7(71%)**, P1 PARTIAL, P6 NOT ACCEPTED. 이는 전체 기능 구현률이 아닌 **형식적 승인 진행률**. 최종 완료에는 실환경 Windows 통합 QA·사용자 시각/라이선스 심사·SKU별 판매 승인과 발견된 실제 오류 수정이 남음. 남은 시간을 실측하지 않았으므로 확정 시간/절감률 제시하지 않음. 전 SKU **SALE NO-GO**.
 
 **검수 제안:** 코드 운영변경은 KEEP, 미실행 전체 로컬 검증 및 고객용 신기능 0건은 FIX, 중복 문서/동일 SHA 폴링은 STOP, 검증 결과 기반 제품 기능 작업은 ACCELERATE. 이 보고서 작성만으로 개발이 완료되었다고 판정하지 말 것.
+
+## 중요 후속 실적 — 보고서 제출 직후 제품 기능 추가 (2026-10-28 KST)
+
+이 절은 최초 보고 시점의 **'신규 고객용 분석 기능 0건(미개선)'** 기록을 삭제하거나 소급 변경하지 않고, **보고서 제출 후 실제 발생한 변경**을 별도로 명시한다.
+
+- **추가로 완성된 고객용 기능:** 빈 논리 CSV 데이터 행을 pandas 기본값이 조용히 건너뛰던 문제를 수정. 원본 입력 행과 분석·예측 출력 행의 정합성을 보호하기 위해 BASIC·STANDARD·PREMIUM 업로드 및 PREMIUM 동일 스키마 로컬 재예측에서 빈 논리 행을 명시적으로 거부한다. 빈 *셀*(후행 결측 포함)과 인용된 멀티라인 데이터는 계속 허용한다. 오류는 행의 실제 고객 값을 노출하지 않는다.
+- **재현 및 수정 근거:** Python csv.reader는 입력 `amount,area\n1,A\n\n2,B\n`에 대해 빈 기록 `[]`을 감지하지만 `pd.read_csv`의 기본 `skip_blank_lines=True`는 이를 묵시적으로 제거해 2개 데이터 행만 반환한다. 코드/테스트 첫 원자적 커밋 [`07ff8073`](https://github.com/hibi89/AI_AutoML_Analyst/commit/07ff80735081a7e49708c0c46b4e313024c55724), 테스트 문자열 이스케이프 보정 [`0a9e188d`](https://github.com/hibi89/AI_AutoML_Analyst/commit/0a9e188d1f6f4716174fc45117cf9a174c31ef2c). 변경: `backend/app/main.py`, `backend/app/services/premium_predict.py`, `tests/test_p6e48_blank_csv_records.py`.
+- **실제 CI:** 최종 테스트 SHA `0a9e188d1f6f4716174fc45117cf9a174c31ef2c`에서 Linux full [40554354659](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40554354659) **COMPLETED SUCCESS, 279 PASS / 3 SKIP / 69 warnings** (pytest 71.09초), PDF 페이지 BASIC 6 / STANDARD 9 / PREMIUM 11, 기존 ML 벤치마크·의존성/아티팩트 단계 성공. 동일 변경된 애플리케이션 코드 SHA `07ff8073`에서 Windows native [40554138211](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40554138211), Windows Chromium [40554138203](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40554138203), Linux Chromium [40554138219](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40554138219), Docker [40554138170](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40554138170) 모두 **SUCCESS**. 신규 전체 Windows 원클릭 `verify_local.ps1` **실제 종단 실행은 여전히 NOT RUN**.
+- **해총 판정 변경 근거:** 이제 운영 개편 이후 **제품 실기능 1건이 CI 검증 완료**되어, '운영 스크립트만 추가되고 신규 제품 기능은 없음'이라는 *이전 시점 평가*에서 진척이 발생했다. 시간 절감률과 향후 완료 시간은 미측정. 판매/라이선스/사용자 Windows 실물 검수는 여전히 차단 상태. 이 추가 기록 외에 기존 문서는 중복 갱신하지 않았다.
