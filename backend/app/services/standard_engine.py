@@ -47,6 +47,32 @@ def _holdout_scores(task: str, y_true: pd.Series, y_pred: Any) -> dict[str, floa
     }
 
 
+def _chronological_timestamp_cv(
+    train_times: pd.Series, requested_folds: int,
+) -> list[tuple[np.ndarray, np.ndarray]]:
+    """Expand forward-chaining CV from distinct timestamps to actual rows.
+
+    TimeSeriesSplit on individual rows can put identical timestamps in both
+    training and validation. Split sorted *unique timestamps*, then map each
+    fold back to its complete observation groups. No shuffling or look-ahead.
+    """
+    if train_times.isna().any() or not train_times.is_monotonic_increasing:
+        raise ValueError("Chronological CV requires sorted non-null timestamps.")
+    unique_times = pd.Index(train_times.unique()).sort_values()
+    if len(unique_times) < 3:
+        raise ValueError("Chronological CV requires at least 3 training timestamps.")
+    folds = min(requested_folds, len(unique_times) - 1)
+    result = []
+    for train_groups, val_groups in TimeSeriesSplit(n_splits=folds).split(unique_times):
+        left = np.flatnonzero(train_times.isin(unique_times.take(train_groups)).to_numpy())
+        right = np.flatnonzero(train_times.isin(unique_times.take(val_groups)).to_numpy())
+        if (not len(left) or not len(right)
+                or train_times.iloc[left].max() >= train_times.iloc[right].min()):
+            raise ValueError("Chronological CV timestamp overlap detected.")
+        result.append((left, right))
+    return result
+
+
 def run_standard(
     df: pd.DataFrame,
     target_column: str,
@@ -193,9 +219,13 @@ def run_standard(
         folds = min(cv, n_groups)
         cv_splits = list(GroupKFold(n_splits=folds).split(X_train, y_train, groups=groups_train))
     elif split_policy == "time":
-        # Do not shuffle CV folds or leak later rows into earlier fits.
-        folds = min(cv, max(2, (len(y_train) - 4) // 4))
-        cv_splits = list(TimeSeriesSplit(n_splits=folds).split(X_train))
+        # Split complete timestamp groups rather than rows. Ordinary
+        # TimeSeriesSplit may put repeated observations at the same instant
+        # in both training and validation, inflating the CV score.
+        timestamps_train = parsed.iloc[i_train].reset_index(drop=True)
+        cv_splits = _chronological_timestamp_cv(timestamps_train, cv)
+        folds = len(cv_splits)
+        warnings.append("시간순 CV는 동일 시각 관측값을 학습과 검증으로 나누지 않습니다.")
     else:
         cv_strategy, folds = _make_cv(y_train, task, cv, random_state)
         cv_splits = list(cv_strategy.split(X_train, y_train))
