@@ -189,8 +189,8 @@ def _premium_page(analysis: dict, model_name: str, raw_schema: dict) -> bytes:
             ("sample_predictions.csv", "예시 예측값을 조작하지 않은 빈 결과 헤더"),
         ]),
         p("반복 예측 전 체크", "head"),
-        p("① 원본 발신자 확인  ② Python/라이브러리 버전 일치  "
-          "③ 열 이름·순서 확인  ④ 출력 경로 중복 확인"),
+        p("1) 원본 발신자 확인  2) Python/라이브러리 버전 일치  "
+          "3) 열 이름·순서 확인  4) 출력 경로 중복 확인"),
         p("시간·고객별 반복 관측, 목표 누수, 데이터 분포 변화가 있다면 "
           "CV/holdout 점수를 실제 미래 성능처럼 사용하지 마세요.", "small"),
         p("중요한 의사결정에는 별도의 업무 검수 및 모델 위험 평가가 필요합니다.", "small"),

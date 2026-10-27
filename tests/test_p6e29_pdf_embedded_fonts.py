@@ -92,10 +92,27 @@ def test_real_tier_pdf_embedded_streams_match_customer_readme(tier, japanese):
         pdf = archive.read("report.pdf")
         names = embedded_pdf_font_names(pdf)
         assert names
+        if tier == "PREMIUM":
+            report_text = "\n".join(
+                page.extract_text() or "" for page in PdfReader(BytesIO(pdf)).pages
+            )
+            assert "1) 원본 발신자 확인" in report_text
+            assert "[U+246" not in report_text
         assert text.count("PDF 내장 서브셋 확인") >= 1
         if japanese:
             assert text.count("PDF 내장 서브셋 확인") == 2, (tier, names, text)
-            assert "Arphic Public License" in text
+            primary, fallback = resolve_report_fonts("売上")
+            assert fallback is not None
+            assert _font_embedded(pdfmetrics.getFont(primary).face.name, names)
+            assert _font_embedded(pdfmetrics.getFont(fallback).face.name, names)
+            # The environment may use AR PL UMing, MS Gothic, Meiryo, or
+            # another supported local font. Check that the customer ZIP
+            # reports the actual selected family and its matching caveat.
+            for expected_line in font_usage_notice("売上").splitlines():
+                if expected_line.startswith(("기본 글꼴:", "보조 글꼴:")):
+                    family, license_notice = expected_line.split(" — ", 1)
+                    assert family in text
+                    assert license_notice in text
         else:
             assert text.count("PDF 내장 서브셋 확인") == 1
             assert "Arphic Public License" not in text
