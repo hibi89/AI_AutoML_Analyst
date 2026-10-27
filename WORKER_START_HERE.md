@@ -1,5 +1,5 @@
 # AI AutoML Analyst — 새 채팅 / 새 작업자 진입점
-Updated: 2026-10-25 KST
+Updated: 2026-10-27 KST
 Repository: https://github.com/hibi89/AI_AutoML_Analyst
 Development branch: `feature/kmong-v1`
 Preserved original: `main`
@@ -147,4 +147,4 @@ Actual final PDF font stream vs customer README verified using pypdf descriptors
 ## Latest P6E31 VERIFIED — Docker localhost boundary and pinned image (2026-10-27 KST)
 Read the final P6E31 entries in `STATUS.md`, `HANDOFF.md`, `docs/dispatch/ACTIVE_TASK.md`, and `docs/qa/P6E31_DOCKER_LOCAL_BOUNDARY.md`. Tested source SHA `0afef7c15022486f33ad665716e08651eae420c8`: Docker build/loopback `/health` and BASIC/STANDARD/PREMIUM routes SUCCESS [40501689796](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40501689796); Linux full **203 PASS/3 SKIP** [40501689831](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40501689831); Windows native **96 PASS** [40501689848](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40501689848); Windows and Linux Chromium both **6/6** [40501689755](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40501689755) / [40501689853](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40501689853). Local Compose and focused gateway tests passed; local daemon is unavailable, so local container runtime was NOT RUN.
 
-No independent code/security/reliability/compatibility finding remains. The only pending release decisions are owner review for each BASIC/STANDARD/PREMIUM PDF/ZIP visual quality, actual font/source/dependency license notices (including 11 dependency notice/license triage items and `skops` metadata), and explicit commercial GO. Keep every tier NO-GO until explicitly approved; do not merge main or deploy/list publicly. Existing successful tests and synthetic artifacts stay preserved.
+No independent code/security/reliability/compatibility finding remains. The only pending release decisions are owner review for each BASIC/STANDARD/PREMIUM PDF/ZIP visual quality, actual font/source/dependency license notices (including the 11 triage items, `skops` metadata, and any shipped project-owned code; the repository has no root `LICENSE`/`COPYING` statement), and explicit commercial GO. Keep every tier NO-GO until explicitly approved; do not merge main or deploy/list publicly. Existing successful tests and synthetic artifacts stay preserved.
