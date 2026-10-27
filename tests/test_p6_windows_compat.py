@@ -73,6 +73,51 @@ def test_output_collision_and_input_header_rejected(trusted_bundle):
         predict_csv(folder, bad, folder / "reordered_predictions.csv")
 
 
+def test_premium_rejects_duplicate_source_header_before_pandas_renames(trusted_bundle):
+    """Duplicated a,a would otherwise become a,a.1 and match a dotted schema."""
+    from backend.app.services.premium_predict import _load_input
+
+    folder, _ = trusted_bundle
+    schema_file = folder / "model_schema.json"
+    schema = json.loads(schema_file.read_text(encoding="utf-8"))
+    schema["raw_feature_columns"] = ["a", "a.1"]
+    schema["numeric_raw_columns"] = ["a", "a.1"]
+    schema_file.write_text(json.dumps(schema), encoding="utf-8")
+
+    deceptive = folder / "duplicate.csv"
+    deceptive.write_bytes(b"a,a\n1,2\n3,4\n")
+    destination = folder / "not_created.csv"
+    with pytest.raises(ValueError, match="Duplicate input column names"):
+        predict_csv(folder, deceptive, destination)
+    assert not destination.exists()
+
+    legitimate = folder / "explicit_dotted.csv"
+    legitimate.write_bytes(b"a,a.1\n1,2\n3,4\n")
+    assert list(_load_input(legitimate, schema).columns) == ["a", "a.1"]
+
+
+def test_premium_rejects_blank_original_column_headers(trusted_bundle):
+    from backend.app.services.premium_predict import _load_input
+
+    folder, _ = trusted_bundle
+    schema = json.loads((folder / "model_schema.json").read_text(encoding="utf-8"))
+    empty = folder / "empty_header.csv"
+    empty.write_bytes(b"a,  \n1,2\n3,4\n")
+    with pytest.raises(ValueError, match="nonempty"):
+        _load_input(empty, schema)
+
+
+def test_premium_preserves_valid_utf8_bom_and_cp949_paths(trusted_bundle):
+    from backend.app.services.premium_predict import _load_input
+
+    folder, source = trusted_bundle
+    schema = json.loads((folder / "model_schema.json").read_text(encoding="utf-8"))
+    encoded = folder / "한국어 자료.csv"
+    pd.read_csv(source).to_csv(encoded, index=False, encoding="utf-8-sig")
+    parsed = _load_input(encoded, schema)
+    assert list(parsed.columns) == ["a", "b"] and len(parsed) == 3
+
+
 def test_modified_model_rejected(trusted_bundle):
     folder, source = trusted_bundle
     model_path = folder / "model_pipeline.skops"
