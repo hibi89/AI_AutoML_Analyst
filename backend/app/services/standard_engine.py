@@ -26,7 +26,7 @@ from backend.app.services.evaluator import get_scoring_config, summarize_cv_scor
 from backend.app.services.model_selector import select_model_candidates
 from backend.app.services.ml_workload_policy import check_rows, estimate_training_matrix
 from backend.app.services.preprocessor import (
-    build_preprocessing_pipeline, _expand_datetime_features,
+    build_preprocessing_pipeline, _expand_datetime_features, FoldLocalPreprocessor,
 )
 from backend.app.services.task_detector import detect_task
 from backend.app.services.trainer import _make_cv
@@ -194,7 +194,8 @@ def run_standard(
             + ", ".join(str(name) for name in prep.dropped_features[:12])
             + (" 외 추가 열" if len(prep.dropped_features) > 12 else "")
             + ". 결측·상수·고유값 비율 규칙에 따라 학습에서 제외되며 "
-            "단순히 누락된 행을 제거한 것은 아닙니다."
+            "단순히 누락된 행을 제거한 것은 아닙니다. "
+            "교차검증에서는 각 학습 fold에서 별도로 특징열을 판정합니다."
         )
 
     # Feature definitions and missingness-based inclusion were learned on TRAIN only.
@@ -204,6 +205,9 @@ def run_standard(
     for name in raw_test_features.select_dtypes(include=["bool"]).columns:
         raw_test_features[name] = raw_test_features[name].astype(float)
     X_train = prep.X
+    # Raw columns must enter each CV fit. Filtering by all training-partition
+    # values first lets CV validation rows influence feature inclusion.
+    cv_raw_features = train_features.reset_index(drop=True)
     workload_budget = estimate_training_matrix(
         X_train, prep.numeric_features, prep.categorical_features, max_challengers
     )
@@ -250,12 +254,12 @@ def run_standard(
     model_rows = []
     for model_name, estimator in selection.models.items():
         pipeline = Pipeline([
-            ("preprocess", clone(prep.preprocessor)),
+            ("preprocess", FoldLocalPreprocessor()),
             ("model", clone(estimator)),
         ])
         try:
             cv_scores = cross_validate(
-                pipeline, X_train, y_train, cv=cv_splits,
+                pipeline, cv_raw_features, y_train, cv=cv_splits,
                 scoring=scoring.scoring, error_score="raise", n_jobs=1,
             )
             metrics = summarize_cv_scores(cv_scores, scoring)
@@ -304,7 +308,7 @@ def run_standard(
             if not grid:
                 continue
             runner = Pipeline([
-                ("preprocess", clone(prep.preprocessor)),
+                ("preprocess", FoldLocalPreprocessor()),
                 ("model", clone(selection.models[name])),
             ])
             try:
@@ -313,7 +317,7 @@ def run_standard(
                     refit=scoring.primary_metric, cv=cv_splits,
                     n_jobs=1, error_score="raise",
                 )
-                search.fit(X_train, y_train)
+                search.fit(cv_raw_features, y_train)
                 best_idx = search.best_index_
                 if not math.isfinite(float(search.best_score_)):
                     raise ValueError("Non-finite tuning CV score.")
