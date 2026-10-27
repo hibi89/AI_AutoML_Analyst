@@ -101,6 +101,21 @@ def _expand_datetime_features(
     """
     X = X.copy()
 
+    # Never overwrite a genuine source column with a generated calendar field.
+    # Reject BEFORE modifying any column; silently losing a customer's actual
+    # feature invalidates CV, holdout metrics, and PREMIUM prediction schemas.
+    suffixes = ("year", "month", "day", "dayofweek", "hour")
+    source_names = set(X.columns)
+    generated_names = [
+        f"{col}__{suffix}" for col in datetime_features for suffix in suffixes
+    ]
+    if (len(generated_names) != len(set(generated_names))
+            or any(name in source_names for name in generated_names)):
+        raise ValueError(
+            "Datetime-derived feature name conflicts with an existing column. "
+            "Rename the conflicting source column and retry."
+        )
+
     for col in datetime_features:
         dt = pd.to_datetime(X[col], errors="coerce")
 
