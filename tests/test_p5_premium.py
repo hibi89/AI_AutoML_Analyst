@@ -61,6 +61,11 @@ def test_premium_full_zip_and_five_challengers(bundle):
         assert len([m for m in info["models"] if m["role"] == "challenger"]) == 5
         assert info["holdout_used_in_selection"] is False
         pages = PdfReader(BytesIO(z.read("report.pdf"))).pages
+        cover = pages[0].extract_text() or ""
+        assert "PREMIUM" in cover
+        assert "EXPLORATORY DATA SECTION" in cover
+        assert "BASIC  /  EXPLORATORY" not in cover
+        assert "모델 학습 및 검증 결과는 뒤의 ML 평가 섹션" in cover
         assert 10 <= len(pages) <= 15
         # P6E handover stays on two substantive pages without overflow/blank spill.
         handover = pages[-2].extract_text() or ""
