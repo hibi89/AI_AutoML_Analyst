@@ -69,37 +69,41 @@ def _load_input(path: Path, schema: dict, csv_encoding: str = "auto") -> pd.Data
         raise ValueError("Unsupported prediction CSV encoding selection.")
     encodings = (("utf-8-sig", "utf-8", "cp949")
                  if csv_encoding == "auto" else (csv_encoding,))
+    # The trusted schema is already known: reject a mismatching original
+    # header before pandas allocates columns or attempts to parse row data.
+    # This also prevents pandas' duplicate-header suffixing from matching the
+    # apparent names of a valid training schema.
+    expected = schema["raw_feature_columns"]
     raw = None
     for encoding in encodings:
         try:
-            # pandas silently renames duplicate source CSV headers: a,a -> a,a.1.
-            # That can accidentally match a genuinely dotted training schema.
-            # Enforce the ORIGINAL header, not pandas' normalized column names.
             with path.open("r", encoding=encoding, newline="") as source:
                 header = next(csv.reader(source, strict=True), None)
         except UnicodeError:
             continue
         except csv.Error as exc:
             raise ValueError("Invalid CSV header structure.") from exc
-        if header is not None:
-            if len(header) != len(set(header)):
-                raise ValueError("Duplicate input column names are not supported.")
-            if not all(name.strip() for name in header):
-                raise ValueError("Input CSV headers must be nonempty.")
+        if header is None or not all(name.strip() for name in header):
+            raise ValueError("Input CSV headers must be nonempty.")
+        if len(header) != len(set(header)):
+            raise ValueError("Duplicate input column names are not supported.")
+        if header != expected:
+            raise ValueError(
+                "Input header mismatch. Use the exact ordered columns in sample_input.csv."
+            )
         try:
-            raw = pd.read_csv(path, encoding=encoding)
+            # nrows includes one overflow row: distinguish exactly MAX_ROWS
+            # from too many rows without materializing the entire input.
+            raw = pd.read_csv(path, encoding=encoding, nrows=MAX_ROWS + 1)
             break
         except UnicodeError:
             continue
+        except pd.errors.ParserError as exc:
+            raise ValueError("Invalid prediction CSV structure.") from exc
     if raw is None:
         raise ValueError("Use UTF-8, CP949 or explicitly selected CP932 CSV encoding.")
     if not 1 <= len(raw) <= MAX_ROWS:
         raise ValueError("Input requires 1–20,000 rows.")
-    expected = schema["raw_feature_columns"]
-    if list(raw.columns) != expected:
-        raise ValueError(
-            "Input header mismatch. Use the exact ordered columns in sample_input.csv."
-        )
     if raw.columns.duplicated().any():
         raise ValueError("Duplicate input column names are not supported.")
     for name in schema["numeric_raw_columns"]:
