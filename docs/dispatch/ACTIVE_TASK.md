@@ -1,5 +1,15 @@
 # ACTIVE TASK — AUTO-KM-P6E22 owner final release decision
 
+## P6E33 — bounded PREMIUM repeat-prediction CSV parsing (2026-10-27 KST)
+- Root cause: shipped `premium_predict._load_input` formerly read all CSV rows into a DataFrame, THEN rejected counts above 20,000. An input within the 30 MiB byte cap could still consume excessive RAM/CPU before the post-read guard.
+- Fix: reject original header/schema mismatch before Pandas allocates a DataFrame; call `read_csv(nrows=MAX_ROWS + 1)`, where one overflow row proves too-many-rows without reading arbitrary remaining rows. Malformed parser structures now return a controlled `ValueError`. UTF-8/CP949 default and explicit CP932 are preserved.
+- Implementation SHA `29592147f689ee6cc047d3d1035633f008c82331`; regression-test SHA `85b41695a57ff5928ff4048fa649bbc3e0018732`. New tests: exact 20,000 accepted, 20,001+ rejected with bounded nrows assertion, invalid schema fail-before-pandas, CP932 retained, file-byte limit.
+- Current full Linux CI on test-inclusive SHA [40507768720](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40507768720): **208 PASS / 3 SKIP / 66 warnings**, 0 FAIL. For same executable source, Windows native [40507706560](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40507706560), Linux browser [40507706657](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40507706657), Windows Chromium [40507706705](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40507706705) and Docker [40507706517](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40507706517) were SUCCESS (they ran at source SHA `29592147...`, before the regression-test-only commit).
+- The halted Codex worker's local uncommitted *upload* security changes were not accessible from GitHub and were NOT integrated or certified by this separate client prediction fix.
+- P1 human acceptance and P6 owner sale/legal/design approval remain OPEN. Accepted milestones **5/7=71%**; BASIC/STANDARD/PREMIUM commercial sale **NO-GO**. Do not merge to main or publicly deploy.
+- Detailed scope: `docs/qa/P6E33_PREMIUM_PREDICTION_BOUNDS.md`.
+
+
 ## P6E32 independent PDF visual review / tier wording correction — 2026-10-27 KST
 - Reviewed actual synthetic GitHub Actions artifact 12733681023 from Linux run 40501689831: BASIC 6-page, STANDARD 9-page, PREMIUM 11-page PDFs (26 pages total), plus three manifests/ZIPs. This was a visual review of an earlier executable revision, not of the newly patched one.
 - Found user-facing report-tier contradiction: STANDARD/PREMIUM cover and first six page footers were marked BASIC, including a statement implying ML fitting was absent from the whole report. Corrected by passing a tier label through the shared BASIC generation component while preserving BASIC default text. New source/test commits f63a706.. through 2fb562144d50652014fdc50a6933b80abac572c2.
