@@ -138,6 +138,26 @@ def test_zip_json_csv_and_pdf_expose_qualified_outlier_diagnostics():
         assert "IQR 밖" in searchable
         assert "오류 판정" in searchable
 
+
+def test_long_numeric_headers_remain_exact_in_json_and_pdf_quality_lookup():
+    # Headers >48 characters were previously truncated by _numeric_profiles
+    # while PDF quality lookup relied on that truncation. Preserve one exact
+    # key for both machine-readable statistics and human-readable reports.
+    long_name = "월별매출_" + "데이터" * 15
+    source = pd.DataFrame({
+        long_name: list(range(1, 12)) + [100],
+        "구분": ["A", "B"] * 6,
+    })
+    with ZipFile(BytesIO(build_basic_zip(source))) as archive:
+        summary = json.loads(archive.read("summary.json"))
+        assert summary["numeric_profiles"][0]["column"] == long_name
+        assert summary["outlier_signals"][0]["column"] == long_name
+        assert summary["quality"][0]["column"] == long_name
+        text = "\n".join(page.extract_text() or "" for page in
+                         PdfReader(BytesIO(archive.read("report.pdf"))).pages)
+        assert "고유값" in text
+
+
 def test_sparse_dataset_avoids_filler_charts_and_nonexistent_claims():
     df = pd.DataFrame({"식별자": ["A", "B", "C"], "상태": ["완료", "완료", "완료"]})
     with ZipFile(BytesIO(build_basic_zip(df))) as z:

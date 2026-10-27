@@ -1,5 +1,11 @@
 # HANDOFF — AI AutoML Analyst / current owner release gate
 
+## P6E38 follow-up — exact 49+ character numeric header quality join (2026-10-27 KST)
+- Independent review of new IQR report source found a consequential old/name mismatch: _numeric_profiles now keeps the full raw header in JSON, but the final-page quality table keyed by 48-character display-shortened names. A long header could appear with '-' unique count and bogus default 0% missing rate. Fixed final PDF mapping to use the original exact column key; presentation-only truncation remains for line width.
+- Added a synthetic long-header real ZIP/PDF test. Earlier source 5a71ac46 passed all five CI: Linux [40529028852](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40529028852) **218 PASS, 3 SKIP, 68 warnings**; Windows native [40529029049](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40529029049), Windows Chromium [40529029204](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40529029204), Linux Chromium [40529029247](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40529029247), Docker [40529028685](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40529028685) SUCCESS. Follow-up updated executable SHA must pass NEW CI before claiming verified.
+- Continue toward final specification and UI/security polish, but distinguish technical completion from human/legal/commercial approval. Formal 5/7=71%, all SKUs sale NO-GO, original main protected.
+
+
 ## Final completion resumed — P6E38 outlier diagnostic gap (2026-10-27 KST)
 - **Owner clarified:** MVP is a checkpoint, NOT final completion. Do not suspend engineering after MVP. Continue original spec gap-fill, frontend usability and security/stability polishing without overclaiming release.
 - **Gap addressed in code:** frozen BASIC requirements demand numeric outlier indications, while former output only provided box plots and quartiles. The shared report now computes conservative 1.5*IQR suspect counts for every numeric column, adds them to JSON and summary CSV, and displays a qualified IQR count in the representative PDF quartile table. Insufficient observations or IQR=0 are explicitly undecided, NOT zero outliers. No source row values exported.

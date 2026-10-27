@@ -395,7 +395,7 @@ def _pdf(summary: dict, charts: list[tuple[str, bytes, str]], *, report_tier: st
         # Quantitative candidates are only inspection aids, never automatic ML
         # target recommendations, task-type inference, or feasibility promises.
         story.extend([Spacer(1, 9), heading("목표열 검토 전 확인할 수치형 현황")])
-        quality_by_name = {_display_name(q["column"]): q for q in summary["quality"]}
+        quality_by_name = {q["column"]: q for q in summary["quality"]}
         audit_rows = [[paragraph("수치형 열", "small"), paragraph("유효 행", "small"),
                        paragraph("고유값", "small"), paragraph("결측률", "small")]]
         for p in profiles:
