@@ -4,6 +4,7 @@ services:
     ports:
       - "127.0.0.1:8000:8000"
     environment:
+      AUTOML_LOCAL_DOCKER_COMPOSE: "1"
       AUTOML_KOREAN_FONT_PATH: /run/automl-fonts/NanumGothic.ttf
       AUTOML_JAPANESE_FONT_PATH: /run/automl-fonts/Japanese.ttf
     volumes:

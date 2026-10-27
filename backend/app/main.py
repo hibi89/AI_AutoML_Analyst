@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import ipaddress
+import os
 from io import BytesIO
 from pathlib import Path
 from typing import Any
@@ -539,12 +541,43 @@ def get_report(job_id: str) -> PlainTextResponse:
 
 # Commercial MVP preview: local-only access, no raw upload persistence.
 # Legacy filesystem routes above remain unchanged and must never be hosted publicly.
+def _docker_default_gateway_ipv4() -> str | None:
+    """Return Linux's default-route gateway without relying on an `ip` binary."""
+    try:
+        with open("/proc/net/route", encoding="ascii") as routes:
+            next(routes, None)
+            for line in routes:
+                fields = line.split()
+                if len(fields) >= 4 and fields[1] == "00000000" and int(fields[3], 16) & 0x2:
+                    packed = bytes.fromhex(fields[2])
+                    return str(ipaddress.IPv4Address(int.from_bytes(packed, "little")))
+    except (OSError, ValueError, IndexError):
+        return None
+    return None
+
+
+def _is_local_service_peer(peer: str) -> bool:
+    """Trust loopback, or only Compose's gateway when its loopback mode is explicit."""
+    if peer in {"127.0.0.1", "::1", "testclient"}:
+        return True
+    if os.environ.get("AUTOML_LOCAL_DOCKER_COMPOSE") != "1":
+        return False
+    try:
+        address = ipaddress.ip_address(peer)
+    except ValueError:
+        return False
+    if address.version == 6 and address.ipv4_mapped:
+        address = address.ipv4_mapped
+    gateway = _docker_default_gateway_ipv4()
+    return address.version == 4 and gateway is not None and address == ipaddress.IPv4Address(gateway)
+
+
 def _require_local_mvp_request(request: Request) -> None:
     from urllib.parse import urlsplit
 
     client_host = request.client.host if request.client else ""
     host = (request.url.hostname or "").lower()
-    if client_host not in {"127.0.0.1", "::1", "testclient"}:
+    if not _is_local_service_peer(client_host):
         raise HTTPException(status_code=403, detail="BASIC MVP requires localhost access.")
     if host not in {"127.0.0.1", "localhost", "::1", "testserver"}:
         raise HTTPException(status_code=403, detail="BASIC MVP requires a local Host.")
@@ -712,7 +745,7 @@ async def _local_commercial_boundary(request: Request, call_next):
 
     peer = request.client.host if request.client else ""
     host = (request.url.hostname or "").lower()
-    if peer not in {"127.0.0.1", "::1", "testclient"}:
+    if not _is_local_service_peer(peer):
         return forbidden("Local-only service. Remote clients are not supported.")
     if host not in {"127.0.0.1", "localhost", "::1", "testserver"}:
         return forbidden("Invalid Host. Use localhost.")

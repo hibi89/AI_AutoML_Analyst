@@ -42,6 +42,7 @@ jobs:
           assert all("C:/Users/" not in mount.get("source", "") for mount in service.get("volumes", []))
           fonts = [mount for mount in service.get("volumes", []) if mount.get("target") == "/run/automl-fonts"]
           assert len(fonts) == 1 and fonts[0].get("read_only") is True, fonts
+          assert service["environment"]["AUTOML_LOCAL_DOCKER_COMPOSE"] == "1"
           assert service["environment"]["AUTOML_KOREAN_FONT_PATH"] == "/run/automl-fonts/NanumGothic.ttf"
           print("Docker host exposure is loopback-only; no developer path or writable font mount is used.")
           PY
@@ -53,9 +54,16 @@ jobs:
           set -euo pipefail
           ready=0
           for attempt in $(seq 1 60); do
-            if curl --silent --show-error --fail http://127.0.0.1:8000/health; then
+            status=$(curl --silent --show-error --output "$RUNNER_TEMP/health-body.txt" --write-out '%{http_code}' http://127.0.0.1:8000/health || true)
+            if [[ "$status" == "200" ]]; then
+              cat "$RUNNER_TEMP/health-body.txt"
               ready=1
               break
+            fi
+            if [[ "$status" == "403" ]]; then
+              cat "$RUNNER_TEMP/health-body.txt"
+              docker compose logs --no-color --tail 30
+              exit 1
             fi
             sleep 1
           done

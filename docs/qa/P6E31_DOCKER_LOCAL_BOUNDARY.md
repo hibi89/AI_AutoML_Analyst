@@ -1,6 +1,6 @@
 # P6E31 — Docker localhost boundary and pinned application image
 
-**State:** implementation and local Compose configuration check complete; hosted container build/runtime CI pending. Branch `feature/kmong-v1`, 2026-10-27 KST.
+**State:** first hosted runtime exposed a Docker bridge peer-identity mismatch; a constrained Compose-gateway fix is implemented and the hosted rerun is pending. Branch `feature/kmong-v1`, 2026-10-27 KST.
 
 ## Reproduced issues
 
@@ -12,17 +12,18 @@
 
 - Compose publishes `127.0.0.1:8000:8000`, removes the fixed container name and user-specific `/data` mount, and keeps `experiments` plus an ignored, read-only `local-fonts` mount. The user supplies licensed `NanumGothic.ttf` and optional `Japanese.ttf`; no font is committed or copied into the image/ZIP.
 - Dockerfile installs `requirements-verified-py311.txt` instead of an incomplete unpinned package list.
+- First Docker CI [40501048122](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40501048122) built the image and validated loopback Compose config, then health/UI returned 403. The forwarded client peer is the Docker bridge gateway, not loopback. Added an explicit Compose-only mode that trusts only the exact Linux default-route gateway from `/proc/net/route`; the host port remains bound to `127.0.0.1`, and Host/Origin checks plus disabled filesystem routes remain in force.
 - README now documents the actual tier pages, pinned local setup, disabled legacy file browsing and localhost-only Compose use.
-- A regression checks the local-only mapping, absence of personal path mounts, and use of the verified dependency manifest. A dedicated GitHub Actions smoke builds the image, checks the resolved host IP, and requests health plus all three tier pages.
+- Regressions check the local-only mapping, no personal path mount, pinned dependency manifest, and that only the explicit Compose gateway is trusted (loopback works by default; other peers remain rejected). A dedicated GitHub Actions smoke builds the image, checks the resolved host IP, and requests health plus all three tier pages.
 
 The container's internal Uvicorn listener remains `0.0.0.0` so Docker networking can reach it; the supported Compose host port is loopback-only. Do not publish the image openly or bypass Compose with a wildcard host-port mapping.
 
 ## Verification
 
 - Local `docker compose config --format json`: **PASS**, resolved host IP `127.0.0.1`; `./experiments` is the only writable bind mount and `./local-fonts` is read-only.
-- Focused new regression: **PASS** (1 passed, 5 deselected; 1 Starlette deprecation warning).
+- Focused gateway/Compose regression: **2 passed / 5 deselected / 1 Starlette deprecation warning**.
 - Docker daemon is unavailable in the local environment, so local image build/runtime: **NOT RUN**.
-- Hosted Docker build/runtime workflow: **PENDING** until commit and observed run.
+- Hosted Docker rerun after the gateway fix: **PENDING**.
 
 ## Release state
 

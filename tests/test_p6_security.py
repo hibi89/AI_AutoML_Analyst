@@ -19,10 +19,24 @@ def test_docker_compose_is_local_only_and_uses_verified_dependencies():
     assert "C:/Users/" not in compose
     assert "C:\\Users\\" not in compose
     assert "target: /data" not in compose
+    assert 'AUTOML_LOCAL_DOCKER_COMPOSE: "1"' in compose
     assert "./local-fonts:/run/automl-fonts:ro" in compose
     assert "AUTOML_KOREAN_FONT_PATH: /run/automl-fonts/NanumGothic.ttf" in compose
     assert "COPY requirements-verified-py311.txt" in dockerfile
     assert "python -m pip install --no-cache-dir -r requirements-verified-py311.txt" in dockerfile
+
+
+def test_docker_gateway_peer_is_trusted_only_in_explicit_compose_mode(monkeypatch):
+    from backend.app import main
+
+    monkeypatch.setattr(main, "_docker_default_gateway_ipv4", lambda: "172.20.0.1")
+    monkeypatch.delenv("AUTOML_LOCAL_DOCKER_COMPOSE", raising=False)
+    assert not main._is_local_service_peer("172.20.0.1")
+
+    monkeypatch.setenv("AUTOML_LOCAL_DOCKER_COMPOSE", "1")
+    assert main._is_local_service_peer("172.20.0.1")
+    assert not main._is_local_service_peer("172.20.0.2")
+    assert not main._is_local_service_peer("203.0.113.10")
 
 
 def test_legacy_filesystem_routes_are_closed():
