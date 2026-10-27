@@ -283,7 +283,7 @@ def build_premium_zip(
         **raw_schema,
     }
 
-    with ZipFile(BytesIO(build_basic_zip(df))) as archive:
+    with ZipFile(BytesIO(build_basic_zip(df, report_tier="PREMIUM"))) as archive:
         parts = {name: archive.read(name) for name in archive.namelist()
                  if name not in ("manifest.json", "README.txt", "report.pdf")}
         basic_pdf = archive.read("report.pdf")
