@@ -24,3 +24,11 @@ PREMIUM's shipped `predict.py` also supported only automatic UTF-8/CP949 for rep
 
 ## Next
 Verify latest CI and exact new tests. Document any failing test and repair before calling complete. Keep owner's private machine untouched until they elect to inspect visual/design/legal/release gates. All changes and test data remain in GitHub branch; no customer model or files committed.
+
+## FINAL CI evidence (2026-10-27 KST)
+- Exact latest executable+tests SHA `b2dc86bd589f667b110dc4146562c40bcc9089e0`:
+  - [Windows native 40472590303](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40472590303) **SUCCESS: 93 PASS / 9 warnings**, including Japanese CP932 cross-tier synthetic encoding tests, delivered Windows `predict.cmd` optional CP932 third argument and full Windows 3-tier synthetic report/ZIP/model replay in path with spaces. No failed steps.
+  - [Linux full 40472590292](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40472590292) **SUCCESS: 150 PASS /3 Windows-only SKIP /41 warnings**. Generated synthetic BASIC PDF **6 pages**, STANDARD **9**, PREMIUM **11**; all manifests PASS.
+  - Browser regression on executable source `d50283a4883375620a3b9ed47c7b9e0afa15c164` (only additional regression tests/docs since): [Windows Chromium three-tier 40472529164](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40472529164) **SUCCESS**, [Linux Chromium three-tier 40472529272](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40472529272) **SUCCESS**.
+- CP932 is **explicit**, NOT promised as reliable automatic inference; all three MVP UI pages retain historical `auto` default. Shipped Windows PREMIUM CLI supports optional `predict.cmd new_data.csv predicted.csv cp932`; previous two-parameter invocation continues to pass native tests. End-to-end source accuracy under selected codec verified in synthetic tests, not a real customer's dataset.
+- Actual owner Windows test from P6E18 happened on earlier code, NOT on this new branch head. No owner's new actual browser clicking/PDF aesthetic/legal/per-tier sale signoff. Strict P0–P6 **5/7=71%** accepted, all SKU commercial **NO-GO**; no main merge, global font updates or production hosting. 
