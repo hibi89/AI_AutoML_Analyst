@@ -55,6 +55,11 @@ def test_standard_real_http_pdf_zip():
         assert "train_original_indices" not in x
         reader = PdfReader(BytesIO(z.read("report.pdf")))
         assert 8 <= len(reader.pages) <= 12
+        first = reader.pages[0].extract_text() or ""
+        assert "STANDARD" in first
+        assert "EXPLORATORY DATA SECTION" in first
+        assert "BASIC  /  EXPLORATORY" not in first
+        assert "모델 학습 및 검증 결과는 뒤의 ML 평가 섹션" in first
         text = " ".join(page.extract_text() or "" for page in reader.pages)
         assert "독립 검증 및 해석" in text
         assert "모델 비교 결과" in text
