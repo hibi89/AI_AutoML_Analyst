@@ -143,27 +143,8 @@ def _make_charts(df: pd.DataFrame, quality: list[dict]) -> list[tuple[str, bytes
 
 
 def _korean_font() -> str:
-    from reportlab.pdfbase import pdfmetrics
-    from reportlab.pdfbase.ttfonts import TTFont
-
-    env = os.environ.get("AUTOML_KOREAN_FONT_PATH", "")
-    paths = [
-        Path(env) if env else None,
-        Path("/usr/share/fonts/truetype/nanum/NanumGothic.ttf"),
-        Path("/usr/local/share/fonts/NanumGothic.ttf"),
-        Path("C:/Windows/Fonts/NanumGothic.ttf"),
-        Path.home() / "AppData/Local/Microsoft/Windows/Fonts/NanumGothic.ttf",
-    ]
-    font_file = next((p for p in paths if p is not None and p.is_file()), None)
-    if font_file is None:
-        raise RuntimeError(
-            "Korean PDF font missing: install NanumGothic (fonts-nanum) or set "
-            "AUTOML_KOREAN_FONT_PATH to a licensed NanumGothic TTF."
-        )
-    font_key = "AutoMLNanumGothic"
-    if font_key not in pdfmetrics.getRegisteredFontNames():
-        pdfmetrics.registerFont(TTFont(font_key, str(font_file)))
-    return font_key
+    from backend.app.services.font_coverage import resolve_report_fonts
+    return resolve_report_fonts()[0]
 
 
 def _pdf(summary: dict, charts: list[tuple[str, bytes, str]]) -> bytes:
@@ -177,7 +158,9 @@ def _pdf(summary: dict, charts: list[tuple[str, bytes, str]]) -> bytes:
         Image, PageBreak, KeepTogether,
     )
 
-    font = _korean_font()
+    from backend.app.services.font_coverage import resolve_report_fonts, safe_pdf_markup
+    required = "".join(str(item["column"]) for item in summary["quality"])
+    font, fallback_font = resolve_report_fonts(required)
     out = BytesIO()
     styles = {
         "title": ParagraphStyle("title", fontName=font, fontSize=26, leading=34,
@@ -191,7 +174,7 @@ def _pdf(summary: dict, charts: list[tuple[str, bytes, str]]) -> bytes:
     }
 
     def paragraph(text: str, style="body"):
-        return Paragraph(escape(str(text)), styles[style])
+        return Paragraph(safe_pdf_markup(text, font, fallback_font), styles[style])
 
     def heading(title: str):
         return paragraph(title, "section")
@@ -232,7 +215,7 @@ def _pdf(summary: dict, charts: list[tuple[str, bytes, str]]) -> bytes:
                 parent=styles["section"], fontSize=19, leading=27,
                 textColor=colors.HexColor("#173e58"), spaceAfter=1,
             )
-            value = Paragraph(escape(str(metric["value"])), value_style)
+            value = Paragraph(safe_pdf_markup(metric["value"], font, fallback_font), value_style)
             cells.append([label, value])
         while len(cells) < 2:
             cells.append("")
@@ -258,7 +241,7 @@ def _pdf(summary: dict, charts: list[tuple[str, bytes, str]]) -> bytes:
                            f"중복 행 {summary['duplicate_rows']:,}개"))
     rows = [["열 이름", "유형", "결측", "결측률", "고유값"]]
     for q in summary["quality"][:18]:
-        rows.append([_display_name(q["column"])[:22], str(q["dtype"])[:13],
+        rows.append([paragraph(_display_name(q["column"])[:22], "small"), str(q["dtype"])[:13],
                      str(q["missing"]), f"{q['missing_pct']:.1f}%", str(q["unique"])])
     table = Table(rows, colWidths=[160, 105, 55, 68, 55], repeatRows=1, hAlign="LEFT")
     table.setStyle(TableStyle([
