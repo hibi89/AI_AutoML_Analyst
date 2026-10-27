@@ -153,7 +153,7 @@ def _premium_page(analysis: dict, model_name: str, raw_schema: dict) -> bytes:
             ("01 / 원본 확인", "발신자와 전달 경로를 확인한 신뢰 가능한 ZIP만 압축 해제"),
             ("02 / 환경 설치", "Python과 requirements-premium.txt의 호환 버전 설치"),
             ("03 / 입력 작성", "sample_input.csv의 필수 열 이름과 순서를 그대로 유지하여 새 CSV 작성"),
-            ("04 / 실행", "Windows: predict.cmd new_data.csv predicted.csv"),
+            ("04 / 실행", "Windows: predict.cmd new_data.csv predicted.csv (일본어 CP932는 끝에 cp932 추가)"),
             ("05 / 결과 확인", "prediction 열을 검토하고 원본 입력과 함께 안전하게 보관"),
         ]),
         p("실행 전 주의", "head"),
@@ -203,8 +203,12 @@ def windows_predict_command() -> bytes:
     """Exactly the batch file shipped to customers; exercise in Windows CI."""
     return (
         '@echo off\r\n'
-        'if "%~2"=="" (echo Usage: predict.cmd new_data.csv predicted.csv & exit /b 2)\r\n'
-        'python "%~dp0predict.py" --model-dir "%~dp0." --input "%~1" --output "%~2"\r\n'
+        'if "%~2"=="" (echo Usage: predict.cmd new_data.csv predicted.csv [cp932] & exit /b 2)\r\n'
+        'if "%~3"=="" (\r\n'
+        '  python "%~dp0predict.py" --model-dir "%~dp0." --input "%~1" --output "%~2"\r\n'
+        ') else (\r\n'
+        '  python "%~dp0predict.py" --model-dir "%~dp0." --input "%~1" --output "%~2" --csv-encoding "%~3"\r\n'
+        ')\r\n'
     ).encode("utf-8")
 
 
@@ -295,6 +299,8 @@ def build_premium_zip(
         "3) 새 CSV를 sample_input.csv와 동일한 컬럼명/순서로 만든 뒤\n"
         "   predict.cmd new_data.csv predicted.csv (Windows) 또는\n"
         "   python predict.py --input new_data.csv --output predicted.csv\n"
+        "   일본어 Windows CSV(CP932)일 때: predict.cmd new_data.csv predicted.csv cp932\n"
+        "   (일반 UTF-8/한국어 CSV는 기존 기본 실행 방식 유지)\n"
         "4) 모델은 오직 신뢰한 원본 ZIP에서 로드하세요. 모델 파일·스키마 SHA만으로 출처를 증명할 수 없습니다.\n"
         "5) 데이터는 외부로 보내지 않습니다. 기존 결과 파일은 덮어쓰지 않습니다.\n"
         "6) 홀드아웃 결과는 평가 당시 학습 모델에만 적용되며, 최종 전체 재학습 모델에 동일한 성능을 보장하지 않습니다.\n"
