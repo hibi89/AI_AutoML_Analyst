@@ -46,3 +46,6 @@ When a new chat receives that sentence, act as the **single lead engineer/projec
 - `HANDOFF.md`: exact last verified commit SHA, files changed, previous outcome, next step, environment constraints.
 - `docs/dispatch/ACTIVE_TASK.md`: next precise READY task with success criteria.
 - Commit docs alongside each working increment. If tool operations cannot finish, record precisely what was actually completed.
+
+## Current-next override (2026-10-27 KST)
+Before following a stale `HANDOFF.md` / `STATUS.md` P6E7 task, read `docs/qa/P6E7_RELEASE.md` for the latest verified P6E7 outcome: Chromium all three tier ZIP downloads with shipping allowlist/hash PASS on `27d97b4`; Windows native **66 PASS /9 warnings** on `78f811b`. These are completed CI checks, not the owner's physical Windows/browser/design signoff. Current READY task is **AUTO-KM-P6E8**: physical Windows + release-gate evidence, or other unblocked QA. Sale state stays NO-GO, completion 5/7 (71%). The original `main` remains unchanged. The large historical `HANDOFF.md` and `STATUS.md` were deliberately not overwritten after a remote content-update safety block; the scoped P6E7 QA document and this pointer preserve the newer verified facts.
