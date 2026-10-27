@@ -17,7 +17,7 @@ import sys
 DIRECT = {
     "fastapi", "uvicorn", "pandas", "numpy", "scikit-learn",
     "python-multipart", "httpx", "pytest", "matplotlib",
-    "reportlab", "pypdf", "pillow", "skops", "openpyxl",
+    "reportlab", "pypdf", "pillow", "skops", "openpyxl", "playwright",
 }
 
 

@@ -388,3 +388,9 @@ P6E18 **ACTUAL OWNER WINDOWS SUCCESS (partial milestone, 2026-10-27 KST)**: Owne
 8. **Security/data:** source-only GitHub commits, no customer ZIP/raw dataset/model pipeline/font binaries; offline/no APIs/paid services, untouched original main, ZIP digest integrity.
 9. **Next owner-dependent:** P6E22 download actual new 3-tier local ZIP, visually review sample PDFs, check local font licensing/attributions, run trusted PREMIUM CSV prediction if necessary, and explicitly approve sale. The owner decides commercial sale; no unilateral merge/listing. Avoid requesting burdensome setup already done.
 10. **Verification timestamp:** 2026-10-27 KST, GitHub CI runs above. Product 71% approved milestones, not percent code count.
+
+
+## P6E30 browser dependency audit handoff — hosted CI pending
+- **Finding/fix:** P6E3 previously installed only `requirements-verified-py311.txt`; the separately pinned `requirements-browser.txt` (Playwright) was absent from CVE and license evidence. P6E3 now installs both, tracks both for cache invalidation and triggering, and includes Playwright in the direct inventory. A focused test enforces manifest/inventory/workflow alignment.
+- **Local evidence:** `tests/test_p6e5_license_notices.py` **5 passed**; `git diff --check` PASS. See [P6E30 QA](docs/qa/P6E30_BROWSER_DEPENDENCY_AUDIT.md). Hosted P6E3 run is pending; do not report an audit outcome until observed.
+- **Release/owner gate:** all prior successful tests are retained. BASIC, STANDARD, PREMIUM stay NO-GO; each SKU still needs owner PDF/ZIP visual review, actual used-font/source license review, and explicit commercial GO. No main merge, deployment, listing, or paid processing.

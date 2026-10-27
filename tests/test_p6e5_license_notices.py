@@ -7,6 +7,24 @@ from pathlib import Path
 from scripts.p6e5_license_notices import (
     identify_license, license_complexity_flags, notice_candidates, _UPSTREAM,
 )
+from scripts.p6e3_dependency_audit import DIRECT, normalize_name
+
+
+def test_direct_inventory_matches_pinned_runtime_and_browser_requirements():
+    repo_root = Path(__file__).resolve().parents[1]
+    declared = set()
+    for filename in ("requirements-verified-py311.txt", "requirements-browser.txt"):
+        for raw_line in (repo_root / filename).read_text(encoding="utf-8").splitlines():
+            line = raw_line.split("#", 1)[0].strip()
+            if line:
+                name = line.split("==", 1)[0].strip()
+                declared.add(normalize_name(name))
+
+    assert declared == DIRECT
+    workflow = (repo_root / ".github/workflows/p6e3-dependency-audit.yml").read_text(
+        encoding="utf-8"
+    )
+    assert "-r requirements-verified-py311.txt -r requirements-browser.txt" in workflow
 
 
 def test_generic_classifier_not_spdx_proof():
