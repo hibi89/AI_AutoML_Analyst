@@ -1,8 +1,9 @@
 """STANDARD P4 controlled synthetic evaluation tests."""
 from __future__ import annotations
 
+import csv
 import json
-from io import BytesIO
+from io import BytesIO, StringIO
 from zipfile import ZipFile
 
 import pandas as pd
@@ -54,6 +55,24 @@ def test_standard_real_http_pdf_zip():
         assert sum(v["role"] == "challenger" for v in x["models"]) == 3
         assert "f1_weighted" in x["selected_holdout_metrics"]
         assert "train_original_indices" not in x
+        # Customer-facing CSV rows must match the untouched holdout metrics
+        # in this same real HTTP-generated delivery ZIP.
+        holdout_rows = list(csv.DictReader(StringIO(
+            z.read("holdout_scores.csv").decode("utf-8-sig"))))
+        assert len(holdout_rows) == len(x["selected_holdout_metrics"])
+        assert {row["metric"] for row in holdout_rows} == set(x["selected_holdout_metrics"])
+        for row in holdout_rows:
+            metric = row["metric"]
+            assert row["selected_model"] == x["selected_model"]
+            assert row["dummy_model"] == x["dummy_model"]
+            assert float(row["selected_holdout"]) == pytest.approx(x["selected_holdout_metrics"][metric])
+            assert float(row["dummy_holdout"]) == pytest.approx(x["dummy_holdout_metrics"][metric])
+            assert float(row["selected_minus_dummy"]) == pytest.approx(
+                x["selected_holdout_metrics"][metric] - x["dummy_holdout_metrics"][metric])
+            assert row["primary_holdout_beats_dummy"] == ("yes" if x["holdout_beats_dummy"] else "no")
+            assert row["selection_basis"] == "selected_by_training_cv_only"
+        assert ("feature_importance.csv" in z.namelist()) == bool(
+            x["training_feature_importance"])
         reader = PdfReader(BytesIO(z.read("report.pdf")))
         assert 8 <= len(reader.pages) <= 12
         first = reader.pages[0].extract_text() or ""
