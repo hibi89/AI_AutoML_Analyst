@@ -225,3 +225,16 @@ Repository `hibi89/AI_AutoML_Analyst`, dev `feature/kmong-v1`, original `main@c8
 8. Safety: synthetic CSV only, no real customer CSV, customer model, extra fonts, tokens or keys pushed; no deployment, no pricing publication, no main merge or public hosting.
 9. **Next READY**: P6E13 physical owner gate still BLOCKED until owner runs PowerShell/GUI/PDF once. When owner supplies **redacted** actual output, repair only observed defects and assess per-tier sale readiness. Do not repeat speculative preflight hardening.
 10. Detailed QA `docs/qa/P6E13_CSV_HEADER.md`; verified as of 2026-10-27 KST.
+
+
+## P6E14 PREMIUM delivered prediction schema guard — 2026-10-27 KST
+1. Goal: BASIC ₩60k/STANDARD ₩150k/PREMIUM ₩300k, offline-first CSV/XLSX + Korean PDF/ZIP and PREMIUM trusted `predict.cmd`. No SaaS, paid APIs or customer data on GitHub.
+2. Real fix: packaged `predict.py` source previously let `pd.read_csv` silently transform duplicate customer input `a,a` to `a,a.1`, which could accidentally match a valid literal dotted saved schema. Guard now validates first logical source CSV header, rejects duplicates/blanks, keeps UTF-8-SIG/UTF-8/CP949 fallback and existing no-overwrite/security/same-column order.
+3. Commit source `7071e5939c840683f5c1aee9f933def8858208b3`, focused cross-platform regression `fb69da8f2e3a8a8adcd600b8c38b1c19d9d9b385`. Detail `docs/qa/P6E14_PREMIUM_HEADERS.md`.
+4. **Actually verified** at exact last executable SHA `fb69da8`: Windows Actions [40465571058](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40465571058) **77 PASS/9 warnings** including native CMD; Linux Actions [40465571117](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40465571117) **135 PASS/2 Windows-only SKIP/41 warnings**, PDF BASIC6/STD9/PREM11 pages and manifest PASS. Windows Chromium [40465500676](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40465500676) and Linux Chromium [40465500670](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40465500670) 3-tier ZIP PASS on earlier `7071e59` code SHA; no backend changes afterwards.
+5. Repo `hibi89/AI_AutoML_Analyst`, branch `feature/kmong-v1`; original `main@c80c874476f8d5deb4bf611761d89c6d72ca0a2d` unchanged; docs-only later HEAD possible. No deployment/Vercel/production URL, font binaries, data or models committed.
+6. Official acceptance P0/P2/P3/P4/P5 accepted; P1 physical Windows GUI PARTIAL and P6 final sale release NOT ACCEPTED; **5/7=71%**, all 3 SKU NO-GO. CI never equals physical owner approval.
+7. No user-supplied actual Windows results. The only required next step for sale is one **real owner's Windows first-install** with licensed NanumGothic and synthetic three-tier ZIP browser inspection, Korean PDF layout/quality, extracted TRUSTED PREMIUM `predict.cmd`, third-party license and explicit per-tier GO/NO-GO decision; see `docs/qa/P6E5_WINDOWS_OWNER_RUNBOOK.md`.
+8. If user again says only `ㄱ` without owner evidence, do not falsely close P6E13 or invent endless preflight improvements; report that one real owner-run result is needed, unless independently reproducible high-priority new defect arises from real source evidence.
+9. All tests are CI-hosted, localhost-only, no customer file or new external services and no other business action.
+10. Last verified 2026-10-27 KST, scope and evidence above.
