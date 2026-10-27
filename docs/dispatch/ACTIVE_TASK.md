@@ -295,5 +295,13 @@ The older `docs/architecture/TARGET_DESIGN.md` static gap list is now explicitly
 The current synthetic BASIC/STANDARD/PREMIUM report PDFs from `qa-preview/p6e5-20261027T111456Z/` were queued into the Codex panel so the owner can inspect them directly. Human aesthetics, font/source rights, and SKU sale authorization remain open.
 
 
-## AUTO-KM-P6E30 IN PROGRESS — include browser automation dependency in audit
-P6E3 previously froze/scanned only `requirements-verified-py311.txt`, while browser CI separately installed pinned Playwright from `requirements-browser.txt`. P6E3 now installs both requirement files and includes Playwright in direct/license inventory. Regression ties the manifests and workflow together. Local focused tests: **5 passed**; `git diff --check` PASS. Push this increment and observe the P6E3 dependency/security workflow before closing this task. Do not repeat previously passing ML, Windows or browser suite without a new code path requiring it. All SKUs remain NO-GO; per-SKU visual PDF/ZIP, used font/source license, and final commercial approvals remain owner-only.
+## AUTO-KM-P6E30 CLOSED — browser dependency audit coverage
+P6E3 now installs both `requirements-verified-py311.txt` and pinned browser `requirements-browser.txt`; Playwright is included and correctly labeled in the direct inventory. Regression enforces manifest/inventory/workflow alignment. Focused tests **5 passed**; [hosted P6E3 run 40498983817](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40498983817) **SUCCESS**, 55 distributions inventoried, no direct missing, no known vulnerabilities found by `pip-audit` (exit 0 at scan time). Eleven dependency license/notice triage items plus `skops` metadata still require source-license review; see [P6E30 QA](../qa/P6E30_BROWSER_DEPENDENCY_AUDIT.md).
+
+## NEXT — P6E22 owner release approval only
+No additional independently actionable code, feature, security, reliability, or compatibility defect is currently evidenced. Preserve the existing successful code and test results. All three SKUs remain **NO-GO** until the owner reviews the following for each tier:
+- **BASIC ₩60,000:** its PDF/ZIP visual quality; actual fonts and applicable source/dependency license notices; explicit commercial GO.
+- **STANDARD ₩150,000:** its PDF/ZIP visual quality; actual fonts and applicable source/dependency license notices; explicit commercial GO.
+- **PREMIUM ₩300,000:** its PDF/ZIP visual quality; actual fonts and applicable source/dependency license notices; explicit commercial GO.
+
+The shared source-license review must address the 11 P6E30 dependency triage items and `skops` license metadata. Do not interpret this CI scan as a license or sales approval. No main merge, public deployment/listing, or sale without explicit owner approval.

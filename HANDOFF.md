@@ -390,7 +390,8 @@ P6E18 **ACTUAL OWNER WINDOWS SUCCESS (partial milestone, 2026-10-27 KST)**: Owne
 10. **Verification timestamp:** 2026-10-27 KST, GitHub CI runs above. Product 71% approved milestones, not percent code count.
 
 
-## P6E30 browser dependency audit handoff — hosted CI pending
+## P6E30 browser dependency audit handoff — VERIFIED
 - **Finding/fix:** P6E3 previously installed only `requirements-verified-py311.txt`; the separately pinned `requirements-browser.txt` (Playwright) was absent from CVE and license evidence. P6E3 now installs both, tracks both for cache invalidation and triggering, and includes Playwright in the direct inventory. A focused test enforces manifest/inventory/workflow alignment.
-- **Local evidence:** `tests/test_p6e5_license_notices.py` **5 passed**; `git diff --check` PASS. See [P6E30 QA](docs/qa/P6E30_BROWSER_DEPENDENCY_AUDIT.md). Hosted P6E3 run is pending; do not report an audit outcome until observed.
-- **Release/owner gate:** all prior successful tests are retained. BASIC, STANDARD, PREMIUM stay NO-GO; each SKU still needs owner PDF/ZIP visual review, actual used-font/source license review, and explicit commercial GO. No main merge, deployment, listing, or paid processing.
+- **Local evidence:** `tests/test_p6e5_license_notices.py` **5 passed**; `git diff --check` PASS. Hosted [P6E3 40498983817](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40498983817) **SUCCESS** on `f28f11ca38780ce425160633ea7fd949ef331bad`: 55 installed distributions including Playwright, no direct dependencies missing, `pip-audit` reported **no known vulnerabilities** (exit 0, advisory state at scan time). See [P6E30 QA](docs/qa/P6E30_BROWSER_DEPENDENCY_AUDIT.md).
+- **Source-license review:** 11 dependency license/notice triage items and `skops` without identifiable license metadata remain for owner/legal review; the scan is not a license certification.
+- **Release/owner gate:** all prior successful tests are retained. BASIC, STANDARD, PREMIUM stay NO-GO; each SKU still needs its own PDF/ZIP visual review, applicable font/source-license review, and explicit commercial GO. No main merge, deployment, listing, or paid processing.
