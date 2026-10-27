@@ -74,6 +74,8 @@ def test_rich_input_produces_real_korean_pdf_five_charts_and_manifest(tmp_path):
         reader = PdfReader(BytesIO(pdf))
         assert 6 <= len(reader.pages) <= 8, len(reader.pages)
         searchable = "\n".join(page.extract_text() or "" for page in reader.pages)
+        assert "BASIC" in (reader.pages[0].extract_text() or "")
+        assert "EXPLORATORY DATA REPORT" in (reader.pages[0].extract_text() or "")
         assert "데이터 진단" in searchable
         assert "주요 발견" in searchable
         assert "ML 적용 가능성" in searchable
