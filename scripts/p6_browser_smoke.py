@@ -13,6 +13,8 @@ import time
 from urllib.request import urlopen
 from zipfile import ZipFile
 
+from scripts.p6e6_delivery_policy import verify_shipping_zip
+
 import pandas as pd
 from playwright.sync_api import sync_playwright
 
@@ -66,6 +68,8 @@ def make_demo(path: Path):
 
 def check_zip(path: Path, tier: str):
     assert path.stat().st_size > 10_000
+    shipping = verify_shipping_zip(path.read_bytes(), tier)
+    assert shipping["tier"] == tier
     with ZipFile(path) as z:
         assert z.testzip() is None
         assert z.read("report.pdf").startswith(b"%PDF-")
