@@ -95,3 +95,28 @@ def test_local_web_pages_offer_explicit_cp932_with_safe_default(page):
     assert 'name="csv_encoding"' in response.text
     assert 'value="auto"' in response.text
     assert 'value="cp932"' in response.text
+
+
+def test_actual_cp932_basic_report_preserves_japanese_columns():
+    """Real PDF+ZIP generation, not only monkeypatched HTTP forwarding."""
+    from zipfile import ZipFile
+    import json
+
+    rows = ["日付,地域,訪問数,売上,費用,購入"]
+    for i in range(120):
+        rows.append(f"2026-01-{(i % 28) + 1:02d},A,{20 + i % 17},{130 + i % 23},{60 + i % 19},{i % 2}")
+    csv = ("\n".join(rows) + "\n").encode("cp932")
+    response = TestClient(app).post(
+        "/api/basic-report",
+        data={"csv_encoding": "cp932"},
+        files={"file": ("synthetic-jp.csv", BytesIO(csv), "text/csv")},
+    )
+    assert response.status_code == 200, response.text
+    with ZipFile(BytesIO(response.content)) as archive:
+        assert archive.testzip() is None
+        summary = json.loads(archive.read("summary.json"))
+        assert summary["rows"] == 120
+        assert {r["column"] for r in summary["quality"]} == {
+            "日付", "地域", "訪問数", "売上", "費用", "購入"
+        }
+        assert archive.read("report.pdf").startswith(b"%PDF-")
