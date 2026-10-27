@@ -18,6 +18,14 @@ button:disabled{opacity:.5}small{color:#5a7182}pre{white-space:pre-wrap;overflow
 <p><small>개발 미리보기. 공개 서버 배포 금지. 동일 고객·반복 기록이면 그룹 분할, 미래 예측 목적이면 시간 분할을 선택하세요. 의미가 불명확한 숫자형 목표는 분류·회귀를 직접 선택해야 합니다.</small></p>
 <form id="analysis">
 <label for="csv">CSV 또는 XLSX (최대 30 MiB · ML 5,000행 한도)</label><input id="csv" type="file" name="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required>
+<label for="csv_encoding">CSV 텍스트 인코딩 (XLSX는 해당 없음)</label>
+<select id="csv_encoding" name="csv_encoding" aria-describedby="encoding-help">
+<option value="auto">자동 — UTF-8 / 한국어 Windows CSV 우선</option>
+<option value="utf-8-sig">UTF-8 (BOM 포함 가능)</option>
+<option value="cp949">한국어 Windows CSV (CP949)</option>
+<option value="cp932">일본어 Windows CSV (CP932 / Shift-JIS)</option>
+</select>
+<small id="encoding-help">일본어 CSV가 깨진다면 CP932를 직접 선택하세요. CP932와 CP949는 자동으로 안전하게 구별할 수 없습니다.</small>
 <label for="target">예측 목표 컬럼 (입력 데이터와 동일한 이름)</label><input id="target" name="target_column" required placeholder="예: 구매여부">
 <label for="task">문제 유형</label><select id="task" name="task_type"><option value="auto">자동 (모호한 숫자는 오류)</option><option value="classification">분류</option><option value="regression">회귀</option></select>
 <label for="split">데이터 분할 기준</label><select id="split" name="split_policy"><option value="random">무작위 (독립 관측일 때만)</option><option value="group">그룹 — 동일 고객·장비가 겹치지 않게</option><option value="time">시간 — 과거 학습 / 이후 평가</option></select>
