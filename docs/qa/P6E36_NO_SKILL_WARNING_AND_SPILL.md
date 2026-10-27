@@ -2,6 +2,20 @@
 
 Repository `hibi89/AI_AutoML_Analyst`; working branch `feature/kmong-v1`. All test data is synthetic. This is engineering evidence, **not sale acceptance**.
 
+## Verified follow-up — release image/page regression closed (2026-10-27 KST)
+
+- Current implementation source `a8c102c0bf13c718bf48c97e44632bc4c59cbf61`, deterministic CI visual gate `d6dade5317ba3630cf495b0bdf0419a88d72ced0`.
+- Script-inclusive full Linux CI [40518329515](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40518329515): **SUCCESS, 213 passed / 3 skipped / 66 warnings**.
+- Independently downloaded **actual artifact 12741525131** (not a prior revision). PDF pages BASIC **6**, STANDARD **9**, PREMIUM **11**. Paid tier ML appendix exactly **3 pages each**, no extra `ML 4` spill.
+- Both STANDARD and PREMIUM were `holdout_beats_dummy=false`, and **both printed** `예측 성능 우위가 입증되지 않았습니다.` in the ML PDF. The previously missing PREMIUM warning is now unambiguously present.
+- All three deliverable ZIP CRC and manifest file SHA-256 validations PASS; externally rendered PDF bytes equal the PDF inside corresponding ZIP; no unsupported `[U+HEX]` placeholders or text spans outside page rectangles in **26 total pages**.
+- Source `a8c102c0` Windows native [40517973675](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40517973675) **96 passed/9 warnings**, Windows Chromium [40517973790](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40517973790) SUCCESS, Docker [40517973754](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40517973754) SUCCESS; source Linux integration [40517973833](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40517973833) 213 PASS /3 SKIP. Linux Chromium [40517973806](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40517973806) still IN PROGRESS at capture; **do not call 5/5 complete** until verified.
+- Product milestones **remain 5/7=71%**, P1 PARTIAL / P6 NOT ACCEPTED; visual approval on owner's physical Windows machine, installed font/source-rights and component notices, and explicit individual SKU commercialization decisions remain OPEN. No public hosting, main merge, customer processing or sale.
+
+**Remaining next step:** check outstanding Linux Chromium status (single check, no rerun), then P6E22 owner-only manual acceptance. Do not reopen P6E36 engineering unless a new reproducible failure appears.
+
+
+
 ## Reproduced defect: sales-critical warning silently omitted
 - Actual 150-row synthetic PREMIUM deliverable from GitHub Actions [40511166451](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40511166451) at tested source `dce23b6847316d3b4b4568145faabf7a7b6aba2b` gave independent holdout `f1_weighted` selected **0.2841**, Dummy **0.3333**, `holdout_beats_dummy=false`.
 - The PREMIUM `premium_summary.json` has seven warnings, including `비교 모델이 Dummy 기준선을 넘지 못했습니다. 유효한 예측 신호가 있다고 주장할 수 없습니다.` as warning 7. Shared PDF builder `backend/app/services/standard_delivery.py` rendered only `analysis["warnings"][:6]`, silently omitting that release-critical warning in PREMIUM PDF (STANDARD had six and displayed it).

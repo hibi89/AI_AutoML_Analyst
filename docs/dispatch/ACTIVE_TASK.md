@@ -3,7 +3,8 @@
 ## P6E36 — verify fixed actual PDF before owner approval (2026-10-27 KST)
 - Old PDF `dce23b68`: PREMIUM no-skill warning omitted. First fix `feb61a59`: CI passed but PREMIUM got a sparse fourth ML page. **Superseded**.
 - Current source `a8c102c0`: existing paragraph conditionally replaced; no extra vertical story block. Regression preview script `d6dade53` checks exactly 3 ML appendix pages and the explicit negative-holdout warning.
-- **NEXT:** fetch latest source-script CI [40518329515](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40518329515) and source-commit five CI workflows; inspect new artifact 6/9/11 pages with no `ML 4`; verify actual warning and ZIP. Mark pass only after observing outputs.
+- **VERIFIED:** synthetic preview CI [40518329515](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40518329515) 213 PASS/3 SKIP and actual artifact 12741525131: BASIC/STANDARD/PREMIUM 6/9/11 pages, exactly three ML pages in each paid SKU, explicit holdout no-skill warning, ZIP CRC/SHA-256 PASS, no `[U+HEX]` or off-page text. Source a8 Windows native 96 PASS, Windows Chromium and Docker SUCCESS. Linux browser [40517973806](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40517973806) still IN PROGRESS at last check.
+- **NEXT:** poll remaining Linux browser run once; then P6E22 owner visual/installed-font-source/NOTICE/commercial signoff. Do not repeat passed synthetic page/ZIP tests or list for sale without authorization.
 - Owner final P6E22 Windows visual/license/commercial signoff remains blocked on owner choice, 5/7=71%, all tiers SALE NO-GO. No main merge/public deploy/listing.
 
 
