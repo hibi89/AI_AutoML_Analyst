@@ -4,6 +4,7 @@ param(
     [switch]$ProbeOnly,
     [switch]$PortProbeOnly,
     [switch]$IdentityProbeOnly,
+    [switch]$VenvOnly,
     [ValidateRange(1024, 65535)][int]$Port = 8000
 )
 $ErrorActionPreference = "Stop"
@@ -58,45 +59,69 @@ if ($IdentityProbeOnly) {
     return
 }
 
-# A stale Windows 'py' launcher can exist even when only 'python' points to
-# an installed Python 3.11. Probe both commands before altering environments.
+# Always use the actual, verified Python 3.11 executable for venv creation.
+# On a real Windows owner machine a py launcher passed a version probe but
+# unexpectedly dropped into the Python REPL for '-m venv'; its exit code was 0.
+# The old script then tried to execute a nonexistent venv interpreter.
 $probe = "import sys; sys.exit(0 if sys.version_info[:2] == (3, 11) else 1)"
-$launcher = @()
-if (Get-Command py -ErrorAction SilentlyContinue) {
+$exe = $null
+$launcherLabel = $null
+
+# Prefer a direct Python 3.11 executable; unlike the 'py' wrapper it has no
+# intermediary argument forwarding for '-m venv' or path-with-spaces values.
+$pythonCmd = Get-Command python -ErrorAction SilentlyContinue
+if ($pythonCmd) {
     try {
-        & py -3.11 -c $probe 2>$null
-        if ($LASTEXITCODE -eq 0) { $launcher = @("py", "-3.11") }
-    } catch { }  # py may exist but have no registered 3.11 runtime
-}
-if ($launcher.Count -eq 0 -and (Get-Command python -ErrorAction SilentlyContinue)) {
-    try {
-        & python -c $probe 2>$null
-        if ($LASTEXITCODE -eq 0) { $launcher = @("python") }
+        & $pythonCmd.Source -c $probe 2>$null
+        if ($LASTEXITCODE -eq 0) {
+            $exe = $pythonCmd.Source
+            $launcherLabel = "python"
+        }
     } catch { }
 }
-if ($launcher.Count -eq 0) {
-    throw "Python 3.11 not found via py -3.11 or python. Install Python 3.11 and retry."
+if (-not $exe -and (Get-Command py -ErrorAction SilentlyContinue)) {
+    try {
+        # py is only used to resolve the actual registered Python binary.
+        $candidate = @(& py -3.11 -c "import sys; print(sys.executable)" 2>$null)
+        if ($LASTEXITCODE -eq 0 -and $candidate.Count -eq 1) {
+            $candidatePath = [string]$candidate[0]
+            if ((Test-Path -LiteralPath $candidatePath -PathType Leaf)) {
+                & $candidatePath -c $probe 2>$null
+                if ($LASTEXITCODE -eq 0) {
+                    $exe = $candidatePath
+                    $launcherLabel = "py -3.11"
+                }
+            }
+        }
+    } catch { }
 }
-$exe = $launcher[0]
-$argsPrefix = if ($launcher.Length -gt 1) { $launcher[1..($launcher.Length-1)] } else { @() }
+if (-not $exe) {
+    throw "Python 3.11 not found via python or py -3.11. Install Python 3.11 and retry."
+}
 if ($ProbeOnly) {
-    # CI-only dry probe: no venv, font checks, pip installs, or app start.
-    Write-Output ("PYTHON311_LAUNCHER=" + ($launcher -join " "))
+    Write-Output ("PYTHON311_LAUNCHER=" + $launcherLabel)
+    Write-Output ("PYTHON311_EXECUTABLE=" + $exe)
     return
 }
 
-# No global pip writes. A dedicated, gitignored environment leaves the owner's
-# other Python installations and their existing packages intact.
+# No global pip writes. Never remove an existing environment automatically.
+# If venv creation exits 0 but does not create python.exe, fail closed.
 $venvRoot = Join-Path (Get-Location).Path ".venv-automl-qa"
 $venvPython = Join-Path $venvRoot "Scripts\python.exe"
-if (-not (Test-Path $venvPython)) {
-    & $exe @argsPrefix -m venv $venvRoot
+if (-not (Test-Path -LiteralPath $venvPython -PathType Leaf)) {
+    & $exe -m venv $venvRoot
     if ($LASTEXITCODE -ne 0) { throw "Failed to create the isolated project QA environment." }
+    if (-not (Test-Path -LiteralPath $venvPython -PathType Leaf)) {
+        throw "Python venv creation returned success but Scripts\\python.exe is missing in $venvRoot. Existing files were preserved; check Python launcher/venv installation."
+    }
 }
 $exe = $venvPython
-$argsPrefix = @()
 & $exe -c "import sys; assert sys.version_info[:2] == (3, 11), 'Python 3.11 required'"
 if ($LASTEXITCODE -ne 0) { throw "Existing QA venv is not Python 3.11. Preserve it and investigate." }
+if ($VenvOnly) {
+    Write-Output ("VENV_PYTHON311_OK=" + $venvPython)
+    return
+}
 $env:PATH = (Join-Path $venvRoot "Scripts") + ";" + $env:PATH
 
 $font = @(
@@ -126,7 +151,6 @@ if ($OpenBrowser) {
         throw "Local port $Port is already occupied. Stop or relocate that service yourself before starting this app."
     }
     $serverArgs = @()
-    if ($exe -eq "py") { $serverArgs += "-3.11" }
     $serverArgs += @("-m", "uvicorn", "backend.app.main:app", "--host", "127.0.0.1", "--port", "$Port")
     $server = Start-Process -FilePath $exe -ArgumentList $serverArgs -WorkingDirectory (Get-Location).Path -WindowStyle Hidden -PassThru
     $ready = $false
