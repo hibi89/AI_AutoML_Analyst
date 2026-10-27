@@ -139,6 +139,13 @@ def _is_safe_number(text: str) -> bool:
 
 
 def main() -> int:
+    # Windows consoles/pipes may use a legacy code page that cannot represent
+    # Korean customer paths. A successful CSV write must not fail while
+    # reporting the output path. Keep the actual CSV encoding unchanged.
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is not None:
+            reconfigure(errors="backslashreplace")
     cli = argparse.ArgumentParser(description="PREMIUM trusted local CSV repeat prediction")
     cli.add_argument("--input", required=True, type=Path)
     cli.add_argument("--output", required=True, type=Path)
