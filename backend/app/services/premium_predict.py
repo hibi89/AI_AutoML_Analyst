@@ -78,7 +78,18 @@ def _load_input(path: Path, schema: dict, csv_encoding: str = "auto") -> pd.Data
     for encoding in encodings:
         try:
             with path.open("r", encoding=encoding, newline="") as source:
-                header = next(csv.reader(source, strict=True), None)
+                reader = csv.reader(source, strict=True)
+                header = next(reader, None)
+                if header is not None:
+                    # An extra CSV field can become a silent implicit pandas
+                    # index; this would feed shifted values to the model.
+                    for row_number, row in enumerate(reader, start=1):
+                        if len(row) != len(header):
+                            raise ValueError(
+                                "Prediction CSV data row field count does not match header."
+                            )
+                        if row_number > MAX_ROWS:
+                            break
         except UnicodeError:
             continue
         except csv.Error as exc:
