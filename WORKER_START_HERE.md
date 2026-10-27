@@ -2,6 +2,10 @@
 Updated: 2026-10-27 KST
 Repository: https://github.com/hibi89/AI_AutoML_Analyst
 Development branch: `feature/kmong-v1`
+
+## Current source-of-truth priority — 2026-10-28 KST
+The owner explicitly corrected the prior MVP freeze: MVP functional success does NOT mean end of engineering. The lead must continue feasible, source-backed final-completion work, with executable tests and commits, rather than repeatedly replying "5/5 PASS" and stopping. At source SHA 4fae0de4, the IQR outlier gap and long-column PDF join are fixed, all five CI SUCCESS (Linux 219 PASS/3 SKIP). Next prioritize remaining privacy-field warning vs frozen architecture and frontend usability. Commercial P6E22 remains owner-only; no SKU has GO, main unchanged. Read the FIRST SECTION of HANDOFF.md and ACTIVE_TASK.md over older superseded "stop work" notes.
+
 Preserved original: `main`
 
 ## One-line wake-up command
