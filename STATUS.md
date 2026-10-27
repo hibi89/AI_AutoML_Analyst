@@ -1,5 +1,12 @@
 # AI AutoML Analyst commercialization — STATUS
 
+## MVP scope freeze — 2026-10-28 checkpoint (owner direction, 2026-10-27 KST)
+- **Priority order from owner:** demonstrably working minimum first; incomplete visuals, new frontend features, polish, broader optional enhancements later. Do not expand scope or invent filler QA activity.
+- **MVP engineering status: FUNCTIONAL under synthetic CI, already satisfied before 2026-10-28 checkpoint.** BASIC CSV/XLSX -> validated aggregate data report/PDF/ZIP; STANDARD -> explicit target, controlled ML comparison/CV/holdout and PDF/ZIP; PREMIUM -> trained trusted bundle, matched-schema offline CSV predictions and PDF/ZIP. Real Windows + Linux Chromium three-tier upload/download SUCCESS; Linux suite **216 PASS/3 SKIP**, Windows native **96 PASS**, Docker SUCCESS, all on executable code `c90dbaed53e11fac100a00a8f41b4c8bf52a22d1`. No frontend rewrite necessary to demonstrate the minimum.
+- **Keep frozen:** original `main` untouched; development branch `feature/kmong-v1`; no paid API, no public SaaS, no customer inputs, no unnecessary source edits. Reopen engineering only for a reproduced blocker of core upload -> analysis -> download -> trusted prediction path.
+- **NOT yet product release:** commercial approval remains a separate `P6E22` gate requiring real owner Windows/visual/font+NOTICE and per-SKU GO. Formal acceptance **5/7 (71%)**, P1 partial and P6 not accepted, all three SKUs **sale NO-GO**; `ㄱ` does not authorize sales or resolve owner-only decisions.
+
+
 ## P6E37 — reject non-finite numeric source measurements (2026-10-27 KST)
 - **Reproduced failure:** Matplotlib `ax.hist([1, 2, inf])` raises `ValueError: supplied range of [1.0, inf] is not finite`. Customer CSVs may parse `Infinity`/`-Infinity` as floating-point values; old shared `validate_basic_frame` did not check these, so BASIC charts could error and STANDARD/PREMIUM could fail in report/ML.
 - **Minimal source fix:** `backend/app/services/basic_report.py` common frame validator rejects `+/-Infinity` in pandas numeric columns with a user-actionable `ValueError`, before report/chart/model generation. Missing `NaN` cells remain accepted for data-quality diagnostics.
