@@ -94,6 +94,26 @@ jobs:
             if ($LASTEXITCODE -ne 0 -or -not ($again -match '^VENV_PYTHON311_OK=').Count) {
               throw "Rerun of existing Windows venv failed"
             }
+            # Real downloader runs only in this temporary runner directory;
+            # no system-font installation and no committed font binary.
+            $fontOutput = @(& powershell.exe -NoProfile -ExecutionPolicy Bypass -File $copy -FontProbeOnly)
+            $ready = @($fontOutput | Where-Object { $_ -match '^KOREAN_QA_FONT_READY=' })
+            if ($LASTEXITCODE -ne 0 -or $ready.Count -ne 1) {
+              throw "Official OFL NanumGothic font QA bootstrap failed"
+            }
+            $fontPath = ([string]$ready[0]) -replace '^KOREAN_QA_FONT_READY=', ''
+            if (-not (Test-Path -LiteralPath $fontPath -PathType Leaf)) {
+              throw "QA font was not saved to local-only file"
+            }
+            $fontHash = (Get-FileHash -LiteralPath $fontPath -Algorithm SHA256).Hash
+            Write-Output "QA_FONT_SHA256=$fontHash"
+            $againFont = @(& powershell.exe -NoProfile -ExecutionPolicy Bypass -File $copy -FontProbeOnly)
+            if ($LASTEXITCODE -ne 0 -or -not ($againFont -contains ("KOREAN_QA_FONT_READY=" + $fontPath))) {
+              throw "QA font cache was not reused on second run"
+            }
+            if ((Get-FileHash -LiteralPath $fontPath -Algorithm SHA256).Hash -ne $fontHash) {
+              throw "Cached QA font unexpectedly changed"
+            }
           } finally {
             Remove-Item -LiteralPath $root -Recurse -Force -ErrorAction SilentlyContinue
           }
