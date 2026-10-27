@@ -232,8 +232,14 @@ def _append_ml_pdf(original: bytes, analysis: dict, chart_png: bytes, *, report_
         para("차이가 양수여도 통계적 유의성이나 미래 일반화가 자동으로 입증되지는 않습니다.", "small"),
         para(f"CV 기준 Dummy 초과: {'예' if analysis['cv_beats_dummy'] else '아니오'} / "
              f"독립 검증 Dummy 초과: {'예' if analysis['holdout_beats_dummy'] else '아니오'}"),
-        para("독립 검증 지표 상세", "head"),
     ])
+    if not analysis["holdout_beats_dummy"]:
+        story.append(para(
+            "중요: 독립 검증에서 선택 모델이 Dummy 기준선을 넘지 못했습니다. "
+            "현재 데이터에서는 예측 성능 우위가 입증되지 않았습니다.",
+            "small",
+        ))
+    story.append(para("독립 검증 지표 상세", "head"))
     for metric in metrics:
         story.append(para(f"{metric}: 선택 모델 {metrics[metric]:.4f}, Dummy {dummy[metric]:.4f}"))
     importance = analysis.get("training_feature_importance", [])

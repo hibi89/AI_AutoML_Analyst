@@ -69,6 +69,8 @@ def test_standard_real_http_pdf_zip():
         assert "AI AutoML Analyst  |  STANDARD 모델 검증" in text
         assert "선택 모델 - Dummy 차이:" in text
         assert "[U+2212]" not in text
+        if not x["holdout_beats_dummy"]:
+            assert "예측 성능 우위가 입증되지 않았습니다." in text
 
 
 def test_standard_regression_direct():

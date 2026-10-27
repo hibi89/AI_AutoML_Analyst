@@ -75,6 +75,8 @@ def test_premium_full_zip_and_five_challengers(bundle):
         assert "STANDARD — 모델 학습 및 검증" not in ml_pages
         assert "선택 모델 - Dummy 차이:" in ml_pages
         assert "[U+2212]" not in ml_pages
+        if not info["holdout_beats_dummy"]:
+            assert "예측 성능 우위가 입증되지 않았습니다." in ml_pages
         # P6E handover stays on two substantive pages without overflow/blank spill.
         handover = pages[-2].extract_text() or ""
         schema_guide = pages[-1].extract_text() or ""
