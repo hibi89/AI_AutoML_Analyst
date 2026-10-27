@@ -11,6 +11,7 @@ import pandas as pd
 from fastapi import FastAPI, File, Form, HTTPException, Query, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse
+from backend.app.upload_guard import UploadEnvelopeLimit
 
 from backend.app.services.automl_runner import run_automl_experiment
 from backend.app.services.ai_analyst import analyze_automl_result
@@ -42,6 +43,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Reject oversized HTTP multipart envelopes before Starlette spools files.
+# The existing localhost boundary is registered later as the outer layer.
+app.add_middleware(UploadEnvelopeLimit)
 
 
 def _read_csv_from_bytes(content: bytes, encoding: str = "auto") -> pd.DataFrame:
