@@ -16,11 +16,10 @@ from backend.app.services.premium_predict import _load_input
 
 @pytest.mark.parametrize("payload", [
     b"amount,area\n1,A,secret\n2,B,secret\n",
-    b"amount,area\n1,A\n2\n",
     b"amount,area\n1,A,secret\n2,B\n",
 ])
-def test_upload_csv_rejects_surplus_or_missing_logical_fields(payload):
-    with pytest.raises(ValueError, match="field count"):
+def test_upload_csv_rejects_surplus_fields(payload):
+    with pytest.raises(ValueError, match="more fields than header"):
         _read_csv_from_bytes(payload)
 
     client = TestClient(app)
@@ -35,13 +34,12 @@ def test_upload_csv_rejects_surplus_or_missing_logical_fields(payload):
             files={"file": ("synthetic.csv", BytesIO(payload), "text/csv")},
         )
         assert response.status_code == 400, (route, response.status_code, response.text)
-        assert "field count" in response.json()["detail"]
+        assert "more fields than header" in response.json()["detail"]
         assert "secret" not in response.text
 
 
 @pytest.mark.parametrize("payload", [
     "amount,area\n1,A,private\n2,B,private\n",
-    "amount,area\n1,A\n2\n",
 ])
 def test_premium_prediction_rejects_shift_before_model_load(tmp_path, payload):
     path = tmp_path / "new.csv"
@@ -53,6 +51,24 @@ def test_premium_prediction_rejects_shift_before_model_load(tmp_path, payload):
     }
     with pytest.raises(ValueError, match="field count"):
         _load_input(path, schema, "utf-8")
+
+
+def test_short_row_is_preserved_as_missing_trailing_cell(tmp_path):
+    payload = b"amount,area\\n1,A\\n2\\n"
+    frame = _read_csv_from_bytes(payload, "utf-8")
+    assert frame["amount"].tolist() == [1, 2]
+    assert frame["area"].isna().sum() == 1
+
+    path = tmp_path / "short-but-imputable.csv"
+    path.write_bytes(payload)
+    schema = {
+        "raw_feature_columns": ["amount", "area"],
+        "numeric_raw_columns": ["amount"],
+        "boolean_raw_columns": [],
+    }
+    result = _load_input(path, schema, "utf-8")
+    assert len(result) == 2
+    assert result["area"].isna().sum() == 1
 
 
 def test_csv_quoted_commas_and_multiline_values_keep_logical_width(tmp_path):
