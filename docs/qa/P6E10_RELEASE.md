@@ -24,3 +24,11 @@ The owner launcher `scripts/windows_release_qa.ps1 -OpenBrowser` starts a hidden
 - P0–P6 strictly accepted **5/7=71%**; P1 physical owner browser remains PARTIAL and P6 final sale release NOT ACCEPTED. BASIC / STANDARD / PREMIUM all **NO-GO**.
 - Real first-install/Edge-Chrome upload/ZIP extraction/PDF aesthetics/owner approval remain mandatory; CI is not substitute for physical owner signoff.
 - **Next P6E11/OWNER GATE candidate:** reconcile P6E10 CI outcome, repair only reproduced regressions, and if no remaining useful independent QA, prepare the single owner-local acceptance round described in `docs/qa/P6E5_WINDOWS_OWNER_RUNBOOK.md`. Do not force an owner action now; no main merge, public deployment or commercial listing without explicit permission.
+
+
+## Final observed P6E10 CI — 2026-10-27 KST
+
+- [Windows 40459918851](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40459918851): SUCCESS at source commit `51a91fc161d8e35ce6fd1eaf8d54ceece5182659`. Raw job log **67 PASS /9 warnings**; PowerShell parse and prior native regression checks PASS. It did not yet include the new occupied-port simulation.
+- [Windows 40459966750](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40459966750): **SUCCESS** at combined source+CI SHA `2b314653241a2bbf527476841b4a78ed0a882e28`. Windows PowerShell parse SUCCESS; Python3.11 broken-`py` launcher fallback SUCCESS; **local port collision guard SUCCESS** for ephemeral occupied localhost port and freed same port; native regressions **67 PASS /9 warnings**. No `##[error]` lines in job log.
+- This proves controlled ephemeral IPv4 loopback port occupancy detection on one GitHub Windows runner; it does **not** prove a physical owner's browser/PDF approval or eliminate every rare bind race. No Linux/Chromium workflow triggered because no backend, frontend or data output changes.
+- **Next READY AUTO-KM-P6E11**: review actual remaining Windows owner release gates; add only grounded no-owner regressions. If the rest requires physical visual judgment, preserve OWNER ACTION REQUIRED instead of inflating percentage. P0–P6 accepted **5/7 (71%)** and BASIC/STANDARD/PREMIUM sale **NO-GO**. `main@c80c874476f8d5deb4bf611761d89c6d72ca0a2d` unchanged, no production deployment.
