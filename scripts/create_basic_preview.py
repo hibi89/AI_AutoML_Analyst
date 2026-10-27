@@ -5,16 +5,34 @@ temporarily as an artifact for inspection, not as customer data.
 """
 from __future__ import annotations
 
+import json
 import subprocess
 from io import BytesIO
 from pathlib import Path
 from zipfile import ZipFile
 
 import pandas as pd
+from pypdf import PdfReader
 
 from backend.app.services.basic_report import build_basic_zip
 from backend.app.services.standard_delivery import build_standard_zip
 from backend.app.services.premium_delivery import build_premium_zip
+
+
+
+def _check_ml_review_pdf(tier: str, report: bytes, metadata: dict) -> None:
+    """Regression gate for sparse appendix spill and dropped no-skill caveat."""
+    page_texts = [page.extract_text() or "" for page in PdfReader(BytesIO(report)).pages]
+    ml_pages = [
+        text for text in page_texts
+        if f"AI AutoML Analyst  |  {tier} 모델 검증" in text
+    ]
+    if len(ml_pages) != 3:
+        raise AssertionError(f"{tier}: expected exactly three ML PDF pages, got {len(ml_pages)}")
+    if not metadata["holdout_beats_dummy"] and not any(
+        "예측 성능 우위가 입증되지 않았습니다." in text for text in ml_pages
+    ):
+        raise AssertionError(f"{tier}: missing independent-holdout no-skill warning")
 
 
 def main() -> None:
@@ -58,6 +76,7 @@ def main() -> None:
     (standard_dir / "standard_synthetic_demo.zip").write_bytes(standard_zip)
     with ZipFile(BytesIO(standard_zip)) as output:
         standard_pdf = output.read("report.pdf")
+        _check_ml_review_pdf("STANDARD", standard_pdf, json.loads(output.read("standard_summary.json")))
         (standard_dir / "report.pdf").write_bytes(standard_pdf)
         print("Generated STANDARD synthetic ZIP bytes:", len(standard_zip))
         print("Generated STANDARD PDF bytes:", len(standard_pdf))
@@ -77,6 +96,7 @@ def main() -> None:
     (premium_dir / "premium_synthetic_demo.zip").write_bytes(premium_zip)
     with ZipFile(BytesIO(premium_zip)) as delivered:
         premium_pdf = delivered.read("report.pdf")
+        _check_ml_review_pdf("PREMIUM", premium_pdf, json.loads(delivered.read("premium_summary.json")))
         (premium_dir / "report.pdf").write_bytes(premium_pdf)
         print("Generated PREMIUM synthetic ZIP bytes:", len(premium_zip))
         print("Generated PREMIUM PDF bytes:", len(premium_pdf))
