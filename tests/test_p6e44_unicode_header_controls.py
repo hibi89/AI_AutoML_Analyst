@@ -26,7 +26,7 @@ from backend.app.services.basic_report import validate_basic_frame
 ])
 def test_deceptive_control_header_rejected(codepoint):
     df = pd.DataFrame({"매출" + chr(codepoint) + "액": [100, 120], "label": [0, 1]})
-    with pytest.raises(ValueError, match="control or bidirectional"):
+    with pytest.raises(ValueError, match="control characters or bidirectional"):
         validate_basic_frame(df)
 
 
@@ -65,5 +65,5 @@ def test_three_skus_reject_bidi_control_before_analysis(route, form, format):
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")},
     )
     assert response.status_code == 400, (route, format, response.status_code, response.text)
-    assert "control or bidirectional" in response.json()["detail"]
+    assert "control characters or bidirectional" in response.json()["detail"]
     assert columns[0] not in response.text
