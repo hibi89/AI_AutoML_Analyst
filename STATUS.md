@@ -143,3 +143,9 @@ PREMIUM last two pages now use real model/CV/untouched-holdout/Dummy numbers and
 
 ## Current P6E8 checkpoint (2026-10-27 KST)
 Native Windows cmd Unicode-path QA added on feature/kmong-v1, first runs failed 66 PASS/1 FAIL because cmd.exe could not resolve an absolute Korean batch path. A single documented relative-command retry at 546cf635 is pending CI. Linux preceding 40457618631 passed. See docs/qa/P6E8_RELEASE.md for evidence and retry state. P1 and P6 not accepted; 5/7 (71%) and all SKUs NO-GO. Physical Windows/browser/designer approval not obtained; main unchanged; Production N/A.
+
+
+### P6E8 final verified regression closure — 2026-10-27 KST
+- Latest tested application SHA `45c6272b2007cc41130ae6cf85ba48998146de6a`: [Linux Actions 40458277791](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40458277791) **125 PASS /2 Windows-only SKIP /41 warnings**, synthetic tier PDFs BASIC 6/STD 9/PREM 11 pages; [Windows 40458277827](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40458277827) **67 PASS /9 warnings**, Korean path/space batch prediction + fail-closed wrong-header/tampered model verified. [Chromium 40458238868](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40458238868) **3 tier downloads PASS** on previous CLI code SHA `e79199e` (later Windows synthetic owner helper only).
+- Discovered and fixed legacy Windows CLI `UnicodeEncodeError` when printing Korean output paths. First two Windows invocation approaches FAILED, see `docs/qa/P6E8_RELEASE.md`; successful fix uses `backslashreplace` console output fallback and relative trusted demo cmd invocation. This is a tested code correction, not owner physical Windows acceptance.
+- Next READY `AUTO-KM-P6E9`: remaining Windows first-install + browser/pdf visual approval and release criteria. P0–P6 **5/7=71%**, BASIC/STD/PREM **NO-GO**, original main untouched, Vercel/Production N/A.
