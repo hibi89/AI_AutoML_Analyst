@@ -16,9 +16,9 @@ from backend.app.services.premium_predict import _load_input
 
 
 @pytest.mark.parametrize("payload", [
-    b"amount,area\\n1,A\\n\\n2,B\\n",
-    b"amount,area\\n\\n1,A\\n2,B\\n",
-    b"amount,area\\n1,A\\n2,B\\n\\n",
+    b"amount,area\n1,A\n\n2,B\n",
+    b"amount,area\n\n1,A\n2,B\n",
+    b"amount,area\n1,A\n2,B\n\n",
 ])
 def test_shared_upload_rejects_blank_logical_record(payload):
     with pytest.raises(ValueError, match="blank data row"):
@@ -39,8 +39,8 @@ def test_shared_upload_rejects_blank_logical_record(payload):
 
 
 @pytest.mark.parametrize("payload", [
-    "amount,area\\n1,A\\n\\n2,B\\n",
-    "amount,area\\n1,A\\n2,B\\n\\n",
+    "amount,area\n1,A\n\n2,B\n",
+    "amount,area\n1,A\n2,B\n\n",
 ])
 def test_premium_predict_rejects_blank_record(payload, tmp_path):
     path = tmp_path / "new.csv"
@@ -55,11 +55,11 @@ def test_premium_predict_rejects_blank_record(payload, tmp_path):
 
 
 def test_missing_cells_and_multiline_quoted_value_stay_supported(tmp_path):
-    valid = 'amount,area\\n1,"A\\nB"\\n2,\\n3\\n'
+    valid = 'amount,area\n1,"A\nB"\n2,\n3\n'
     payload = valid.encode("utf-8")
     uploaded = _read_csv_from_bytes(payload, "utf-8")
     assert len(uploaded) == 3
-    assert uploaded["area"].iloc[0] == "A\\nB"
+    assert uploaded["area"].iloc[0] == "A\nB"
     assert uploaded["area"].isna().sum() == 2
 
     path = tmp_path / "new.csv"
@@ -71,5 +71,5 @@ def test_missing_cells_and_multiline_quoted_value_stay_supported(tmp_path):
     }
     predicted_input = _load_input(path, schema, "utf-8")
     assert len(predicted_input) == 3
-    assert predicted_input["area"].iloc[0] == "A\\nB"
+    assert predicted_input["area"].iloc[0] == "A\nB"
     assert predicted_input["area"].isna().sum() == 2
