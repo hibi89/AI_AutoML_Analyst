@@ -212,6 +212,30 @@ def windows_predict_command() -> bytes:
     ).encode("utf-8")
 
 
+def _reject_unsafe_sample_headers(
+    df: pd.DataFrame, target_column: str,
+    group_column: str | None, time_column: str | None,
+) -> None:
+    """A PREMIUM CSV header is both an exact prediction schema and an Excel cell.
+
+    Escaping these names in sample_input.csv would make the trusted predictor
+    reject the template. Reject formula-shaped feature names *before* training
+    rather than shipping an executable spreadsheet header or changing schema.
+    """
+    excluded = {target_column}
+    if group_column is not None:
+        excluded.add(group_column)
+    if time_column is not None:
+        excluded.add(time_column)
+    for name in df.columns:
+        if name not in excluded and isinstance(name, str) and name.lstrip().startswith(("=", "+", "-", "@")):
+            raise ValueError(
+                "PREMIUM cannot export a safe exact-schema CSV template with "
+                "spreadsheet formula-like feature headers. Rename columns "
+                "starting with =, +, - or @, then retry."
+            )
+
+
 def build_premium_zip(
     df: pd.DataFrame,
     target_column: str,
@@ -221,6 +245,9 @@ def build_premium_zip(
     time_column: str | None = None,
     cv: int = 3,
 ) -> bytes:
+    # The generated sample_input.csv is opened in spreadsheets by customers.
+    # Enforce its safe/exact column contract before expensive model fitting.
+    _reject_unsafe_sample_headers(df, target_column, group_column, time_column)
     analysis = run_standard(
         df, target_column, task_type, split_policy, group_column, time_column,
         cv=cv, max_challengers=5,
