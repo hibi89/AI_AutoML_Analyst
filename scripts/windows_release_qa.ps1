@@ -5,6 +5,7 @@ param(
     [switch]$PortProbeOnly,
     [switch]$IdentityProbeOnly,
     [switch]$VenvOnly,
+    [switch]$FontProbeOnly,
     [ValidateRange(1024, 65535)][int]$Port = 8000
 )
 $ErrorActionPreference = "Stop"
@@ -124,14 +125,47 @@ if ($VenvOnly) {
 }
 $env:PATH = (Join-Path $venvRoot "Scripts") + ";" + $env:PATH
 
-$font = @(
+# Prefer an owner's licensed installed font when available. For the local-only
+# synthetic QA preview, bootstrap the official Google Fonts OFL original into
+# this project's already-ignored QA virtualenv, never into Windows Fonts,
+# the repository, or a customer ZIP. Other Python projects stay unchanged.
+$fontCandidates = @(
+    $env:AUTOML_KOREAN_FONT_PATH,
     "$env:WINDIR\Fonts\NanumGothic.ttf",
-    "$env:LOCALAPPDATA\Microsoft\Windows\Fonts\NanumGothic.ttf"
-) | Where-Object { Test-Path $_ } | Select-Object -First 1
+    "$env:WINDIR\Fonts\NanumGothic-Regular.ttf",
+    "$env:LOCALAPPDATA\Microsoft\Windows\Fonts\NanumGothic.ttf",
+    "$env:LOCALAPPDATA\Microsoft\Windows\Fonts\NanumGothic-Regular.ttf"
+)
+$font = $fontCandidates | Where-Object { $_ -and (Test-Path -LiteralPath $_ -PathType Leaf) } | Select-Object -First 1
 if (-not $font) {
-    throw "Install a properly licensed NanumGothic.ttf, then rerun. Do not bundle Microsoft fonts."
+    $qaAssets = Join-Path $venvRoot "qa-assets"
+    $qaFont = Join-Path $qaAssets "NanumGothic-Regular.ttf"
+    if (-not (Test-Path -LiteralPath $qaFont -PathType Leaf)) {
+        New-Item -ItemType Directory -Path $qaAssets -Force | Out-Null
+        $temporary = Join-Path $qaAssets "NanumGothic-Regular.download"
+        $url = "https://raw.githubusercontent.com/google/fonts/main/ofl/nanumgothic/NanumGothic-Regular.ttf"
+        Write-Host "Local QA Korean font missing; fetching official Nanum Gothic (OFL) into project-only venv." -ForegroundColor Yellow
+        try {
+            Invoke-WebRequest -Uri $url -UseBasicParsing -OutFile $temporary -TimeoutSec 45 -ErrorAction Stop
+            $fontBytes = [System.IO.File]::ReadAllBytes($temporary)
+            if ($fontBytes.Length -lt 1000000 -or $fontBytes.Length -gt 5000000 -or
+                $fontBytes[0] -ne 0 -or $fontBytes[1] -ne 1 -or
+                $fontBytes[2] -ne 0 -or $fontBytes[3] -ne 0) {
+                throw "Downloaded Nanum Gothic font is not a valid-size TrueType file."
+            }
+            Move-Item -LiteralPath $temporary -Destination $qaFont -ErrorAction Stop
+        } catch {
+            Remove-Item -LiteralPath $temporary -Force -ErrorAction SilentlyContinue
+            throw "Cannot fetch the OFL Nanum Gothic QA font from Google Fonts. Check internet access, or install official Nanum Gothic and rerun. Details: $($_.Exception.Message)"
+        }
+    }
+    $font = $qaFont
 }
-$env:AUTOML_KOREAN_FONT_PATH = $font
+$env:AUTOML_KOREAN_FONT_PATH = [string]$font
+if ($FontProbeOnly) {
+    Write-Output ("KOREAN_QA_FONT_READY=" + $font)
+    return
+}
 
 & $exe -m pip install -r requirements-verified-py311.txt
 if ($LASTEXITCODE -ne 0) { throw "Dependency installation failed." }
