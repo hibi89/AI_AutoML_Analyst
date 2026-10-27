@@ -38,7 +38,7 @@ def validate_basic_frame(df: pd.DataFrame) -> None:
         raise ValueError("All columns must have non-empty text names.")
     # Invisible controls and bidirectional overrides can spoof a column's
     # displayed identity in reports even when its exact schema differs.
-    bidi_controls = {"\\u061c", "\\u200e", "\\u200f"}
+    bidi_controls = {chr(n) for n in (0x061C, 0x200E, 0x200F)}
     bidi_controls.update(chr(n) for n in (*range(0x202A, 0x202F), *range(0x2066, 0x206A)))
     if any(
         len(name) > 160 or any(
