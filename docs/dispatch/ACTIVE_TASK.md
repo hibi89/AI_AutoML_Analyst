@@ -132,3 +132,12 @@ P6E7: 1) confirm exact latest CI for P6E6 shipping policy (including changed cus
 3. Human-required only at true last gate: physical owner's Windows first-install, real Chrome/Edge upload and extraction for 3 tiers, localized font and PDF visual approval, exact trusted PREMIUM CSV prediction and correction / legal shipping review. `docs/qa/P6E5_WINDOWS_OWNER_RUNBOOK.md` is the reproducible workflow; **NOT EXECUTED BY OWNER**.
 4. Must not promote sale GO without all applicable evidence and explicit owner approval. BASIC/STANDARD/PREMIUM **NO-GO**, P1 PARTIAL/P6 IN PROGRESS, official P0–P6 **5/7 = 71%**.
 5. End every increment with GitHub commit, CI observation, and coherent `STATUS.md`/`HANDOFF.md`/ACTIVE_TASK update. Original `main@c80c8744` preserved; local-first, no Vercel/Production.
+
+## P6E9 VERIFIED / AUTO-KM-P6E10 READY (2026-10-27 KST)
+P6E9 code SHA `d5fa54b489a30c808bfe7bd4df27f1f5742167c3` verified in [Windows Actions 40459036865](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40459036865) **67 PASS /9 warnings**, both healthy launcher and temporary broken-`py.cmd` fallback probe PASS, with no global Python/venv modification in probe. Detailed QA `docs/qa/P6E9_RELEASE.md`, STATUS and HANDOFF up to date. Original main preserved.
+
+### Next actionable task: AUTO-KM-P6E10
+1. Read remote HEAD, `HANDOFF.md` → `STATUS.md` → `AGENTS.md` → `REQUIREMENTS.md` → latest QA and relevant source. Do not repeat resolved Windows Unicode/Python launcher failures. Distinguish verified CI from owner's real PC.
+2. Find a genuinely untested no-owner release boundary in the local Windows launcher/ZIP/model UX (if any); prefer minimal targeted change and observed CI over speculative rewrite. If none remains independent, explicitly mark **OWNER MACHINE GATE** and avoid fabricated progress.
+3. Once final owner-machine check is feasible, run `docs/qa/P6E5_WINDOWS_OWNER_RUNBOOK.md` on owner's physical Windows in a *single* coordinated round: Python 3.11/Nanum font, three-tier actual Edge/Chrome uploads, ZIP/PDF Korean visual/quality review, trusted PREMIUM `predict.cmd` schema/tamper/collision, license/commercial signoff. No public customer artifacts or external uploads.
+4. Maintain BASIC/STANDARD/PREMIUM **NO-GO**, **5/7 (71%)** official acceptance, P1 PARTIAL and P6 IN PROGRESS until verified owner evidence + explicit sale approval. Original `main` unchanged, Vercel/Production N/A. Update STATUS/HANDOFF/ACTIVE_TASK per source and CI; no needless commits for status-only queries.
