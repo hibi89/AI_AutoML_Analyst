@@ -1,12 +1,20 @@
-# HANDOFF — AI AutoML Analyst / continue next P6E work
-Updated 2026-10-26 KST. **Single-command wake-up**: [AI AutoML Analyst 깃헙 레포지토리 보고 작업이어가셈] or ㄱ. Immediately start next task, do not ask prior decisions. Live GitHub branch `feature/kmong-v1`, repo `hibi89/AI_AutoML_Analyst` is source. Original `main@c80c874476f8d5deb4bf611761d89c6d72ca0a2d` must remain unchanged.
+# HANDOFF — AI AutoML Analyst / current owner release gate
+Updated 2026-10-27 KST. **Single-command wake-up**: [AI AutoML Analyst 깃헙 레포지토리 보고 작업이어가셈] or ㄱ. Immediately start the next feasible task without re-asking settled decisions. Live GitHub branch `feature/kmong-v1`, repo `hibi89/AI_AutoML_Analyst` is source. Original `main@c80c874476f8d5deb4bf611761d89c6d72ca0a2d` must remain unchanged.
+
+## Current authoritative handoff — supersedes historical queued tasks below
+- **Only remaining acceptance task:** `AUTO-KM-P6E22`, owner-only visual/font-rights/commercial decision. P6E24–P6E29 engineering gap work and the current synthetic crosswalk are complete; do not restart old queued P6E1–P6E29 tasks from the historical log.
+- Latest source commit: `12189482177c8efb415972fcab75f1cfe2bdd4f2` (readable PREMIUM checklist numbering; Windows/Linux-adaptive embedded-font tests). Local Windows focused suite **13 passed / 16 warnings**; full wrapper test subset **93 passed / 25 warnings**.
+- Latest review pack is ignored local synthetic output `qa-preview/p6e5-20261027T105043Z/`; BASIC/STANDARD/PREMIUM PDFs are 6/9/11 pages, ZIP manifests pass, premium Python and `predict.cmd` replay outputs match (3 rows). No customer data, model, font binary or generated ZIP is committed.
+- The wrapper's current `-OpenBrowser` path was not completed. A managed sandbox run hung in Windows `socket.socketpair()` at TestClient startup; the individual endpoint and same full test subset passed outside that context. Current revision remote CI remains to be checked after push.
+- Strict accepted milestone count **5/7 = 71%**; P1 PARTIAL; P6 NOT ACCEPTED. All SKUs remain **NO-GO** until the owner reviews current ZIP/PDF output, checks local font/source terms and explicitly approves any SKU for sale. No public deployment, listing, paid processing, or main merge.
+- Detailed evidence: [`docs/qa/FINAL_ACCEPTANCE_CROSSWALK.md`](docs/qa/FINAL_ACCEPTANCE_CROSSWALK.md), [`docs/qa/P6E29_PDF_EMBEDDED_FONT_AUDIT.md`](docs/qa/P6E29_PDF_EMBEDDED_FONT_AUDIT.md), [`docs/dispatch/ACTIVE_TASK.md`](docs/dispatch/ACTIVE_TASK.md).
 
 ## 1. Locked objective
 Local-first 3-tier Kmong data-analysis report and ML custom-delivery product (BASIC ₩60k, STANDARD ₩150k, PREMIUM ₩300k). User directs implementation, lead engineer is ChatGPT. FastAPI + Pandas + scikit-learn + ReportLab, paid external APIs excluded. MVP-first; security and sale QA gate before launch. No unauthorized public hosting/merge/visibility change/paid resources/customer data commits.
 
 ## 2. Latest implementation stages
-P0 DONE, P1 PARTIAL (real Windows browser), P2 DONE, P3 BASIC DONE implementation, P4 STANDARD DONE implementation, P5 PREMIUM DONE implementation. **P6 IN PROGRESS, NOT ACCEPTED** (P6A visual redesign, local-only security and XLSX implemented and Linux CI passes; Windows and final QA still missing). Strict milestones **5/7 = 71%**, not subjective completion percentage. **All tiers NOT SALE READY.**
-Next precise READY task: **AUTO-KM-P6E**, see `docs/dispatch/ACTIVE_TASK.md`.
+P0 DONE, P1 PARTIAL (hosted Chromium tier downloads proven; owner P6E18 local server/pages opened, but latest owner ZIP download review is outstanding), P2 DONE, P3 BASIC DONE implementation, P4 STANDARD DONE implementation, P5 PREMIUM DONE implementation. **P6 IN PROGRESS, NOT ACCEPTED**; latest Windows tests and synthetic output are summarized in the authoritative handoff above. Strict milestones **5/7 = 71%**, not subjective completion percentage. **All tiers NOT SALE READY.**
+Next precise task: **AUTO-KM-P6E22 owner action required**, see `docs/dispatch/ACTIVE_TASK.md`.
 
 ## 3. Current source progress and verification
 - `backend/app/services/chart_design.py` now creates higher-quality Korean, 155dpi graphs with consistent palette, actual column names (not N1), median line, percent labels, correlation values, anonymized categories with explicitly stated privacy notice, box plot/trend. `basic_p3.py` delegates chart generation to P6 shared designer and formats first-page KPIs into cards with consistent accent. `standard_delivery.py` P5 ML comparison plot already highlights selected model, hatches Dummy baseline and annotates scores. **All chart code shared across tiers.**

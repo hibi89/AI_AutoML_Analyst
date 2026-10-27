@@ -1,10 +1,18 @@
-# ACTIVE TASK — AUTO-KM-P6E final product acceptance gate
-Updated: 2026-10-26 KST
-status: READY
+# ACTIVE TASK — AUTO-KM-P6E22 owner final release decision
+Updated: 2026-10-27 KST
+status: OWNER_ACTION_REQUIRED
 target_branch: feature/kmong-v1
-task_id: AUTO-KM-P6E7
-predecessor: P0 P2 P3 P4 P5 implementation DONE, P1 PARTIAL (Linux Chromium real browser proven; owner Windows unverified), P6A/B/C/D engineering work verified, P6 release still IN PROGRESS.
-next_after_success: P7 Kmong listing DRAFT only after tier-specific release criteria satisfied and owner approves.
+task_id: AUTO-KM-P6E22
+predecessor: P6E24-P6E29 engineering gaps closed; final acceptance crosswalk recorded; P1 PARTIAL and P6 NOT ACCEPTED.
+next_after_success: P7 listing DRAFT only after explicit owner approval for a specific tier; no automatic sale/listing/deployment.
+
+## Current authoritative status (supersedes historical queue below)
+- Latest source: `12189482177c8efb415972fcab75f1cfe2bdd4f2`, feature branch only. Full evidence: [`../qa/FINAL_ACCEPTANCE_CROSSWALK.md`](../qa/FINAL_ACCEPTANCE_CROSSWALK.md) and [`../qa/P6E29_PDF_EMBEDDED_FONT_AUDIT.md`](../qa/P6E29_PDF_EMBEDDED_FONT_AUDIT.md).
+- Local Windows: focused tier/font tests **13 passed / 16 warnings**; all ten release-wrapper test modules **93 passed / 25 warnings**. A current wrapper `-OpenBrowser` execution did not finish in this run; previous owner browser launch is not current downloadable-artifact approval.
+- Latest ignored synthetic review pack `qa-preview/p6e5-20261027T105043Z/`: BASIC/STANDARD/PREMIUM PDF pages 6/9/11; ZIP manifests pass; PREMIUM local Python and `predict.cmd` three-row outputs match. No customer files/models/fonts were committed.
+- **Owner only:** inspect each actual tier ZIP/PDF and report readability/layout; confirm the font source and applicable delivery terms; explicitly decide whether BASIC, STANDARD, and/or PREMIUM can be offered. Record NO-GO for any unresolved tier. This engineering turn cannot substitute for that approval.
+- Strict P0–P6 accepted implementation milestones stay **5/7 = 71%**; P1 PARTIAL, P6 NOT ACCEPTED, all SKUs sale **NO-GO**. Do not merge to `main`, deploy publicly, list, charge, or process customer data before the relevant explicit release authorization.
+- Older `NEXT READY AUTO-KM-P6E1` through `P6E29` sections below are historical records and must not be re-run as open work.
 
 ## Exact latest proven P6D facts
 - Linux full integration [40211592836](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40211592836): **90 PASS, 1 Windows-only SKIP, 34 warnings**. BASIC/STANDARD/PREMIUM reports & PDF/ZIP generated with resource guards, confidential-category-safe ML feature ranking and explicit dropped input columns.
