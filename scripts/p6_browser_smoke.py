@@ -76,7 +76,7 @@ def make_japanese_demo(korean_csv: Path, output: Path) -> None:
     renamed.to_csv(output, index=False, encoding="cp932")
 
 
-def check_zip(path: Path, tier: str):
+def check_zip(path: Path, tier: str, encoding: str = "auto"):
     assert path.stat().st_size > 10_000
     shipping = verify_shipping_zip(path.read_bytes(), tier)
     assert shipping["tier"] == tier
@@ -86,6 +86,13 @@ def check_zip(path: Path, tier: str):
         assert "manifest.json" in z.namelist()
         m=json.loads(z.read("manifest.json"))
         assert m.get("no_raw_dataset") is True
+        if encoding == "cp932":
+            # ZIP validity alone cannot prove absence of silent Japanese
+            # mojibake. Inspect the computed quality report in every tier.
+            summary = json.loads(z.read("summary.json"))
+            columns = {row["column"] for row in summary["quality"]}
+            assert {"日付", "地域", "訪問数", "売上", "費用", "購入"} == columns, columns
+            assert summary["rows"] == 120
         assert all(z.read(f["path"]) for f in m["files"])
         if tier != "BASIC":
             assert "model_scores.csv" in z.namelist()
@@ -136,7 +143,7 @@ def main():
                             down = info.value
                             destination = path / f"{tier.lower()}_{encoding}_result.zip"
                             down.save_as(destination)
-                            check_zip(destination, tier)
+                            check_zip(destination, tier, encoding=encoding)
                             assert "ZIP" in tab.locator('[role="status"]').inner_text()
                             print(f"Chromium {tier} CSV encoding {encoding}: actual browser ZIP PASS", flush=True)
                         finally:
