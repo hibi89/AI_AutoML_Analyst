@@ -49,7 +49,7 @@ def validate_basic_frame(df: pd.DataFrame) -> None:
     ):
         raise ValueError(
             "Column headers must be at most 160 characters and contain "
-            "no control or bidirectional formatting characters."
+            "no control characters or bidirectional formatting characters."
         )
 
 
