@@ -32,3 +32,8 @@ git pull --ff-only origin feature/kmong-v1
 powershell -ExecutionPolicy Bypass -File .\scripts\windows_release_qa.ps1 -OpenBrowser
 ```
 Only the owner machine's redacted terminal result can confirm the new font path resolved that person's particular setup.
+
+
+## FINAL exact-version Windows CI — 2026-10-27 KST
+- [Windows 40468311430](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40468311430) **SUCCESS**, tested hash-pinned script commit `cd5527de24e895208ab0e85beab798e6689ce9a8`: actual PowerShell 5.1 synthetic-first-create venv in a path with spaces, Google Fonts OFL original exact checksum, and subsequent cached font reuse PASS; native **77 PASS /9 warnings**, zero CI errors. No font binary attached/committed or included in commercial ZIP.
+- Owner has not re-executed new source on their own machine; no three-tier real browser or PDF aesthetic/commercial approval. Strict milestones 5/7=71%, all sales NO-GO. Owner can pull existing clone and run one command again, no global font installation or Python reinstall.
