@@ -12,7 +12,7 @@ The shipped trusted repeat-prediction script previously called `pd.read_csv` wit
 
 ## Verification (checked run statuses, no inferred successes)
 - [Docker 40548672267](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40548672267) **COMPLETED SUCCESS** on exact application SHA `aa2ffb19`.
-- [Full Linux 40548766131](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40548766131) on exact regression SHA `6c376ace`: IN PROGRESS at initial documentation. Confirm final count and artifact steps before calling P6E47 complete.
+- [Full Linux 40548766131](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40548766131) on exact regression SHA `6c376aceae1d571d68d42b325fcdaa177fc5dfd4`: **COMPLETED SUCCESS: 273 passed / 3 skipped / 69 warnings**, 6/9/11-page BASIC/STANDARD/PREMIUM PDF previews and all synthetic artifacts, benchmarks and version inventories completed.
 - [Windows native 40548671991](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40548671991), [Windows Chromium 40548671949](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40548671949), [Linux Chromium 40548672179](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40548672179): IN PROGRESS at initial documentation; verify completed status.
 
 ## Release boundaries
