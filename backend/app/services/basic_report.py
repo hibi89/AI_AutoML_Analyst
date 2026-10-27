@@ -9,6 +9,7 @@ import csv
 import io
 import json
 import zipfile
+import unicodedata
 
 import pandas as pd
 
@@ -35,9 +36,21 @@ def validate_basic_frame(df: pd.DataFrame) -> None:
         )
     if not all(isinstance(x, str) and x.strip() for x in df.columns):
         raise ValueError("All columns must have non-empty text names.")
-    # Extremely long/control-character headers can corrupt charts or PDF layout.
-    if any(len(name) > 160 or any(ord(ch) < 32 for ch in name) for name in df.columns):
-        raise ValueError("Column headers must be at most 160 characters and contain no control characters.")
+    # Invisible controls and bidirectional overrides can spoof a column's
+    # displayed identity in reports even when its exact schema differs.
+    bidi_controls = {"\\u061c", "\\u200e", "\\u200f"}
+    bidi_controls.update(chr(n) for n in (*range(0x202A, 0x202F), *range(0x2066, 0x206A)))
+    if any(
+        len(name) > 160 or any(
+            unicodedata.category(ch) == "Cc" or ch in bidi_controls
+            for ch in name
+        )
+        for name in df.columns
+    ):
+        raise ValueError(
+            "Column headers must be at most 160 characters and contain "
+            "no control or bidirectional formatting characters."
+        )
 
 
 def _csv_safe(value: object) -> str:
