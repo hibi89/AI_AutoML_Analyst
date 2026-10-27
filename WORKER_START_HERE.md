@@ -62,3 +62,8 @@ Before following a stale `HANDOFF.md` / `STATUS.md` P6E7 task, read `docs/qa/P6E
 ## Latest P6E10 confirmed result and next P6E11 — 2026-10-27 KST
 P6E10 Windows local-port safety guard tested [Windows Actions 40459966750](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40459966750) at code/workflow SHA `2b314653241a2bbf527476841b4a78ed0a882e28`: occupied-port reject and freed-port permit both PASS; 67 Windows native regressions PASS/9 warnings; original main unchanged. See `docs/qa/P6E10_RELEASE.md`. New source/CI is tested; further documentation commits are not new executable CI.
 **NEXT READY: P6E11** from bottom of `docs/dispatch/ACTIVE_TASK.md`. Physical owner Windows/browser/Korean-PDF design/legal launch signoff still NOT RUN. P1 PARTIAL, P6 not accepted; strictly 5/7=71%, BASIC/STANDARD/PREMIUM sale NO-GO. Local-only, no Vercel/production.
+
+
+## Latest P6E11 verified Windows API identity / Next P6E12 (2026-10-27 KST)
+- P6E11 `scripts/windows_release_qa.ps1` now requires expected AutoML root API JSON, `/health` and living child before opening browsers, on the previously verified unoccupied localhost port. CI [40461091189](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40461091189) code/workflow SHA `5a7e56679a14a658586f18010449bee242f77fa2` **67 PASS /9 warnings**, real local app accepted and unrelated HTTP server refused. Detailed `docs/qa/P6E11_RELEASE.md`.
+- **NEXT READY P6E12 owner-machine release gate** at end of `docs/dispatch/ACTIVE_TASK.md`. One future physical Windows review guide in `docs/qa/P6E5_WINDOWS_OWNER_RUNBOOK.md`. Don't repeat CI, invent final user approval or change frozen scope for activity's sake. P1 PARTIAL/P6 IN PROGRESS, strict 5/7=71%, all SKU sales NO-GO, main unchanged. No Vercel/production.
