@@ -17,9 +17,9 @@ The exported PREMIUM `model_schema.json` lists true training-side boolean input 
 - Local pandas 2.2.3 isolated reproduction: `True,,False` with a blank returns object `[True, NaN, False]`, and new predicate preserves bool/NaN; strings `yes` or `0` mixed with other booleans do not qualify.
 - GitHub Docker [40546704907](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40546704907): **SUCCESS** on application SHA.
 - GitHub Windows Chromium [40546705041](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40546705041): **SUCCESS** on application SHA.
-- GitHub Windows native [40546704996](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40546704996): **SUCCESS** on application SHA.
-- Full Linux + new regression [40546766710](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40546766710) on exact test SHA `da765d4f`: **IN PROGRESS at this document's first write**. Do not mark P6E46 final verified until its completed result and test count are checked; preserve any failures.
-- Linux Chromium [40546704889](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40546704889): **IN PROGRESS at this document's first write**.
+- GitHub Windows native [40546704996](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40546704996): **COMPLETED SUCCESS, 99 passed / 9 warnings** on application SHA.
+- Full Linux + new regression [40546766710](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40546766710) on exact test SHA `da765d4fbd0dd14d27ec08f7a60e582e9227e70b`: **COMPLETED SUCCESS, 270 passed / 3 skipped / 68 warnings in 48.75 seconds**. Original import/smoke, BASIC 6-page, STANDARD 9-page and PREMIUM 11-page synthetic PDFs, owner review pack, BASIC 20k×50 and ML CV benchmarks, inventory and CI uploads all completed successfully.
+- Linux Chromium [40546704889](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40546704889): **COMPLETED SUCCESS** on application SHA.
 
 ## Boundary
 Original `main` SHA `c80c874476f8d5deb4bf611761d89c6d72ca0a2d` protected. No external/customer CSV, paid API, model archive or physical font file committed. No Vercel/public hosting. Physical owner Windows PDF/ZIP and font/software-rights/NOTICE validation and explicit per-SKU commercial acceptance remain outside automated CI. Formal P0–P6 acceptance: **5/7 = 71%**, P1 partial, P6 owner approval pending; BASIC/STANDARD/PREMIUM **SALE NO-GO**.
