@@ -21,6 +21,7 @@ from sklearn.base import clone
 from sklearn.pipeline import Pipeline
 
 from backend.app.services.basic_report import _csv_safe, build_basic_zip
+from backend.app.services.ml_delivery_tables import holdout_scores_csv, feature_importance_csv
 from backend.app.services.preprocessor import (
     build_preprocessing_pipeline, _expand_datetime_features,
 )
@@ -313,6 +314,10 @@ def build_premium_zip(
                          row["cv_primary"] if row["cv_primary"] is not None else "",
                          row["cv_std"] if row["cv_std"] is not None else "", row["error"] or ""])
     parts["model_scores.csv"] = ("\ufeff" + csv_out.getvalue()).encode("utf-8")
+    parts["holdout_scores.csv"] = holdout_scores_csv(analysis)
+    importance_table = feature_importance_csv(analysis)
+    if importance_table is not None:
+        parts["feature_importance.csv"] = importance_table
     input_example = StringIO()
     csv.writer(input_example).writerow(raw_schema["raw_feature_columns"])
     parts["sample_input.csv"] = ("\ufeff" + input_example.getvalue()).encode("utf-8")
@@ -327,6 +332,8 @@ def build_premium_zip(
     parts["README.txt"] = (
         "AI AutoML Analyst PREMIUM\n"
         "1) 신뢰하는 ZIP만 로컬 압축 해제. Python 환경 설치: pip install -r requirements-premium.txt\n"
+        "   model_scores.csv=학습 CV, holdout_scores.csv=선정 모델/Dummy 독립 검증.\n"
+        "   feature_importance.csv는 유효한 모델 내부 중요도만 포함(인과관계 아님).\n"
         "2) sample_input.csv는 행이 없는 컬럼 템플릿입니다. 예시 결과를 만들어내지 않습니다.\n"
         "3) 새 CSV를 sample_input.csv와 동일한 컬럼명/순서로 만든 뒤\n"
         "   predict.cmd new_data.csv predicted.csv (Windows) 또는\n"

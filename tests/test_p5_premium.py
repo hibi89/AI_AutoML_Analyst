@@ -47,7 +47,7 @@ def test_premium_full_zip_and_five_challengers(bundle):
     with ZipFile(BytesIO(bundle)) as z:
         filenames = set(z.namelist())
         assert {"report.pdf", "model_pipeline.skops", "model_schema.json",
-                "premium_summary.json", "model_scores.csv", "predict.py",
+                "premium_summary.json", "model_scores.csv", "holdout_scores.csv", "predict.py",
                 "predict.cmd", "sample_input.csv", "sample_predictions.csv",
                 "requirements-premium.txt", "manifest.json"} <= filenames
         info = json.loads(z.read("premium_summary.json"))

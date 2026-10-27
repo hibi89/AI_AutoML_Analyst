@@ -14,9 +14,9 @@ import re
 from zipfile import ZipFile
 
 _COMMON = frozenset({"report.pdf", "summary.csv", "summary.json", "README.txt", "manifest.json"})
-_STANDARD = frozenset({"standard_summary.json", "model_scores.csv"})
+_STANDARD = frozenset({"standard_summary.json", "model_scores.csv", "holdout_scores.csv"})
 _PREMIUM = frozenset({
-    "premium_summary.json", "model_scores.csv", "model_pipeline.skops",
+    "premium_summary.json", "model_scores.csv", "holdout_scores.csv", "model_pipeline.skops",
     "model_schema.json", "predict.py", "predict.cmd", "requirements-premium.txt",
     "sample_input.csv", "sample_predictions.csv",
 })
@@ -38,11 +38,12 @@ def verify_shipping_zip(payload: bytes, tier: str) -> dict:
         members = archive.namelist()
         if len(members) != len(set(members)):
             raise ValueError("Duplicate shipping members")
+        optional = {"feature_importance.csv"} if tier in {"STANDARD", "PREMIUM"} else set()
         for name in members:
             if (name.startswith(("/", "\\")) or "\\" in name or
                     ".." in name.split("/") or
                     any(name.casefold().endswith(suffix) for suffix in _FORBIDDEN) or
-                    (name not in allowed and not _CHART.fullmatch(name))):
+                    (name not in allowed and name not in optional and not _CHART.fullmatch(name))):
                 raise ValueError("Unexpected or bundled dependency member in shipping ZIP")
         if not _COMMON.issubset(members):
             raise ValueError("Missing common delivery member")

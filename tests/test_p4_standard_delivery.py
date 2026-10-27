@@ -44,7 +44,8 @@ def test_standard_real_http_pdf_zip():
     assert resp.status_code == 200, resp.text
     with ZipFile(BytesIO(resp.content)) as z:
         assert {"report.pdf", "model_scores.csv", "standard_summary.json",
-                "summary.csv", "manifest.json", "charts/06_ml_comparison.png"} <= set(z.namelist())
+                "summary.csv", "manifest.json", "charts/06_ml_comparison.png",
+                "holdout_scores.csv"} <= set(z.namelist())
         x = json.loads(z.read("standard_summary.json"))
         assert x["train_rows"] + x["holdout_rows"] == 120
         assert x["holdout_used_in_selection"] is False

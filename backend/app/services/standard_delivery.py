@@ -16,6 +16,7 @@ import pandas as pd
 from backend.app.services.basic_report import _csv_safe, build_basic_zip
 from backend.app.services.basic_p3 import _korean_font, NANUM_FONT_CREDIT
 from backend.app.services.standard_engine import run_standard
+from backend.app.services.ml_delivery_tables import holdout_scores_csv, feature_importance_csv
 
 
 def _comparison_plot(analysis: dict) -> bytes:
@@ -328,10 +329,16 @@ def build_standard_zip(
             row["cv_std"] if row["cv_std"] is not None else "", row["error"] or "",
         ])
     parts["model_scores.csv"] = ("\ufeff" + buffer.getvalue()).encode("utf-8")
+    parts["holdout_scores.csv"] = holdout_scores_csv(analysis)
+    importance_table = feature_importance_csv(analysis)
+    if importance_table is not None:
+        parts["feature_importance.csv"] = importance_table
     parts["README.txt"] = (
         "AI AutoML Analyst STANDARD\n"
         "report.pdf: BASIC 품질 진단 + STANDARD 모델 평가 결과.\n"
         "model_scores.csv: 학습 데이터 내부 CV 평균/편차.\n"
+        "holdout_scores.csv: 독립 holdout의 선정 모델/Dummy 비교. holdout은 모델 선정에 쓰지 않았습니다.\n"
+        "feature_importance.csv: 유효한 모델 내부 중요도가 있을 때만 포함(인과관계 아님).\n"
         "standard_summary.json: 선정 모델과 holdout 평가, 누수 경고.\n"
         "Dummy 기준선은 3종 비교 모델에 포함되지 않습니다.\n"
         "독립 검증 결과로 모델을 다시 고르지 않았습니다.\n"
