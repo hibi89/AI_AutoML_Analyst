@@ -24,7 +24,10 @@ permissions:
 jobs:
   original-smoke:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    # Apt mirror/font installation took ~11 minutes on 2026-10-28; all 231
+    # tests passed but the previous 12-minute job timeout cancelled preview QA.
+    # Keep every existing test, PDF preview, benchmark and artifact check.
+    timeout-minutes: 25
     steps:
       - name: Checkout current branch
         uses: actions/checkout@v4
