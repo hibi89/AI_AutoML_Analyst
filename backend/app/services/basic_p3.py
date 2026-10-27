@@ -21,6 +21,7 @@ import pandas as pd
 from backend.app.services.basic_report import (
     _csv_safe, _quality_rows, validate_basic_frame,
 )
+from backend.app.services.ml_feasibility import inspect_ml_feasibility
 
 
 # ReportLab may embed a subset of the owner's installed NanumGothic font.
@@ -347,6 +348,24 @@ def _pdf(summary: dict, charts: list[tuple[str, bytes, str]]) -> bytes:
     story.extend([Spacer(1, 14), heading("ML 적용 가능성")])
     story.append(paragraph("분류/회귀의 목적 변수와 관측 시점, 미래 정보 누수 여부를 먼저 정의해야 합니다. "
                            "이 BASIC 보고서에는 모델 적합, 정확도 비교, 자동 목표 확정이 포함되지 않습니다."))
+    feasibility = summary["ml_feasibility"]
+    if feasibility["candidates"]:
+        hints = " / ".join(
+            f"{str(item['column'])[:20]} ({item['inspection_type']})"
+            for item in feasibility["candidates"]
+        )
+        story.append(paragraph(
+            "업무 목표 확인용 열 후보: " + hints
+            + ". 입력 열 이름과 고유값·결측만 검토했습니다. 실제 목표 선정은 의뢰인이 해야 합니다.",
+            "small",
+        ))
+    else:
+        story.append(paragraph(
+            "목표열을 검토할 충분한 근거가 없습니다. 의뢰인의 업무 목적과 정답 열 정의가 필요합니다.",
+            "small",
+        ))
+    if feasibility["constraints"]:
+        story.append(paragraph("진단 제약: " + feasibility["constraints"][0], "small"))
     profiles = summary.get("numeric_profiles", [])
     if profiles:
         # Quantitative candidates are only inspection aids, never automatic ML
@@ -405,6 +424,7 @@ def build_basic_delivery(df: pd.DataFrame) -> bytes:
         "suggestions": suggestions,
         "metrics": metrics,
         "numeric_profiles": _numeric_profiles(df),
+        "ml_feasibility": inspect_ml_feasibility(df),
         "quality": quality,
         "chart_count": len(charts),
         "chart_captions": {name: note for name, _, note in charts},
