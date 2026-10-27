@@ -149,7 +149,7 @@ def _korean_font() -> str:
     return resolve_report_fonts()[0]
 
 
-def _pdf(summary: dict, charts: list[tuple[str, bytes, str]]) -> bytes:
+def _pdf(summary: dict, charts: list[tuple[str, bytes, str]], *, report_tier: str = "BASIC") -> bytes:
     from reportlab.lib import colors
     from reportlab.lib.enums import TA_CENTER, TA_LEFT
     from reportlab.lib.pagesizes import A4
@@ -164,6 +164,8 @@ def _pdf(summary: dict, charts: list[tuple[str, bytes, str]]) -> bytes:
     required = "".join(str(item["column"]) for item in summary["quality"])
     font, fallback_font = resolve_report_fonts(required)
     out = BytesIO()
+    is_basic = report_tier == "BASIC"
+    section_name = "BASIC 데이터 진단 보고서" if is_basic else f"{report_tier} 데이터 진단 섹션"
     styles = {
         "title": ParagraphStyle("title", fontName=font, fontSize=26, leading=34,
                                 textColor=colors.HexColor("#173e58"), spaceAfter=20),
@@ -190,7 +192,7 @@ def _pdf(summary: dict, charts: list[tuple[str, bytes, str]]) -> bytes:
         canvas.rect(44, h-33, 45, 3, stroke=0, fill=1)
         canvas.setFont(font, 8)
         canvas.setFillColor(colors.HexColor("#6c8492"))
-        canvas.drawString(44, 31, "AI AutoML Analyst  |  BASIC 데이터 진단 보고서")
+        canvas.drawString(44, 31, f"AI AutoML Analyst  |  {section_name}")
         canvas.drawRightString(w-44, 31, f"{doc.page}")
         canvas.restoreState()
 
@@ -198,9 +200,12 @@ def _pdf(summary: dict, charts: list[tuple[str, bytes, str]]) -> bytes:
         Spacer(1, 16),
         paragraph("AI AUTOML ANALYST   /   DATA INTELLIGENCE", "small"),
         paragraph("데이터 진단 및 핵심 인사이트", "title"),
-        paragraph("BASIC  /  EXPLORATORY DATA REPORT", "small"),
-        paragraph("이 보고서는 제공된 표형 데이터의 품질 및 관측 분포를 요약합니다. "
-                  "ML 모델 학습이나 미래 예측, 인과관계 판단은 포함하지 않습니다.", "small"),
+        paragraph(f"{report_tier}  /  " + ("EXPLORATORY DATA REPORT" if is_basic else "EXPLORATORY DATA SECTION"), "small"),
+        paragraph(("이 보고서는 제공된 표형 데이터의 품질 및 관측 분포를 요약합니다. "
+                   "ML 모델 학습이나 미래 예측, 인과관계 판단은 포함하지 않습니다.")
+                  if is_basic else
+                  ("이 데이터 진단 섹션은 제공된 자료의 품질과 관측 분포를 요약합니다. "
+                   "모델 학습 및 검증 결과는 뒤의 ML 평가 섹션에 포함됩니다. 인과관계 판단은 포함하지 않습니다."), "small"),
         Spacer(1, 14),
         heading("핵심 지표"),
     ]
@@ -331,8 +336,11 @@ def _pdf(summary: dict, charts: list[tuple[str, bytes, str]]) -> bytes:
     for line in summary["suggestions"]:
         story.append(paragraph("• " + line))
     story.extend([Spacer(1, 14), heading("ML 적용 가능성")])
-    story.append(paragraph("분류/회귀의 목적 변수와 관측 시점, 미래 정보 누수 여부를 먼저 정의해야 합니다. "
-                           "이 BASIC 보고서에는 모델 적합, 정확도 비교, 자동 목표 확정이 포함되지 않습니다."))
+    story.append(paragraph(
+        "분류/회귀의 목적 변수와 관측 시점, 미래 정보 누수 여부를 먼저 정의해야 합니다. "
+        + ("이 BASIC 보고서에는 모델 적합, 정확도 비교, 자동 목표 확정이 포함되지 않습니다."
+           if is_basic else "이 데이터 진단 섹션은 모델 학습 결과를 다루지 않습니다. 뒤의 ML 평가 섹션에서 모델 비교와 독립 검증을 확인하세요.")
+    ))
     feasibility = summary["ml_feasibility"]
     if feasibility["candidates"]:
         hints = " / ".join(
@@ -387,13 +395,15 @@ def _pdf(summary: dict, charts: list[tuple[str, bytes, str]]) -> bytes:
                             "지원되는 차트를 생성했습니다. 범주 값과 개별 행은 ZIP에 넣지 않습니다.", "small"),
                   paragraph("주의: 데이터 정합성, 대표성, 편향, 수집 맥락은 자동 진단만으로 확인할 수 없습니다.", "small")])
     document = SimpleDocTemplate(out, pagesize=A4, leftMargin=44, rightMargin=44,
-                                 topMargin=48, bottomMargin=60, title="AI AutoML Analyst BASIC",
+                                 topMargin=48, bottomMargin=60, title=f"AI AutoML Analyst {report_tier}",
                                  author="AI AutoML Analyst")
     document.build(story, onFirstPage=footer, onLaterPages=footer)
     return out.getvalue()
 
 
-def build_basic_delivery(df: pd.DataFrame) -> bytes:
+def build_basic_delivery(df: pd.DataFrame, *, report_tier: str = "BASIC") -> bytes:
+    if report_tier not in {"BASIC", "STANDARD", "PREMIUM"}:
+        raise ValueError("Unsupported report tier.")
     validate_basic_frame(df)
     quality = _quality_rows(df)
     findings, suggestions = _insights(df, quality)
@@ -415,7 +425,7 @@ def build_basic_delivery(df: pd.DataFrame) -> bytes:
         "chart_captions": {name: note for name, _, note in charts},
         "disclaimer": "Descriptive only, no ML fit, no causal claim.",
     }
-    pdf = _pdf(summary, charts)
+    pdf = _pdf(summary, charts, report_tier=report_tier)
     buf = StringIO()
     writer = csv.writer(buf)
     writer.writerow(["column", "dtype", "missing", "missing_pct", "unique"])
