@@ -141,3 +141,15 @@ P6E9 code SHA `d5fa54b489a30c808bfe7bd4df27f1f5742167c3` verified in [Windows Ac
 2. Find a genuinely untested no-owner release boundary in the local Windows launcher/ZIP/model UX (if any); prefer minimal targeted change and observed CI over speculative rewrite. If none remains independent, explicitly mark **OWNER MACHINE GATE** and avoid fabricated progress.
 3. Once final owner-machine check is feasible, run `docs/qa/P6E5_WINDOWS_OWNER_RUNBOOK.md` on owner's physical Windows in a *single* coordinated round: Python 3.11/Nanum font, three-tier actual Edge/Chrome uploads, ZIP/PDF Korean visual/quality review, trusted PREMIUM `predict.cmd` schema/tamper/collision, license/commercial signoff. No public customer artifacts or external uploads.
 4. Maintain BASIC/STANDARD/PREMIUM **NO-GO**, **5/7 (71%)** official acceptance, P1 PARTIAL and P6 IN PROGRESS until verified owner evidence + explicit sale approval. Original `main` unchanged, Vercel/Production N/A. Update STATUS/HANDOFF/ACTIVE_TASK per source and CI; no needless commits for status-only queries.
+
+
+## P6E10 DONE IN TESTED CODE / P6E11 READY (2026-10-27 KST)
+- Port-collision prelaunch guard and `-PortProbeOnly` added to Windows owner script without dependencies; Windows CI ephemeral occupied/free localhost port check PASS.
+- [Windows Actions 40459966750](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/40459966750) on code+workflow SHA `2b314653241a2bbf527476841b4a78ed0a882e28`: SUCCESS, 67 PASS/9 warnings; parse/Python launcher fallback/local collision regression steps all SUCCESS. QA `docs/qa/P6E10_RELEASE.md`.
+- P0–P6 accepted **5/7=71%**; P1 physical owner UX PARTIAL/P6 release NOT ACCEPTED; all tiers NO-GO. `main` preserved, no production/Vercel.
+
+### Next actionable task: AUTO-KM-P6E11
+1. Read live branch/CI, `HANDOFF.md`, `STATUS.md`, `AGENTS.md`, `REQUIREMENTS.md`, `docs/qa/P6E10_RELEASE.md` and actual source.
+2. Inspect remaining owner first-install, local server/ZIP and trusted model handover **only for concrete untested defects**; implement small, testable gaps if found. Avoid speculative refactor/extra GUI automation that cannot replace human design signoff.
+3. When genuinely no independent work remains, document OWNER MACHINE GATE in `docs/qa/P6E5_WINDOWS_OWNER_RUNBOOK.md`; user should have just one physical run with Python3.11/Nanum font/Edge-Chrome three SKU PDFs/ZIPs and PREMIUM repeat prediction and design/legal consent.
+4. Remain **NO-GO** all tiers and **5/7=71%** until physical/approval evidence; no main merge, customer data upload, public hosting, cost or commercial activation without permission. Update status/handoff/task at meaningful boundary.
