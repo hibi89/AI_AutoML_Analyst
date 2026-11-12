@@ -1,3 +1,16 @@
+## 2026-11-12 KST — P95 active target / P6E53 status handoff (10 points)
+
+1. Objective/stack: AutoML Analyst original local FastAPI/pandas/scikit-learn/ReportLab, BASIC/STANDARD/PREMIUM; owner target 85→95 engineering, formal P0-P6 5/7 (71%) unchanged.
+2. Change/decision: error cleanup used pathname unlink and could delete replaced owner file. Compared inode-check/unlink (TOCTOU remains) with fail-closed no-auto-delete (chosen), manual HOLD of partial private outputs.
+3. Tests: P6E53 has two new error/replacement regression tests and adjusted existing second-file failure expectation. Exact code/tests SHA `685589677c7db24fc554360651442a207e0db637`; hosted Linux/Windows CI queued and must be read before PASS claim.
+4. State: 85% provisional remains; **95% not achieved**; three SKUs SALE NO-GO, RELEASE HOLD; no rate inflation.
+5. Failure/root/pivot: direct Path.unlink(missing_ok=True) on failure was unsafe if the name is concurrently replaced; no paid external services, original input ZIP preserved. Incomplete output is not completed delivery.
+6. Repository: hibi89/AI_AutoML_Analyst@feature/kmong-p6e50-owner-delivery-20261112, source/test paths P6E50/51 and docs/qa/P6E53_SAFE_OUTPUT_HOLD_20261112.md; previous Git history is rollback point.
+7. Deployment/environment: owner-local CLI; public GitHub Actions Ubuntu/Windows; Vercel and production **N/A**.
+8. Originals/backups/security: `main` and underlying original 3-tier engines, original customer data, secrets, ZIP/PDF owner files untouched; no licensing/permission/charge change.
+9. Next acceptance: same SHA CI and focused tests, then actual Windows10/11 and PDF visual/font rights/NOTICE/data-use authorization, per-SKU owner GO. Central **[작업중] must remain until verified P95**, even across pause/room change.
+10. Updated 2026-11-12 KST; central marker commit `e5ba7512e8d9995da729ff41aa77deceeb4e453c`; P6E53 source SHA `685589677c7db24fc554360651442a207e0db637`, CI result pending, original release gates unverified.
+
 ## 2026-11-12 KST — P6E50–P6E52 cross-OS owner artifact review, AutoML engineering 85% provisional (10-point handoff)
 1. Objective/scope/technology: owner-authorized customer CSV/XLSX→BASIC(60k)/STANDARD(150k)/PREMIUM(300k) original local FastAPI/pandas/sklearn/ReportLab/skops, user asked next urgent non-SOVIA/DBVORA under85 to85. Original rigorous P0–P6 acceptance 5/7 (71%); P6 customer rights/commercial not satisfied.
 2. Delivered/decision: A existing synthetic package policy/CI as auto-sale APPROVAL (rejected: rights/physical original absent) vs B bounded exact original physical ZIP SHA+manifest+PDF inspection, three-SKU cross-check and offline owner-only print HTML/JSON (selected). New P6E50/P6E51 source and P6E52 original-engine synthetic full generation/independent verification, no ZIP extraction/model execution/actual customer source, no external API.
