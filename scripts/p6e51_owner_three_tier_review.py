@@ -129,22 +129,17 @@ def create_three_tier_review(
         "contents_or_local_paths_in_review": False,
         "every_sku_sale_approved": False,
     }
-    created = []
-    try:
-        for path, content in (
-            (output_json, json.dumps(report, ensure_ascii=True, indent=2, sort_keys=True) + "\n"),
-            (output_html, _review_html(report)),
-        ):
-            flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_BINARY", 0)
-            fd = os.open(path, flags, 0o600)
-            created.append(path)
-            with os.fdopen(fd, "w", encoding="utf-8") as out:
-                out.write(content)
-        return report
-    except Exception:
-        for path in reversed(created):
-            path.unlink(missing_ok=True)
-        raise
+    # Preserve partial files for owner-only manual HOLD. Never unlink by
+    # pathname after failure: another writer may replace an output entry.
+    for path, content in (
+        (output_json, json.dumps(report, ensure_ascii=True, indent=2, sort_keys=True) + "\n"),
+        (output_html, _review_html(report)),
+    ):
+        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_BINARY", 0)
+        fd = os.open(path, flags, 0o600)
+        with os.fdopen(fd, "w", encoding="utf-8") as out:
+            out.write(content)
+    return report
 
 
 def main(argv: list[str] | None = None) -> int:
