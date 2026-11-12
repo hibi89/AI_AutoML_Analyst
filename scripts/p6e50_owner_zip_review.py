@@ -160,7 +160,6 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--expected-sha256", required=True)
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args(argv)
-    made = False
     try:
         if (not args.out.is_absolute() or args.out.suffix.lower() != ".json"
                 or args.out == args.zip or args.out.exists() or args.out.is_symlink()):
@@ -171,7 +170,6 @@ def main(argv: list[str] | None = None) -> int:
         result = inspect_owner_zip(args.zip, args.tier, args.expected_sha256)
         flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY | getattr(os, "O_BINARY", 0)
         fd = os.open(args.out, flags, 0o600)
-        made = True
         with os.fdopen(fd, "w", encoding="utf-8") as target:
             json.dump(result, target, sort_keys=True, ensure_ascii=True, indent=2)
             target.write("\n")
@@ -181,8 +179,8 @@ def main(argv: list[str] | None = None) -> int:
         print("CUSTOMER_SALE_APPROVED=False")
         return 0
     except (OSError, ValueError, KeyError, TypeError, BadZipFile, ImportError, OverflowError):
-        if made:
-            args.out.unlink(missing_ok=True)
+        # Do not remove the pathname after failure: a concurrent writer may
+        # have replaced it. A partial file is HOLD for manual owner review.
         print("LOCAL_OWNER_DELIVERY_REVIEW_BLOCKED")
         return 1
 
