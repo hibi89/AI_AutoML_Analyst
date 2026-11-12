@@ -5,6 +5,7 @@ from hashlib import sha256
 from io import BytesIO
 import json
 from pathlib import Path
+from unittest.mock import patch
 from zipfile import ZIP_DEFLATED, ZipFile
 
 import pytest
@@ -215,3 +216,23 @@ def test_review_path_must_be_absolute_and_json(tmp_path):
                  "--expected-sha256", sha256(data).hexdigest(),
                  "--out", str(out)]) == 1
     assert not out.exists()
+
+
+def test_interrupted_metadata_write_preserves_partial_file_without_deleting_path(tmp_path):
+    from scripts import p6e50_owner_zip_review as mod
+    payload = _archive()
+    source = tmp_path / "owner-source.zip"
+    source.write_bytes(payload)
+    out = tmp_path / "receipt.json"
+    argv = ["--zip", str(source), "--tier", "BASIC",
+            "--expected-sha256", sha256(payload).hexdigest(), "--out", str(out)]
+
+    def interrupted_dump(value, handle, **kwargs):
+        handle.write("INCOMPLETE_DO_NOT_USE")
+        raise OSError("synthetic output failure")
+
+    with patch.object(mod.json, "dump", side_effect=interrupted_dump):
+        assert mod.main(argv) == 1
+    # Manual HOLD/cleanup: the error handler must never unlink an output name.
+    assert out.read_text(encoding="utf-8") == "INCOMPLETE_DO_NOT_USE"
+    assert source.read_bytes() == payload
