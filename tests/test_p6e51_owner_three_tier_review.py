@@ -153,7 +153,7 @@ def test_output_parent_symlink_is_blocked(tmp_path):
         create_three_tier_review(sources, alias / "report.json", tmp_path / "report.html")
 
 
-def test_failed_second_output_write_removes_only_new_first_output(tmp_path):
+def test_failed_second_output_write_preserves_partial_first_output(tmp_path):
     from scripts import p6e51_owner_three_tier_review as mod
     sources = _sources(tmp_path)
     j, h = tmp_path / "report.json", tmp_path / "report.html"
@@ -165,7 +165,7 @@ def test_failed_second_output_write_removes_only_new_first_output(tmp_path):
     with patch.object(mod.os, "open", side_effect=fail_second):
         with pytest.raises(OSError):
             mod.create_three_tier_review(sources, j, h)
-    assert not j.exists()
+    assert json.loads(j.read_text(encoding="utf-8"))["every_sku_sale_approved"] is False
     assert not h.exists()
     assert all(p.exists() for p, digest in sources.values())
 
@@ -202,3 +202,27 @@ def test_changed_zip_after_inspection_is_rejected_without_outputs(tmp_path):
             create_three_tier_review(sources, tmp_path / "report.json",
                                      tmp_path / "report.html")
     assert not (tmp_path / "report.json").exists()
+
+
+def test_failed_html_cannot_delete_a_concurrent_owner_replacement(tmp_path):
+    from scripts import p6e51_owner_three_tier_review as mod
+    sources = _sources(tmp_path)
+    j, h = tmp_path / "review.json", tmp_path / "review.html"
+    moved = tmp_path / "created-by-reviewer.json"
+    owner_bytes = b"OWNER REPLACED PATH; NOT REVIEW OUTPUT"
+    real_open = os.open
+
+    def swap_after_first_output(path, flags, mode=0o777):
+        if Path(path) == h and flags & os.O_CREAT:
+            os.replace(j, moved)
+            j.write_bytes(owner_bytes)
+            raise OSError("synthetic later output failure")
+        return real_open(path, flags, mode)
+
+    with patch.object(mod.os, "open", side_effect=swap_after_first_output):
+        with pytest.raises(OSError):
+            mod.create_three_tier_review(sources, j, h)
+    assert moved.is_file()
+    assert j.read_bytes() == owner_bytes
+    assert not h.exists()
+    assert all(p.exists() for p, digest in sources.values())
