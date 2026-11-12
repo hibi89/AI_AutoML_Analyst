@@ -1,3 +1,16 @@
+## 2026-11-12 KST — P95 scope milestone verified / release still HOLD (10-point handoff)
+
+1. **Goal/scope/stack:** Local-first original FastAPI/Pandas/sklearn/ReportLab AutoML tiers BASIC/STANDARD/PREMIUM. P95 engineering user target reached **provisionally**, frozen P0-P6 5/7 (71%) formal acceptance unchanged.
+2. **Implemented/decision:** P6E53 original ZIP/3-SKU local review failures no longer delete an output pathname after another owner process may replace it; preserve private partial output for manual HOLD, O_EXCL and zero sale flags. P6E54 same-source comprehensive original QA; P6E28 test now checks actual Japanese fallback licensing provenance (Windows system vs Linux Arphic).
+3. **Test evidence:** exact executable/test SHA `458cf43816d3fa581a7c9e5c53399936c1933ede`, [P6E54](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/43226903380) 4/4 success; Ubuntu320P/3S, Windows322P/1S, Linux/Windows Chromium6/6 each, PDF pages 6/9/11; [targeted #43226903499](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/43226903499) and [#43227210983](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/43227210983) SUCCESS. Customer visual/legal NOT RUN.
+4. **State:** 85→95% provisional engineering only (+3 P6E53, +7 P6E54), strict formal 5/7 (71%), owner approvals not met; all SKUs SALE NO-GO/RELEASE HOLD. No production deployment.
+5. **Failure causes/retry:** first Windows-full 9 FAIL due missing temporary Nanum font and pdftoppm; second 3 FAIL due hardcoded Arphic expectation despite native Windows fallback. Fixed runner with SHA-pinned temp assets, portable provenance test; final all green. Do not rerun failed settings.
+6. **Repo/branch/SHA:** `hibi89/AI_AutoML_Analyst@feature/kmong-p6e50-owner-delivery-20261112`, exact validated SHA `458cf43816d3fa581a7c9e5c53399936c1933ede`, primary paths `scripts/p6e50_owner_zip_review.py`, `scripts/p6e51_owner_three_tier_review.py`, tests/P6E53 QA and `.github/workflows/p6e54-full-original-qa.yml`. `main` unchanged; original history is backup.
+7. **Environment:** GitHub Actions Ubuntu24.04, Windows2025, Python3.11, headless real Chromium; product runs owner-local, not hosted. Vercel/Production not applicable.
+8. **Data/security:** no customer ZIP, source data, credentials, paid API, font binary, license approval, GitHub visibility changes, or real sales; original source and release boundaries preserved. Third-party rights not cleared.
+9. **Next tasks/acceptance:** 95→100 only after real owner/customer Windows10/11 visual PDF/ZIP/fonts, rights and software NOTICE originals, data authorization, terms and distinct BASIC/STD/PREMIUM explicit commercial GO; preserve HOLD until then. Central work marker may clear ONLY once P95 verified evidence and hub row synced.
+10. **Updated:** 2026-11-12 KST; latest source audit run #43226903380, source `458cf43816d3fa581a7c9e5c53399936c1933ede`; docs-only commits follow with no executable changes; repo/central HEAD and marker consistency to verify after push.
+
 ## 2026-11-12 KST — P95 active target / P6E53 status handoff (10 points)
 
 1. Objective/stack: AutoML Analyst original local FastAPI/pandas/scikit-learn/ReportLab, BASIC/STANDARD/PREMIUM; owner target 85→95 engineering, formal P0-P6 5/7 (71%) unchanged.
