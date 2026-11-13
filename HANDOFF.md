@@ -1,3 +1,16 @@
+## 2026-11-13 KST — ONTOINSIGHT AX P50 (10-point handoff)
+
+1. Goal/spec/stack: Freelancer ONTOINSIGHT entire final blueprint, not inherited old AutoML P95; local Python pandas+Decimal. No external AI/API.
+2. Implementation/decision: reuses existing bounded AutoML CSV reader plus ontology-lite role candidates; external LLM upload rejected due to privacy/cost. Business meaning remains REVIEW_HOLD.
+3. Tests: source SHA 8da6ae98e308f68b52af159a662fe58c20f5bc74; CI #43375766099 2/2 SUCCESS, Ubuntu 11 PASS, Windows Server2025 11 PASS, compileall PASS. Exact synthetic KPI 5 dimensions. No buyer-PC CLI test.
+4. State: P50 engineering milestone passed; official full-design percentage UNASSESSED, central [작업중] must remain, product RELEASE HOLD.
+5. Failure evidence/limits: digest change, missing money/order ID, duplicate header, ambiguous money, refund overflow refused. No customer-level source data released. Real customer mappings not approved.
+6. Repo/ref/SHA: hibi89/AI_AutoML_Analyst feature/ontoinsight-ax-p50-20261113 at source 8da6ae98e308f68b52af159a662fe58c20f5bc74; backend/app/services/ontoinsight_p50.py, scripts/ontoinsight_p50_review.py, tests/test_ontoinsight_p50.py, .github/workflows/ontoinsight-p50.yml.
+7. Environment/deploy: GitHub Actions Python3.11 Ubuntu24.04 and Windows Server2025; no Production/Vercel (N/A), user Windows10/11 NOT VERIFIED.
+8. Original/backup/security: main/original AutoML untouched; parent a3ddd8b9d20fee591ad246becab2b4adc89b56d8 for non-destructive rollback; no secret, customer rows, paid services or uploaded data.
+9. Next/prerequisites: source+mapping signed approval, XLSX/multi-CSV and cardinality join, independent real financial reconciliation, ML/time-group leakage policy, owner Windows10/11 and legal/rights verification. Official 50% requires owner-approved full-design weights.
+10. Timestamp/verification: 2026-11-13 KST; source SHA 8da6ae98e308f68b52af159a662fe58c20f5bc74 and CI #43375766099 read back; docs-only commit follows, test scope above. QA details in docs/qa/ONTOINSIGHT_AX_P50_20261113.md.
+
 ## 2026-11-12 KST — P95 scope milestone verified / release still HOLD (10-point handoff)
 
 1. **Goal/scope/stack:** Local-first original FastAPI/Pandas/sklearn/ReportLab AutoML tiers BASIC/STANDARD/PREMIUM. P95 engineering user target reached **provisionally**, frozen P0-P6 5/7 (71%) formal acceptance unchanged.

@@ -1,3 +1,9 @@
+## 2026-11-13 KST — ONTOINSIGHT AX P50 engineering verified; whole blueprint UNASSESSED
+
+- New product branch feature/ontoinsight-ax-p50-20261113 executable SHA 8da6ae98e308f68b52af159a662fe58c20f5bc74: existing bounded AutoML one-CSV intake, metadata-only data dictionary, ontology-lite role candidates, REVIEW_HOLD, SHA256, independent synthetic-only Decimal KPI audit. Original AutoML engines/main preserved.
+- CI [#43375766099](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/43375766099) exact SHA SUCCESS: Ubuntu 11/11 PASS, Windows Server2025 11/11 PASS, 0 FAIL/0 SKIP, compileall both PASS. P50 phase acceptance verified on synthetic only.
+- Full final design official completion remains UNASSESSED (no owner-approved 100-point weighting/complete audit). Central ONTOINSIGHT [작업중] retained, RELEASE HOLD. Buyer Windows10/11, actual customers, license/production NOT VERIFIED. See docs/qa/ONTOINSIGHT_AX_P50_20261113.md.
+
 ## 2026-11-12 KST — P6E53/P6E54 exact-source verification; P95 engineering target reached (provisional, not sale)
 
 - **Engineering scope score 85% → 95% provisional (+10 percentage points):** +3pp for P6E53 validated unsafe failed-output pathname unlink elimination and 2 adversarial regressions + revised failure test; +7pp for P6E54 exact-feature-SHA full Linux/Windows original regression and both real-Chromium 3-SKU downloads with encodings. This is a **subjective scope-weighted engineering estimate, not a proportion of tests or a formal acceptance/legal certificate**. Formal P0–P6 still **5/7=71%**.
