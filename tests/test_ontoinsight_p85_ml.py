@@ -148,7 +148,7 @@ def test_random_split_forbids_undeclared_group_column():
     source = sample()
     p = plan()
     p["group_col"] = "store_bucket"
-    with pytest.raises(ValueError, match="Random split"):
+    with pytest.raises(ValueError, match="Split requires exactly"): 
         approved(source, p)
 
 
@@ -194,12 +194,12 @@ def test_overlapping_time_boundary_abstain():
     source = sample(irregular_date=True)
     res = evaluate_approved_ml(source, approved(source, plan(mode="time")))
     assert res["status"] == "ML_NOT_SUITABLE"
-    assert res["reason"] in {"OVERLAPPING_TIME_BOUNDARY", "CLASS_SUPPORT_IN_CV"}
+    assert res["reason"] in {"OVERLAPPING_TIME_BOUNDARY", "DUPLICATE_TIME_SPLIT_AMBIGUITY", "CLASS_SUPPORT_IN_CV"}
 
 
 def test_unapproved_sensitive_column_excluded_even_if_not_feature():
     source = sample()
-    rows = source.content.decode().replace(",event_date", ",event_date,email").replace("\n", ",sample@example.invalid\n", 1)
+    rows = source.content.decode().replace("event_date", "email", 1)
     with pytest.raises(ValueError, match="Identifier"):
         review_ml_source(InputSource("ml", "synthetic.csv", rows.encode()))
 

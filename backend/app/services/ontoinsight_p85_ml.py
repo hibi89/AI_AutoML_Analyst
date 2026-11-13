@@ -195,6 +195,11 @@ def evaluate_approved_ml(source: InputSource, receipt: dict[str, Any]) -> dict[s
         dt = pd.to_datetime(frame[plan["time_col"]], errors="coerce", utc=True, format="ISO8601")
         if dt.isna().any() or dt.nunique() < 8:
             return _abstain("INVALID_OR_INSUFFICIENT_TIME")
+        # Multiple rows sharing an identical prediction timestamp may cross a
+        # CV/holdout boundary. P85 intentionally fails closed until a bounded
+        # timestamp-grouped splitter is audited.
+        if dt.duplicated().any():
+            return _abstain("DUPLICATE_TIME_SPLIT_AMBIGUITY")
         idx = np.argsort(dt.to_numpy(), kind="stable")
         cut = int(len(idx) * .8)
         train_ids, test_ids = idx[:cut], idx[cut:]
