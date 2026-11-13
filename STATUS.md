@@ -1,3 +1,10 @@
+## 2026-11-13 KST — ONTOINSIGHT AX P85 engineering acceptance SUCCESS, official full rate UNASSESSED
+
+- Current P85 isolated branch `feature/ontoinsight-ax-p85-20261113` exact executed source SHA `8d1bdc80ed345485591f739aace632e91112a604`; ML target/feature/time/group data leakage gates, 3-fold train-only CV + Dummy baseline/heldout, explicit ML_NOT_SUITABLE abstention, static aggregate-only HTML/XLSX/PDF/JSON manifest ZIP and local no-overwrite CLI. Original AutoML, P50, P70 source retained unchanged.
+- [CI #43383793303](https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/43383793303) completed **2/2 SUCCESS**: Ubuntu24.04 **93 PASS/0 FAIL/0 SKIP/1 expected ZIP warning**, Windows Server2025 **93 PASS/0 FAIL/0 SKIP/1 expected ZIP warning**; each independently reran **30/30 CORE30 PASS**, compileall PASS.
+- Initial P85 SHA `d8ac0644` 90 PASS/3 FAIL; 2 test expectation/fixture defects + 1 repeated-time boundary risk fixed at tested SHA `8d1bdc80ed345485591f739aace632e91112a604`. Time duplicate now abstains, not optimistic fit.
+- **P85 technical milestone synthetic CI PASS only**, owner weighted full-final-design score still **UNASSESSED**; central ONTOINSIGHT `[작업중]` remains. Client Windows10/11, genuine encrypted Excel, PII/rights, 36/36 catalog, complete original AutoML regression, real customer records, Korean final PDF, deployment not verified; **RELEASE HOLD**. Audit `docs/qa/ONTOINSIGHT_AX_P85_20261113.md`.
+
 ## 2026-11-13 KST — ONTOINSIGHT AX P70 technical acceptance SUCCESS; official final rate UNASSESSED
 - Exact executable SHA 34e7b16a2fef5e1b0d21f4e6d097c6faaaaf9012, branch feature/ontoinsight-ax-p70-20261113. Bounded 2-3 CSV/XLSX, local approval attestation, order/refund/channel cardinality guard and exact financial reconciliation + three-stage CLI, source files unchanged.
 - Actions #43378733016 https://github.com/hibi89/AI_AutoML_Analyst/actions/runs/43378733016: Linux 44 PASS/0 FAIL/0 SKIP; Windows Server2025 44 PASS/0 FAIL/0 SKIP; compilation both PASS.
