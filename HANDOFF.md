@@ -1,3 +1,16 @@
+## 2026-11-13 KST — ONTOINSIGHT AX P70 handoff (10 items)
+1. Goal/technology: ONTOINSIGHT full private Freelancer blueprint; local-first Python/pandas/Decimal, 2-3 approved CSV/XLSX data source relationships, no paid or external model.
+2. Change/architecture: P50 safe intake inherited, new explicit source/mapping attestation and order-grain ledger; rejected direct external AI (cost/PII), naive 1:N joins (double gross), changed only new feature branch files.
+3. Tests: exact SHA 34e7b16a2fef5e1b0d21f4e6d097c6faaaaf9012, GitHub Actions #43378733016 2/2 SUCCESS: Ubuntu44 PASS, Windows Server2025 44 PASS, 0 FAIL/0 SKIP each; compileall PASS; synthetic and CLI 3-stage source review/attest/run.
+4. State: engineering P70 phase PASS; official full-blueprint final percent UNASSESSED; [작업중] remains in hub; commercial SALE NO-GO and RELEASE HOLD.
+5. Failures/remaining: CI none. Duplicate order/channel, missing foreign key, over-refund, source/receipt drift, XLSX formula/external/hidden, sensitive columns rejected. Local approval not authenticated; equal-value duplicate refund events without event ID not distinguished.
+6. Repo/paths/SHA: hibi89/AI_AutoML_Analyst@feature/ontoinsight-ax-p70-20261113 (above SHA); backend/app/services/ontoinsight_p70.py, scripts/ontoinsight_p70_cli.py, tests/test_ontoinsight_p70.py + tests/test_ontoinsight_p70_cli.py; audit docs/qa/ONTOINSIGHT_AX_P70_20261113.md.
+7. Deploy/environment: Python3.11 GitHub-hosted Ubuntu24.04/Windows Server2025; real owner Windows10/11 not run, no Production/Vercel (not applicable), no live customer API.
+8. Originals/backup/security: Original main, old AutoML engine and P50 branch untouched; base 8defbec4a943e081a12a6aaff1ae59f135ef05d0 for non-destructive branch recovery; customer originals, token and data never uploaded.
+9. Next acceptance and owner approval: P85 ML leakage/time/group/dummy, offline report and 30 security tests; P95 customer Windows, lawful data, NOTICE/license; P100 customer final GO. Official numeric rate requires owner-approved whole-blueprint weights and full requirement SHA trace.
+10. Updated 2026-11-13 KST: same-source P70 tested SHA 34e7b16a2fef5e1b0d21f4e6d097c6faaaaf9012, CI #43378733016; documentation-only commit follows. Existing historic AutoML engineering P95 unaffected.
+
+
 ## 2026-11-13 KST — ONTOINSIGHT AX P50 (10-point handoff)
 
 1. Goal/spec/stack: Freelancer ONTOINSIGHT entire final blueprint, not inherited old AutoML P95; local Python pandas+Decimal. No external AI/API.
