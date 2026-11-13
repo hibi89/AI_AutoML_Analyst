@@ -20,7 +20,7 @@ jobs:
         with:
           python-version: '3.11'
       - run: python -m pip install -r requirements-verified-py311.txt
-      - name: ONTOINSIGHT P50/P70 original-source tests
-        run: python -m pytest -q tests/test_ontoinsight_p50.py tests/test_ontoinsight_p70.py
+      - name: ONTOINSIGHT P50/P70 original-source and CLI tests
+        run: python -m pytest -q tests/test_ontoinsight_p50.py tests/test_ontoinsight_p70.py tests/test_ontoinsight_p70_cli.py
       - name: Python compile
         run: python -m compileall -q backend/app/services/ontoinsight_p50.py backend/app/services/ontoinsight_p70.py scripts/ontoinsight_p70_cli.py
