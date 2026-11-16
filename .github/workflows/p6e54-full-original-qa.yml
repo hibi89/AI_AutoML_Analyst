@@ -1,0 +1,122 @@
+name: AutoML P6E54 same-source original full and browser QA
+on:
+  push:
+    branches: [feature/kmong-p6e50-owner-delivery-20261112]
+    paths:
+      - ".github/workflows/p6e54-full-original-qa.yml"
+      - "backend/**"
+      - "frontend/**"
+      - "tests/**"
+      - "scripts/p6e50_owner_zip_review.py"
+      - "scripts/p6e51_owner_three_tier_review.py"
+      - "scripts/p6_browser_smoke.py"
+      - "requirements-verified-py311.txt"
+      - "requirements-browser.txt"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-full-ubuntu:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements-verified-py311.txt
+      - name: Install only synthetic PDF dependencies and Korean runner fonts
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq fonts-nanum fonts-arphic-uming poppler-utils
+          python -m pip install -r requirements-verified-py311.txt
+      - name: Original complete pytest suite on exact feature SHA
+        run: python -m pytest -q tests
+      - name: Generate original synthetic multi-page PDF preview
+        run: python -m scripts.create_basic_preview
+
+  original-full-windows:
+    runs-on: windows-2025
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements-verified-py311.txt
+      - name: Install original Python dependencies
+        run: python -m pip install -r requirements-verified-py311.txt
+      - name: Provision sha256-pinned local-only Korean PDF test font
+        shell: pwsh
+        run: |
+          $font = Join-Path $env:RUNNER_TEMP "NanumGothic-Regular.ttf"
+          Invoke-WebRequest -Uri "https://raw.githubusercontent.com/google/fonts/main/ofl/nanumgothic/NanumGothic-Regular.ttf" -OutFile $font -TimeoutSec 90
+          if ((Get-FileHash -LiteralPath $font -Algorithm SHA256).Hash -ne "76F45EF4A6BCFF344C837C95A7DCC26E017E38B5846D5AE0CDCB5B86BE2E2D31") { throw "Temporary QA font SHA mismatch" }
+          "AUTOML_KOREAN_FONT_PATH=$font" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      - name: Provision SHA256-pinned PDF rasterizer in runner temp only
+        shell: pwsh
+        run: |
+          $zip = Join-Path $env:RUNNER_TEMP "poppler-26.09.0-0.zip"
+          $unpacked = Join-Path $env:RUNNER_TEMP "automl-poppler"
+          Invoke-WebRequest -Uri "https://github.com/oschwartz10612/poppler-windows/releases/download/v26.09.0-0/Release-26.09.0-0.zip" -OutFile $zip -TimeoutSec 180
+          if ((Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash -ne "7A6F256A0DDF7536182246A5733331BF4677CBCC34F4663774947AD34556C8D0") { throw "Poppler ZIP SHA mismatch" }
+          Expand-Archive -LiteralPath $zip -DestinationPath $unpacked
+          $render = Get-ChildItem -LiteralPath $unpacked -Recurse -File -Filter "pdftoppm.exe" | Select-Object -First 1
+          if (-not $render) { throw "Rasterizer pdftoppm.exe unavailable" }
+          $render.DirectoryName | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+      - name: Original complete pytest suite on hosted native Windows
+        run: python -m pytest -q tests
+
+  original-browser-ubuntu:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements-verified-py311.txt
+      - name: Set up original local-only three-SKU Chromium smoke
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq fonts-nanum fonts-arphic-uming
+          python -m pip install -r requirements-verified-py311.txt -r requirements-browser.txt
+          python -m playwright install --with-deps chromium
+      - name: Actual Chromium BASIC STANDARD PREMIUM ZIP downloads
+        run: python -m scripts.p6_browser_smoke
+
+  original-browser-windows:
+    runs-on: windows-2025
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements-verified-py311.txt
+      - name: Install original Python and browser dependencies
+        run: |
+          python -m pip install -r requirements-verified-py311.txt -r requirements-browser.txt
+          python -m playwright install chromium
+      - name: Download transient OFL test font into runner temporary folder
+        shell: pwsh
+        run: |
+          $font = Join-Path $env:RUNNER_TEMP "NanumGothic-Regular.ttf"
+          $source = "https://raw.githubusercontent.com/google/fonts/main/ofl/nanumgothic/NanumGothic-Regular.ttf"
+          Invoke-WebRequest -Uri $source -OutFile $font
+          if (-not (Test-Path $font) -or (Get-Item $font).Length -lt 1000000) { throw "Missing test font" }
+          "AUTOML_KOREAN_FONT_PATH=$font" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      - name: Actual native Windows Chromium three-SKU ZIP downloads
+        run: python -m scripts.p6_browser_smoke

@@ -54,7 +54,21 @@ def test_shipped_zip_font_readme_tracks_japanese_fallback_and_manifest(tier, jap
         assert "Nanum Gothic" in readme
         if japanese:
             assert "보조 글꼴:" in readme
-            assert "Arphic Public License" in readme
+            fallback_path = font_coverage._japanese_path()
+            assert fallback_path is not None
+            family = font_coverage._installed_font_family(fallback_path)
+            compact = "".join(ch for ch in family.casefold() if ch.isalnum())
+            # The real local fallback differs by OS: Linux CI has AR PL UMing,
+            # while native Windows may select MS Gothic. Never misattribute
+            # Microsoft/system-font rights as an Arphic public license.
+            if "arpluming" in compact or "uming" in compact:
+                assert "Arphic Public License" in readme
+            elif any(name in compact for name in ("malgun", "meiryo", "msgothic", "yugothic")):
+                assert "Windows-installed system font" in readme
+                assert "Arphic Public License" not in readme
+            else:
+                assert "locally installed font; provenance/permission not verified" in readme
+                assert "Arphic Public License" not in readme
         else:
             assert "보조 글꼴:" not in readme
             assert "Arphic Public License" not in readme

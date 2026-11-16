@@ -1,3 +1,13 @@
+> **[OWNER-DEV-EXECUTION-V2 | ACTIVE]** [2026-11-16 사용자 확정 최신 실행·복원 정본](https://github.com/hibi89/hackathon-command-center-2026/blob/kmong-productization/docs/strategy/OWNER_DEV_EXECUTION_CANONICAL_20261116.md): **웹 GPT-6 Sol High 최초 전체 설계/Instant 작업큐 → 웹 GPT-6 Sol Instant BE/FE 구현 후보100%까지 묶음 코딩 → 최종 전체 CI·수정(고위험 최소검사 즉시) → Codex GPT-6.1 Sol Max 기술·Astra Max 디자인 독립검수 → 웹 Sol High 최종 인수 → 형 승인 후 Codex Luna Extra High 크몽 등록.** 과거 '4개 작업슬롯만', 'High 단독 코딩', '매 작업 전체 CI', '개발 중간 Codex 디자인/감사' 등 일반 순서는 효력상 대체; 프로젝트 최종설계/보안·원본/권한·외부비용/라이선스/상품 HOLD는 유지. 이 정책 배포 자체는 제품 개발 재개/CI·출시·등록 승인이 아님. **새 채팅은 역할·브랜치 HEAD와 이 AGENTS 정책을 먼저 확정한 뒤 HANDOFF→STATUS→REQUIREMENTS→최종설계→실코드·작업큐를 읽는다.** HANDOFF 옛 작업지시는 정책을 덮어쓰지 못하며 `ㄱ`은 이 브랜치가 지정된 제품 작업만 이어간다. 구현률과 공식 검증률은 구분, 실증 없는 +1%p 금지.
+
+> **[OWNER-FINAL-BLUEPRINT-100 | 2026-11-13 KST | 사용자 확정]** 공식 최종완성률은 **사용자 최종설계도 전체 = 100%** 기준으로만 산정. 작업자·총괄이 임의 설계 범위·가중치·수용조건 축소/수정 금지. 해커톤 MVP, 합성/CI, P85/P95 같은 기술 마일스톤을 공식 최종완성률로 부르면 안 된다. 최종설계 요구 ID→소스→정확 SHA 검증·미검증→승인 가중치 100점 추적표와 대조. 근거가 없으면 공식 `UNASSESSED(재산정 대기)`; 과거 수치는 내부 역사 지표로 보존. 해총 `kmong-productization` 최종완성률 원장에 결과 동기화. 기존 [작업중]/등록이력·RELEASE HOLD 변경 금지. [공통 정본](https://github.com/hibi89/hackathon-command-center-2026/blob/kmong-productization/docs/strategy/FINAL_BLUEPRINT_COMPLETION_STANDARD_20261113.md). 정책 커밋은 기능 완료나 점수 확정이 아니다.
+
+> **[KMONG_WORK_TARGET_GATE_20261112 | 사용자 최신 확정 | 필수 작업 규칙]** 이 저장소에서 크몽 상품·육성 후보를 작업하는 모든 AI 담당자는 새 채팅·`ㄱ` 시작 시 이 문구를 읽고 적용한다.
+> - 실제 개발/수정/테스트 착수 즉시 [해총 크몽 최종완성률·후보 상태표](https://github.com/hibi89/hackathon-command-center-2026/blob/kmong-productization/docs/audits/KMONG_16_CURRENT_20261111.md)의 **해당 상품명 옆에 `**[작업중]**`을 표시하고 GitHub 커밋**한다. 확정 단계 목표(예: 95%)와 검증 기준을 제품 STATUS/HANDOFF에 남긴다.
+> - **목표 완성률 달성 전에는 [작업중]을 삭제하지 않는다.** 일시중단·종료·보류·다른 제품 전환·담당 채팅 변경도 삭제 사유가 아니다. 예전 '전환·중단 시 삭제' 지시는 폐기한다.
+> - **검증된 목표치에 도달한 뒤에만** 기능 SHA·PASS/FAIL/SKIP·미검증을 기록하고 자기 표시를 제거·커밋한다. 목표 하향/변경으로 표식 제거 시 사용자 명시 승인 필요. 다른 담당자 표시·기존 수치·RELEASE HOLD 보존.
+> - 표식은 목표 미달 상태를 의미하며 **실시간 실행 증명은 아니다**. 허브 최신 HEAD 확인 후 안전하게 반영, 실패 시 `KMONG_HUB_SYNC_PENDING` 기록. 자동 동기화 없음. 크몽 외 작업에는 표시 불필요.
+
 > **2026-10-28 해총 최종 공통 개발·검증 지시 / 소유자 최신 결정:** [전 프로젝트 개발 속도·검증 통합 정본](https://github.com/hibi89/hackathon-command-center-2026/blob/main/docs/DEV_ACCELERATION_AND_VERIFICATION_20261028.md). 현재 **KIC(+DL)·PayPal·UGREEN·LA만 활성 4개 작업 슬롯**, 이 브랜치는 **임시 대기(원본 보존, 폐기 아님)**. 다른 소유자 지시로 재개되지 않았다면 `ㄱ`만으로 자율적인 코드 수정/테스트 CI/배포를 시작하지 않는다. 재개 시 합의된 구현은 GPT-6 **Instant**, 최초 설계·난제·해총 최상위 검수는 높은 추론; 실제 기능 중심, GitHub 파일 단위 반복·다중 상태문서 복제·동일 SHA CI 폴링 줄임. 단일 안전 로컬 검증과 정확한 실행 SHA/PASS·FAIL·SKIP을 보고한다. 기존 제품 설계·권리·보안·사용자 승인·동결/복구·비공개 원본 보호 규칙은 보존한다. 본 공지는 개발 허가나 테스트 통과 주장 아님.
 
 # Lead developer and future-chat rules
